@@ -23,13 +23,6 @@
     ,auditTrail: 'thesis_audit_trail_v1'
   };
 
-  var DEFAULT_INSTRUCTOR_AUTH = {
-    username: 'instructor',
-    password: '123456'
-  };
-  var DEFAULT_ADMIN_PIN = '123456';
-  var LEGACY_ADMIN_PIN = '000000';
-
   function readJson(key, fallback) {
     var raw = localStorage.getItem(key);
     if (!raw) {
@@ -80,10 +73,6 @@
       display_name: normalize(displayName) || normalize(username),
       created_at: new Date().toISOString()
     };
-  }
-
-  function getDefaultInstructorAccount() {
-    return makeInstructorAccount(DEFAULT_INSTRUCTOR_AUTH.username, DEFAULT_INSTRUCTOR_AUTH.password, 'Default Instructor');
   }
 
   function getInstructorAccountsInternal() {
@@ -138,18 +127,7 @@
         password: accounts[0].password
       };
     }
-    return {
-      username: DEFAULT_INSTRUCTOR_AUTH.username,
-      password: DEFAULT_INSTRUCTOR_AUTH.password
-    };
-  }
-
-  function getStoredAdminPin() {
-    var pin = normalize(localStorage.getItem(STORAGE_KEYS.adminPin));
-    if (!pin) {
-      return DEFAULT_ADMIN_PIN;
-    }
-    return pin;
+    return { username: '', password: '' };
   }
 
   function findInstructorAccountByCredentials(username, password) {
@@ -169,7 +147,8 @@
   }
 
   function matchesAdminPin(pin) {
-    return normalize(pin) === normalize(getStoredAdminPin());
+    // Browser storage is never an authority for administrator credentials.
+    return false;
   }
 
   var ensureStorageRunning = false;
@@ -215,21 +194,8 @@
       writeJson(STORAGE_KEYS.meta, meta);
     }
 
-    var accounts = getInstructorAccountsInternal();
-    if (!accounts.length) {
-      var legacyAuth = readJson(STORAGE_KEYS.instructorAuth, null);
-      if (legacyAuth && typeof legacyAuth === 'object' && normalize(legacyAuth.username) && normalize(legacyAuth.password)) {
-        accounts = [makeInstructorAccount(legacyAuth.username, legacyAuth.password, legacyAuth.username)];
-      } else {
-        accounts = [getDefaultInstructorAccount()];
-      }
-      saveInstructorAccountsInternal(accounts);
-    }
-
-    var savedAdminPin = normalize(localStorage.getItem(STORAGE_KEYS.adminPin));
-    if (!savedAdminPin || savedAdminPin === LEGACY_ADMIN_PIN) {
-      localStorage.setItem(STORAGE_KEYS.adminPin, DEFAULT_ADMIN_PIN);
-    }
+    // Do not recreate legacy browser-only accounts or PINs. Authentication is
+    // exclusively handled by the PHP API below.
 
     var metaForMigration = readJson(STORAGE_KEYS.meta, null);
     if (!metaForMigration || typeof metaForMigration !== 'object') {
@@ -1334,7 +1300,8 @@
       var accounts = getInstructorAccountsInternal().filter(function (account) {
         return !account.archived;
       });
-      var first = accounts[0] || getDefaultInstructorAccount();
+      var first = accounts[0];
+      if (!first) return { ok: false, message: 'Instructor accounts are managed by the server.' };
       return {
         ok: true,
         instructor: {
@@ -1346,33 +1313,7 @@
     },
 
     async saveInstructorAccount(username, password) {
-      ensureStorage();
-      var nextUsername = normalize(username);
-      var nextPassword = normalize(password);
-      if (!nextUsername || !nextPassword) {
-        return { ok: false, message: 'Instructor username and password are required.' };
-      }
-
-      var accounts = getInstructorAccountsInternal();
-      if (!accounts.length) {
-        accounts = [getDefaultInstructorAccount()];
-      }
-      accounts[0] = Object.assign({}, accounts[0], {
-        username: nextUsername,
-        password: nextPassword,
-        display_name: accounts[0].display_name || nextUsername
-      });
-      saveInstructorAccountsInternal(accounts);
-      saveLegacyInstructorAuth(accounts[0].username, accounts[0].password);
-
-      return {
-        ok: true,
-        instructor: {
-          id: accounts[0].id,
-          username: accounts[0].username,
-          display_name: accounts[0].display_name || accounts[0].username
-        }
-      };
+      return { ok: false, message: 'Instructor credentials are managed by the server.' };
     },
 
     async validateAdminPin(pin) {
@@ -1476,7 +1417,7 @@
 
     async validateInstructorPin(pin) {
       ensureStorage();
-      return matchesInstructorCredentials(DEFAULT_INSTRUCTOR_AUTH.username, pin);
+      return false;
     },
 
     async addNotificationHistory(payload) {
@@ -2162,10 +2103,7 @@
 
     authenticateInstructor: function (username, password) {
       ensureStorage();
-      if (arguments.length === 1) {
-        return matchesInstructorCredentials(DEFAULT_INSTRUCTOR_AUTH.username, username);
-      }
-      return matchesInstructorCredentials(username, password);
+      return false;
     },
 
     getInstructorAccount: function () {
@@ -2326,7 +2264,7 @@
 
     validateInstructorPin: function (pin) {
       ensureStorage();
-      return matchesInstructorCredentials(DEFAULT_INSTRUCTOR_AUTH.username, pin);
+      return false;
     },
 
     clearCaseDataOnly: function () {
@@ -2453,16 +2391,54 @@
   }
 
   // MySQL-backed API overrides. Browser storage is never a business-data source.
+  // Keep mutation requests single-flight so rapid clicks cannot create the same
+  // output twice before the first response reaches the page.
+  var pendingMutationRequests = new Map();
+  var completedMutationRequests = new Map();
+  var mutationDuplicateWindowMs = 1500;
+
+  function mutationRequestKey(path, options) {
+    var method = String((options && options.method) || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return '';
+    return method + ':' + String(path || '') + ':' + String((options && options.body) || '');
+  }
+
   async function mysqlRequest(path, options) {
     options = options || {};
+    var mutationKey = mutationRequestKey(path, options);
+    if (mutationKey) {
+      var now = Date.now();
+      if (pendingMutationRequests.has(mutationKey) || (completedMutationRequests.get(mutationKey) || 0) > now) {
+        var duplicateError = new Error('Duplicate submission ignored.');
+        duplicateError.code = 'duplicate_submission';
+        throw duplicateError;
+      }
+      pendingMutationRequests.set(mutationKey, true);
+    }
     var headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
     var token = sessionStorage.getItem('thesis_api_token') || '';
     if (token) headers.Authorization = 'Bearer ' + token;
     var apiBase = location.protocol === 'file:' ? 'http://localhost/THESIS6/api/' : 'api/';
-    var response = await fetch(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
-    var result = await response.json().catch(function () { return {}; });
-    if (!response.ok) throw new Error(result.message || 'Database request failed.');
-    return result;
+    try {
+      var response = await fetch(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
+      var result = await response.json().catch(function () { return {}; });
+      if (response.status === 401 && token) {
+        sessionStorage.removeItem('thesis_api_token');
+        window.dispatchEvent(new CustomEvent('portal-session-expired'));
+      }
+      if (!response.ok) throw new Error(result.message || 'Database request failed.');
+      if (mutationKey) {
+        completedMutationRequests.set(mutationKey, Date.now() + mutationDuplicateWindowMs);
+        window.setTimeout(function () {
+          if ((completedMutationRequests.get(mutationKey) || 0) <= Date.now()) {
+            completedMutationRequests.delete(mutationKey);
+          }
+        }, mutationDuplicateWindowMs + 50);
+      }
+      return result;
+    } finally {
+      if (mutationKey) pendingMutationRequests.delete(mutationKey);
+    }
   }
 
   async function mysqlLogin(role, credentials) {
@@ -2489,6 +2465,46 @@
   };
   ApiClient.authenticateAdmin = async function (pin) {
     return mysqlLogin('admin', { pin_number: normalize(pin) });
+  };
+  ApiClient.getSession = async function () {
+    return mysqlRequest('auth/session');
+  };
+  ApiClient.logout = async function () {
+    try {
+      return await mysqlRequest('auth/logout', { method: 'POST', body: '{}' });
+    } catch (error) {
+      return { ok: false, message: error.message };
+    } finally {
+      sessionStorage.removeItem('thesis_api_token');
+    }
+  };
+  ApiClient.updateAdminPin = async function (currentPin, newPin) {
+    try {
+      return await mysqlRequest('auth/admin-pin', {
+        method: 'PATCH',
+        body: JSON.stringify({ current_pin: currentPin || '', new_pin: newPin || '' })
+      });
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
+  ApiClient.createDatabaseBackup = async function () {
+    try {
+      var result = await mysqlRequest('backup');
+      return { ok: !!result.ok, backup: result.backup, message: result.message };
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
+  ApiClient.restoreDatabaseBackup = async function (backup) {
+    try {
+      return await mysqlRequest('backup/restore', {
+        method: 'POST',
+        body: JSON.stringify({ confirmation: 'RESTORE', backup: backup || {} })
+      });
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
   };
   ApiClient.getSchoolYears = async function () {
     var result;
@@ -2565,7 +2581,44 @@
           supervisor_license_expiry_date: normalize(caseData.supervisor_license_expiry_date) || null
         })
       });
-      return { ok: !!result.ok, case_id: result.id, message: result.message };
+      return { ok: !!result.ok, case_id: result.id, message: result.message, code: result.code };
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
+  ApiClient.updateCaseRecord = async function (caseId, caseData) {
+    try {
+      caseData = caseData || {};
+      var result = await mysqlRequest('cases/' + encodeURIComponent(caseId), {
+        method: 'PATCH',
+        body: JSON.stringify({
+          case_no: normalize(caseData.case_no),
+          complete_diagnosis: normalize(caseData.complete_diagnosis),
+          date_time_performed: normalize(caseData.date_time_performed),
+          patient_name: normalize(caseData.patient_name),
+          patient_address: normalize(caseData.patient_address),
+          facility_name: normalize(caseData.facility_name),
+          facility_address: normalize(caseData.facility_address),
+          facility_contact_number: normalize(caseData.facility_contact_number),
+          supervisor_printed_name: normalize(caseData.supervisor_printed_name),
+          supervisor_contact_number: normalize(caseData.supervisor_contact_number),
+          supervisor_position_designation: normalize(caseData.supervisor_position_designation),
+          supervisor_license_no: normalize(caseData.supervisor_license_no),
+          supervisor_license_expiry_date: normalize(caseData.supervisor_license_expiry_date)
+        })
+      });
+      return { ok: !!result.ok, message: result.message };
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
+  ApiClient.getCaseRoleAvailability = async function (procedureName, caseNo, patientName, academicYear) {
+    try {
+      var query = 'case-role-availability?procedure_key=' + encodeURIComponent(canonicalProcedureName(procedureName)) +
+        '&case_no=' + encodeURIComponent(normalize(caseNo)) +
+        '&patient_name=' + encodeURIComponent(normalize(patientName));
+      if (normalize(academicYear)) query += '&academic_year=' + encodeURIComponent(normalize(academicYear));
+      return await mysqlRequest(query);
     } catch (error) {
       return { ok: false, message: error.message };
     }
@@ -2602,7 +2655,7 @@
   };
   ApiClient.permanentlyDeleteCaseRecord = async function (studentId, caseId) {
     try {
-      var result = await mysqlRequest('cases/' + encodeURIComponent(caseId), { method: 'DELETE' });
+      var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/delete', { method: 'PATCH', body: '{}' });
       return { ok: !!result.ok, message: result.message };
     } catch (error) {
       return { ok: false, message: error.message };
@@ -2640,6 +2693,10 @@
   };
   ApiClient.restoreStudent = async function (studentId) {
     try { return await mysqlRequest('students/' + encodeURIComponent(studentId) + '/restore', { method: 'PATCH', body: '{}' }); }
+    catch (error) { return { ok: false, message: error.message }; }
+  };
+  ApiClient.permanentlyDeleteStudent = async function (studentId) {
+    try { return await mysqlRequest('students/' + encodeURIComponent(studentId) + '/delete', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.getArchivedStudents = async function () {
@@ -2692,12 +2749,19 @@
       return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,caseNumbers:typeof r.case_numbers==='string'?JSON.parse(r.case_numbers||'[]'):r.case_numbers,requestedAt:r.requested_at});
     });
   };
-  ApiClient.getEditRequests = async function () {
-    var result=await mysqlRequest('edit-requests');
+  ApiClient.getEditRequests = async function (filters) {
+    var query = filters && filters.archived ? '?archived=1' : '';
+    var result=await mysqlRequest('edit-requests' + query);
     return (result.requests||[]).map(function(r){var numbers=r.case_numbers;if(typeof numbers==='string'){try{numbers=JSON.parse(numbers||'[]');}catch(e){numbers=[];}}numbers=Array.isArray(numbers)?numbers:[];return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,procedureKey:r.procedure_key,procedure:r.procedure_name,caseNumbers:numbers,caseNo:numbers[0]||'',caseKey:String(r.id),requestedAt:r.requested_at});});
   };
   ApiClient.archiveEditRequest = async function (requestId) {
     try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/archive',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
+  };
+  ApiClient.restoreEditRequest = async function (requestId) {
+    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/restore',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
+  };
+  ApiClient.permanentlyDeleteEditRequest = async function (requestId) {
+    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/delete',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.cancelEditRequest = async function (requestId) {
     return ApiClient.archiveEditRequest(requestId);
@@ -2725,6 +2789,11 @@
     try { return await mysqlRequest('notifications/' + encodeURIComponent(notificationId) + '/restore', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
+  ApiClient.deleteNotification = async function (notificationId) {
+    try { return await mysqlRequest('notifications/' + encodeURIComponent(notificationId) + '/delete', { method: 'PATCH', body: '{}' }); }
+    catch (error) { return { ok: false, message: error.message }; }
+  };
+  ApiClient.permanentlyDeleteNotification = ApiClient.deleteNotification;
   ApiClient.sendChatMessage = async function (payload) {
     try { return await mysqlRequest('chat',{method:'POST',body:JSON.stringify(payload||{})}); }
     catch(error){return {ok:false,message:error.message};}
@@ -2769,7 +2838,12 @@
   ApiClient.restoreCaseComment = async function (commentId) {
     try { return await mysqlRequest('case-comments/' + encodeURIComponent(commentId) + '/restore', { method: 'PATCH', body: '{}' }); }
     catch (error) { return { ok: false, message: error.message }; }
-  };  ApiClient.addTeacherRemarks = async function (caseId,remarks,checkedBy,instructorId) {
+  };
+  ApiClient.permanentlyDeleteCaseComment = async function (commentId) {
+    try { return await mysqlRequest('case-comments/' + encodeURIComponent(commentId) + '/delete', { method: 'PATCH', body: '{}' }); }
+    catch (error) { return { ok: false, message: error.message }; }
+  };
+  ApiClient.addTeacherRemarks = async function (caseId,remarks,checkedBy,instructorId) {
     return ApiClient.updateRecordStatus(caseId,'Under Review',{remarks:remarks,instructor_name:checkedBy,instructor_id:instructorId});
   };
   ApiClient.updateRecordStatus = async function (caseId,status,options) {
@@ -2780,6 +2854,10 @@
   };
   ApiClient.getActivityLog = async function () {
     try {var result=await mysqlRequest('audit');return {ok:true,entries:result.entries||[]};}catch(error){return {ok:false,entries:[],message:error.message};}
+  };
+  ApiClient.addActivityLog = async function (payload) {
+    try { return await mysqlRequest('audit', { method: 'POST', body: JSON.stringify(payload || {}) }); }
+    catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.addNotificationHistory = async function (payload) {
     try {var result=await mysqlRequest('notifications',{method:'POST',body:JSON.stringify(payload||{})});return {ok:!!result.ok,notification_id:result.id};}catch(error){return {ok:false,message:error.message};}

@@ -25,7 +25,7 @@
   });
   sidebar.addEventListener("mouseleave", function () {
     clearTimeout(collapseTimer);
-    collapseTimer = setTimeout(function () { setCollapsed(true); }, 180);
+    collapseTimer = setTimeout(function () { setCollapsed(true); }, 90);
   });
   sidebar.addEventListener("focusin", function () { setCollapsed(false); });
   sidebar.addEventListener("focusout", function (event) {
@@ -188,6 +188,40 @@
   let students = [];
   const escape = (value) => String(value ?? '').replace(/[&<>'"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
   let allRecords = [];
+  let exportContext = null;
+  let exportRequestPending = false;
+
+  async function openExportPreview(button, context = exportContext) {
+    if (exportRequestPending || !context) {
+      if (!context) {
+        window.alert('Select a student before exporting the PRC form.');
+      }
+      return;
+    }
+    if (typeof window.openInstructorPrcExport !== 'function') {
+      console.error('The PRC export handler is not available.');
+      window.alert('The PRC export is still loading. Please refresh the page and try again.');
+      return;
+    }
+
+    exportRequestPending = true;
+    const originalMarkup = button.innerHTML;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Preparing preview...';
+    try {
+      await window.openInstructorPrcExport(context.student, button, context.records);
+    } catch (error) {
+      console.error('Unable to open the PRC export preview.', error);
+      window.alert(`Unable to open the PRC export preview. ${error?.message || 'Please try again.'}`);
+    } finally {
+      exportRequestPending = false;
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.innerHTML = originalMarkup;
+    }
+  }
+
   async function loadStudents() {
     const empty = byId('ipEmpty');
     empty.hidden = false;
@@ -270,11 +304,16 @@
       const fallback = byId('ipStudentInfo').querySelector('[data-ip-profile-initials]');
       if (fallback) fallback.hidden = false;
     });
-    byId('ipExport').addEventListener('click', async (event) => {
-      if (typeof window.openInstructorPrcExport === 'function') {
-        await window.openInstructorPrcExport(student, event.currentTarget, options.records);
-      }
-    });
+    const exportButton = byId('ipExport');
+    exportContext = { student, records };
+    exportButton.style.setProperty('position', 'relative', 'important');
+    exportButton.style.setProperty('z-index', '20', 'important');
+    exportButton.style.setProperty('pointer-events', 'auto', 'important');
+    exportButton.style.setProperty('cursor', 'pointer', 'important');
+    exportButton.disabled = false;
+    exportButton.onclick = () => {
+      void openExportPreview(exportButton, { student, records });
+    };
     const output = byId('ipRecords'); output.innerHTML = '';
     procedureFilters.slice(1).forEach(([filterKey, procedure]) => {
       const group = records.filter((row) => procedureKey(row.procedure_name) === filterKey);

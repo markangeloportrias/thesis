@@ -4,7 +4,14 @@ declare(strict_types=1);
 $config = require __DIR__ . '/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
-header('Access-Control-Allow-Origin: *');
+// The portal is normally served from this same XAMPP origin. A separate
+// frontend must be explicitly allow-listed through THESIS_ALLOWED_ORIGIN.
+$requestOrigin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+$allowedOrigin = trim((string)($config['allowed_origin'] ?? ''));
+if ($requestOrigin !== '' && $allowedOrigin !== '' && hash_equals($allowedOrigin, $requestOrigin)) {
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, OPTIONS');
 
@@ -78,6 +85,190 @@ function ensureAuditTrailTable(PDO $pdo): void
 
 ensureAuditTrailTable($pdo);
 
+function columnExists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare('SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+    $stmt->execute([$table, $column]);
+    return (bool)$stmt->fetchColumn();
+}
+
+function ensureSecurityTables(PDO $pdo): void
+{
+    // Bcrypt hashes are currently 60 characters long and may grow in a future
+    // PHP release. Older portal installs used VARCHAR(50), which silently
+    // truncates a hash and makes the administrator unable to sign in.
+    $pinColumn = $pdo->query("SELECT CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='admins' AND COLUMN_NAME='pin_number'")->fetchColumn();
+    if ($pinColumn !== false && (int)$pinColumn < 255) {
+        $pdo->exec('ALTER TABLE admins MODIFY COLUMN pin_number VARCHAR(255) NOT NULL');
+    }
+
+    if (!columnExists($pdo, 'admins', 'must_change_pin')) {
+        $pdo->exec('ALTER TABLE admins ADD COLUMN must_change_pin TINYINT(1) NOT NULL DEFAULT 0 AFTER pin_number');
+    }
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS auth_login_attempts (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        role_name VARCHAR(24) NOT NULL,
+        identity_hash CHAR(64) NOT NULL,
+        ip_hash CHAR(64) NOT NULL,
+        failure_count SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+        first_failed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_failed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        locked_until DATETIME NULL,
+        UNIQUE KEY uq_auth_attempt_identity (role_name, identity_hash, ip_hash),
+        INDEX idx_auth_attempt_lock (locked_until)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function ensureStudentProfileFields(PDO $pdo): void
+{
+    if (!columnExists($pdo, 'students', 'parent_contact')) {
+        $pdo->exec('ALTER TABLE students ADD COLUMN parent_contact VARCHAR(50) NULL AFTER contact_number');
+    }
+}
+
+function indexExists(PDO $pdo, string $table, string $index): bool
+{
+    $stmt = $pdo->prepare('SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND INDEX_NAME=?');
+    $stmt->execute([$table, $index]);
+    return (bool)$stmt->fetchColumn();
+}
+
+function ensureEnrollmentHistorySchema(PDO $pdo): void
+{
+    if (!columnExists($pdo, 'student_block_assignments', 'school_year_id')) {
+        $pdo->exec('ALTER TABLE student_block_assignments ADD COLUMN school_year_id INT UNSIGNED NULL AFTER block_id');
+    }
+    $pdo->exec('UPDATE student_block_assignments a JOIN student_blocks b ON b.id=a.block_id SET a.school_year_id=b.school_year_id WHERE a.school_year_id IS NULL');
+    $missingSchoolYears = (int)$pdo->query('SELECT COUNT(*) FROM student_block_assignments WHERE school_year_id IS NULL')->fetchColumn();
+    if ($missingSchoolYears === 0) {
+        $pdo->exec('ALTER TABLE student_block_assignments MODIFY COLUMN school_year_id INT UNSIGNED NOT NULL');
+    }
+    // The original unique student_id index also satisfies the student foreign
+    // key on existing installs, so provide a normal replacement before it is
+    // removed to permit multi-year enrollments.
+    if (!indexExists($pdo, 'student_block_assignments', 'idx_assignment_student')) {
+        $pdo->exec('ALTER TABLE student_block_assignments ADD INDEX idx_assignment_student (student_id)');
+    }
+    if (indexExists($pdo, 'student_block_assignments', 'uq_student_block')) {
+        $pdo->exec('ALTER TABLE student_block_assignments DROP INDEX uq_student_block');
+    }
+    if (!indexExists($pdo, 'student_block_assignments', 'uq_student_school_year')) {
+        $pdo->exec('ALTER TABLE student_block_assignments ADD UNIQUE KEY uq_student_school_year (student_id, school_year_id)');
+    }
+    if (!indexExists($pdo, 'student_block_assignments', 'idx_assignment_year')) {
+        $pdo->exec('ALTER TABLE student_block_assignments ADD INDEX idx_assignment_year (school_year_id, archived_at)');
+    }
+}
+
+function migrateLegacyCredentials(PDO $pdo): void
+{
+    $adminRows = $pdo->query('SELECT id, pin_number FROM admins')->fetchAll();
+    $adminUpdate = $pdo->prepare('UPDATE admins SET pin_number=?, must_change_pin=1 WHERE id=?');
+    foreach ($adminRows as $row) {
+        $pin = (string)($row['pin_number'] ?? '');
+        // Do not hash a previously truncated bcrypt value. It is not the
+        // administrator's PIN and must be recovered with the explicit,
+        // server-side recovery secret below.
+        if (isTruncatedBcryptHash($pin)) {
+            continue;
+        }
+        if ($pin !== '' && !isPasswordHash($pin)) {
+            $adminUpdate->execute([password_hash($pin, PASSWORD_DEFAULT), $row['id']]);
+        }
+    }
+
+    foreach ([
+        ['students', 'student_id'],
+        ['instructor_accounts', 'account_uid'],
+    ] as [$table, $idColumn]) {
+        $rows = $pdo->query("SELECT $idColumn AS record_id, password FROM $table")->fetchAll();
+        $update = $pdo->prepare("UPDATE $table SET password=? WHERE $idColumn=?");
+        foreach ($rows as $row) {
+            $password = (string)($row['password'] ?? '');
+            if ($password !== '' && !isPasswordHash($password)) {
+                $update->execute([password_hash($password, PASSWORD_DEFAULT), $row['record_id']]);
+            }
+        }
+    }
+}
+
+ensureSecurityTables($pdo);
+ensureStudentProfileFields($pdo);
+ensureEnrollmentHistorySchema($pdo);
+function isTruncatedBcryptHash(string $value): bool
+{
+    return str_starts_with($value, '$2') && strlen($value) < 60;
+}
+
+function ensureInitialAdministrator(PDO $pdo, string $initialPin): void
+{
+    $count = (int)$pdo->query('SELECT COUNT(*) FROM admins WHERE archived_at IS NULL')->fetchColumn();
+    if ($count > 0) return;
+    if (!preg_match('/^\d{6,12}$/', $initialPin)) {
+        return;
+    }
+    $stmt = $pdo->prepare('INSERT INTO admins (pin_number, must_change_pin) VALUES (?, 0)');
+    $stmt->execute([password_hash($initialPin, PASSWORD_DEFAULT)]);
+}
+
+function recoverTruncatedAdministratorCredentials(PDO $pdo, string $recoveryPin): void
+{
+    if (!preg_match('/^\d{6,12}$/', $recoveryPin)) {
+        return;
+    }
+
+    $rows = $pdo->query('SELECT id, pin_number FROM admins WHERE archived_at IS NULL')->fetchAll();
+    $affectedIds = [];
+    foreach ($rows as $row) {
+        if (isTruncatedBcryptHash((string)($row['pin_number'] ?? ''))) {
+            $affectedIds[] = (int)$row['id'];
+        }
+    }
+    if ($affectedIds === []) {
+        return;
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $update = $pdo->prepare('UPDATE admins SET pin_number=?, must_change_pin=1 WHERE id=?');
+        foreach ($affectedIds as $id) {
+            $update->execute([password_hash($recoveryPin, PASSWORD_DEFAULT), $id]);
+        }
+        // Any session issued before recovery must not remain usable.
+        $pdo->exec("DELETE FROM api_sessions WHERE role='admin'");
+        $audit = $pdo->prepare("INSERT INTO audit_trail (actor_role, actor_uid, action_name, entity_type, entity_uid, details) VALUES ('system', NULL, 'recover_admin_pin', 'admin', ?, ?)");
+        foreach ($affectedIds as $id) {
+            $audit->execute([(string)$id, json_encode(['reason' => 'legacy_truncated_bcrypt'])]);
+        }
+        $pdo->commit();
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+function retireLegacyCredentialProcedures(PDO $pdo): void
+{
+    // These legacy procedures compare or store credentials in plaintext. All
+    // account creation and authentication must go through the API instead.
+    foreach ([
+        'sp_register_student',
+        'sp_authenticate_student',
+        'sp_authenticate_instructor',
+        'sp_create_instructor_account',
+    ] as $procedure) {
+        $pdo->exec("DROP PROCEDURE IF EXISTS `$procedure`");
+    }
+}
+
+ensureInitialAdministrator($pdo, (string)($config['initial_admin_pin'] ?? ''));
+recoverTruncatedAdministratorCredentials($pdo, (string)($config['admin_recovery_pin'] ?? ''));
+migrateLegacyCredentials($pdo);
+retireLegacyCredentialProcedures($pdo);
+
 function ensureInvalidCaseRecordStatus(PDO $pdo): void
 {
     $stmt = $pdo->query("SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='case_records' AND COLUMN_NAME='record_status'");
@@ -126,7 +317,56 @@ function requireFields(array $data, array $fields): void
 
 function passwordMatches(string $plain, string $stored): bool
 {
-    return password_verify($plain, $stored) || hash_equals($stored, $plain);
+    return $stored !== '' && isPasswordHash($stored) && password_verify($plain, $stored);
+}
+
+function isPasswordHash(string $value): bool
+{
+    $info = password_get_info($value);
+    return ($info['algoName'] ?? 'unknown') !== 'unknown';
+}
+
+function credentialIsStrong(string $value, int $minimumLength = 8): bool
+{
+    return strlen($value) >= $minimumLength;
+}
+
+function authAttemptIdentity(string $role, string $identity): array
+{
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? 'unknown');
+    return [
+        hash('sha256', strtolower(trim($identity))),
+        hash('sha256', $ip),
+    ];
+}
+
+function loginIsLocked(PDO $pdo, string $role, string $identity): bool
+{
+    [$identityHash, $ipHash] = authAttemptIdentity($role, $identity);
+    $stmt = $pdo->prepare('SELECT locked_until FROM auth_login_attempts WHERE role_name=? AND identity_hash=? AND ip_hash=?');
+    $stmt->execute([$role, $identityHash, $ipHash]);
+    $lockedUntil = $stmt->fetchColumn();
+    return $lockedUntil !== false && $lockedUntil !== null && strtotime((string)$lockedUntil) > time();
+}
+
+function recordLoginFailure(PDO $pdo, string $role, string $identity): void
+{
+    [$identityHash, $ipHash] = authAttemptIdentity($role, $identity);
+    $stmt = $pdo->prepare("INSERT INTO auth_login_attempts (role_name, identity_hash, ip_hash, failure_count, first_failed_at, last_failed_at, locked_until)
+        VALUES (?, ?, ?, 1, NOW(), NOW(), NULL)
+        ON DUPLICATE KEY UPDATE
+          failure_count = IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), 1, failure_count + 1),
+          first_failed_at = IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), NOW(), first_failed_at),
+          last_failed_at = NOW(),
+          locked_until = IF(IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), 1, failure_count + 1) >= 5, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL)");
+    $stmt->execute([$role, $identityHash, $ipHash]);
+}
+
+function clearLoginFailures(PDO $pdo, string $role, string $identity): void
+{
+    [$identityHash, $ipHash] = authAttemptIdentity($role, $identity);
+    $stmt = $pdo->prepare('DELETE FROM auth_login_attempts WHERE role_name=? AND identity_hash=? AND ip_hash=?');
+    $stmt->execute([$role, $identityHash, $ipHash]);
 }
 
 function bearerToken(): string
@@ -135,7 +375,7 @@ function bearerToken(): string
     return preg_match('/^Bearer\s+(.+)$/i', $header, $match) ? trim($match[1]) : '';
 }
 
-function currentUser(PDO $pdo, array $roles = []): array
+function currentUser(PDO $pdo, array $roles = [], bool $allowPendingAdminPin = false): array
 {
     $token = bearerToken();
     if ($token === '') respond(['ok' => false, 'message' => 'Authentication required.'], 401);
@@ -145,6 +385,13 @@ function currentUser(PDO $pdo, array $roles = []): array
     $user = $stmt->fetch();
     if (!$user) respond(['ok' => false, 'message' => 'Session is invalid or expired.'], 401);
     if ($roles && !in_array($user['role'], $roles, true)) respond(['ok' => false, 'message' => 'Access denied.'], 403);
+    if ($user['role'] === 'admin' && !$allowPendingAdminPin) {
+        $admin = $pdo->prepare('SELECT must_change_pin FROM admins WHERE id=? AND archived_at IS NULL');
+        $admin->execute([$user['user_uid']]);
+        if ((bool)$admin->fetchColumn()) {
+            respond(['ok' => false, 'message' => 'Your administrator PIN must be changed before continuing.'], 403);
+        }
+    }
     return $user;
 }
 

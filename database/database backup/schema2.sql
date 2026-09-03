@@ -11,10 +11,6 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';
 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0;
 
 
-CREATE DATABASE IF NOT EXISTS `thesis_portal` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE `thesis_portal`;
-
 
 DROP TABLE IF EXISTS `admins`;
 SET @saved_cs_client     = @@character_set_client;
@@ -33,7 +29,7 @@ SET character_set_client = @saved_cs_client;
 
 LOCK TABLES `admins` WRITE;
 ALTER TABLE `admins` DISABLE KEYS;
-INSERT INTO `admins` VALUES (1,'$2y$10$D3fDPalHS1F9XFv/xhiDr.3UbUVULk3wgsGJdTfF33znZmqpXIYTW',0,NULL,'2026-07-20 19:52:12','2026-09-01 17:33:48');
+ INSERT INTO `admins` VALUES (1,'$2y$10$x18UsfIOZMVsyzpKygv5NOMaHC7FHiNhPODFCisJTk7GkVaCNe3pS',0,NULL,'2026-07-20 19:52:12','2026-09-01 17:33:48');
 ALTER TABLE `admins` ENABLE KEYS;
 UNLOCK TABLES;
 
@@ -643,8 +639,6 @@ SET character_set_client = @saved_cs_client;
 
 
 
-USE `thesis_portal`;
-
 
 DROP VIEW IF EXISTS `v_case_records_full`;
 SET @saved_cs_client          = @@character_set_client;
@@ -654,7 +648,6 @@ SET character_set_client      = utf8mb4;
 SET character_set_results     = utf8mb4;
 SET collation_connection      = utf8mb4_unicode_ci;
 CREATE ALGORITHM=UNDEFINED
-DEFINER=`root`@`localhost` SQL SECURITY DEFINER
 VIEW `v_case_records_full` AS select `c`.`id` AS `id`,`c`.`student_id` AS `student_id`,`s`.`student_name` AS `current_student_name`,`c`.`student_name` AS `recorded_student_name`,`c`.`instructor_uid` AS `instructor_uid`,`c`.`instructor_name` AS `instructor_name`,`c`.`academic_year` AS `academic_year`,`c`.`procedure_key` AS `procedure_key`,`c`.`procedure_name` AS `procedure_name`,`c`.`case_no` AS `case_no`,`c`.`complete_diagnosis` AS `complete_diagnosis`,`c`.`date_time_performed` AS `date_time_performed`,`c`.`patient_name` AS `patient_name`,`c`.`patient_address` AS `patient_address`,`c`.`facility_name` AS `facility_name`,`c`.`facility_address` AS `facility_address`,`c`.`facility_contact_number` AS `facility_contact_number`,`c`.`supervisor_printed_name` AS `supervisor_printed_name`,`c`.`supervisor_contact_number` AS `supervisor_contact_number`,`c`.`supervisor_position_designation` AS `supervisor_position_designation`,`c`.`supervisor_license_no` AS `supervisor_license_no`,`c`.`supervisor_license_expiry_date` AS `supervisor_license_expiry_date`,`c`.`teacher_remarks` AS `teacher_remarks`,`c`.`checked_by` AS `checked_by`,`c`.`checked_at` AS `checked_at`,`c`.`created_at` AS `created_at`,`c`.`updated_at` AS `updated_at` from (`case_records` `c` join `students` `s` on(`s`.`student_id` = `c`.`student_id`));
 SET character_set_client      = @saved_cs_client;
 SET character_set_results     = @saved_cs_results;
@@ -669,7 +662,6 @@ SET character_set_client      = utf8mb4;
 SET character_set_results     = utf8mb4;
 SET collation_connection      = utf8mb4_unicode_ci;
 CREATE ALGORITHM=UNDEFINED
-DEFINER=`root`@`localhost` SQL SECURITY DEFINER
 VIEW `v_school_year_procedure_summary` AS select `c`.`academic_year` AS `school_year`,`c`.`procedure_key` AS `procedure_key`,`c`.`procedure_name` AS `procedure_name`,count(0) AS `total_records`,count(distinct `c`.`student_id`) AS `total_students`,sum(case when `c`.`checked_by` is not null and trim(`c`.`checked_by`) <> '' then 1 else 0 end) AS `verified_records` from `case_records` `c` where `c`.`academic_year` is not null and trim(`c`.`academic_year`) <> '' group by `c`.`academic_year`,`c`.`procedure_key`,`c`.`procedure_name`;
 SET character_set_client      = @saved_cs_client;
 SET character_set_results     = @saved_cs_results;
@@ -684,7 +676,6 @@ SET character_set_client      = utf8mb4;
 SET character_set_results     = utf8mb4;
 SET collation_connection      = utf8mb4_unicode_ci;
 CREATE ALGORITHM=UNDEFINED
-DEFINER=`root`@`localhost` SQL SECURITY DEFINER
 VIEW `v_student_case_summary` AS select `s`.`student_id` AS `student_id`,`s`.`student_name` AS `student_name`,count(`c`.`id`) AS `total_cases`,sum(case when `c`.`checked_by` is not null and trim(`c`.`checked_by`) <> '' then 1 else 0 end) AS `verified_cases`,group_concat(distinct `c`.`procedure_name` order by `c`.`procedure_name` ASC separator ', ') AS `procedures` from (`students` `s` left join `case_records` `c` on(`c`.`student_id` = `s`.`student_id`)) group by `s`.`student_id`,`s`.`student_name`;
 SET character_set_client      = @saved_cs_client;
 SET character_set_results     = @saved_cs_results;
