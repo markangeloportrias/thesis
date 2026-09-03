@@ -179,7 +179,7 @@
   legacy.forEach((node) => { node.style.display = 'none'; });
   const root = document.createElement('div');
   root.id = 'instructorProgressCopy';
-  root.innerHTML = `<div class="ip-overview"><div class="instructor-title-heading"><span class="instructor-title-icon" aria-hidden="true"><i class="fas fa-chart-pie"></i></span><div class="instructor-title-copy"><h2>Progress Overview</h2><p class="ip-subtitle">Search for a student to view their clinical progress.</p></div></div><div class="ip-toolbar" role="search"><input id="ipSearch" aria-label="Search students" placeholder="Search by student ID or name..."><button class="ip-btn" id="ipRefresh" type="button">Refresh</button></div><div class="ip-panel"><div class="ip-table-wrap"><table><thead><tr><th style="width:55px">NO.</th><th>STUDENT ID</th><th>STUDENT NAME</th><th style="width:120px">CLINICAL RECORDS</th><th style="width:120px">ACTIONS</th></tr></thead><tbody id="ipStudents"></tbody></table></div></div><div class="ip-empty" id="ipEmpty">Enter a student name or ID to view progress.</div></div><div class="ip-detail"><div class="ip-detail-actions"><button class="ip-btn back" id="ipBack" type="button"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Search</button></div><div id="ipStudentInfo"></div><div id="ipRecords"></div></div>`;
+  root.innerHTML = `<div class="ip-overview"><div class="instructor-title-heading"><span class="instructor-title-icon" aria-hidden="true"><i class="fas fa-chart-pie"></i></span><div class="instructor-title-copy"><h2>Progress Overview</h2><p class="ip-subtitle">Search for a student to view their clinical progress.</p></div></div><div class="ip-toolbar" role="search"><input id="ipSearch" aria-label="Search students" placeholder="Search by student ID or name..."><button class="ip-btn" id="ipRefresh" type="button">Refresh</button></div><div class="ip-panel"><div class="ip-table-wrap"><table><thead><tr><th style="width:55px">NO.</th><th>STUDENT ID</th><th>STUDENT NAME</th><th style="width:120px">CLINICAL RECORDS</th><th style="width:120px">ACTIONS</th></tr></thead><tbody id="ipStudents"></tbody></table></div></div><div class="ip-empty" id="ipEmpty">Enter a student name or ID to view progress.</div></div><div class="ip-detail"><div class="ip-detail-actions"><button class="ip-btn back" id="ipBack" type="button"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Search</button></div><div id="ipStudentInfo" class="student-preview-info"></div><div id="ipRecords" class="student-preview-records"></div></div>`;
   host.append(root);
   [host, root, root.querySelector('.ip-overview')].forEach((node) => {
     ['margin', 'padding', 'border', 'border-radius', 'outline', 'background', 'box-shadow'].forEach((property) => node.style.setProperty(property, property === 'background' ? 'transparent' : '0', 'important'));
@@ -295,6 +295,38 @@
       if (name.includes('internal')) return 'internal-exam';
       return 'other';
     };
+    const diagnosisHeaders = {
+      'delivery-handled': 'Complete Diagnosis(Gravida, Para)',
+      'delivery-assisted': 'Complete Diagnosis(Gravida, Para)',
+      suturing: 'Complete Diagnosis',
+      'iv-insertion': 'Complete Diagnosis',
+      'internal-exam': 'Internal Examination (Cervical Dilation,Effacement,BOW,Presentation and Station)',
+    };
+    const formatPreviewDateTime = (value) => {
+      if (!value) return '-';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return `${date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}\n${date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+    };
+    const formatPreviewDate = (value) => {
+      if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return '-';
+      const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+    };
+    const appendPreviewCell = (row, values, numeric = false) => {
+      const cell = document.createElement('td');
+      cell.className = 'record-detail-cell';
+      const lines = values.filter(Boolean);
+      (lines.length ? lines : ['-']).forEach((value, index) => {
+        const line = document.createElement('span');
+        line.className = index === 0 ? 'record-detail-primary' : 'record-detail-secondary';
+        if (numeric) line.classList.add('record-detail-numeric');
+        line.textContent = value;
+        cell.appendChild(line);
+      });
+      row.appendChild(cell);
+    };
     const initials = String(student.student_name || 'Student').trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase() || 'S';
     const photoSource = String(student.profile_photo || '').trim();
     byId('ipStudentInfo').innerHTML = `<div class="ip-detail-heading"><div><h2>Clinical Progress &amp; Case Summary</h2><p class="ip-subtitle">A comprehensive overview of ${escape(student.student_name || 'this student')}'s clinical requirements and record history.</p></div></div><section class="ip-student summary-student-info ip-student-profile" aria-label="Student profile"><div class="ip-profile-identity"><div class="ip-profile-photo">${photoSource ? `<img data-ip-profile-photo src="${escape(photoSource)}" alt="${escape(student.student_name || 'Student')} profile photo">` : ''}<span data-ip-profile-initials${photoSource ? ' hidden' : ''}>${escape(initials)}</span></div><div class="ip-profile-name"><span class="ip-profile-eyebrow">Clinical student</span><strong>${escape(student.student_name || 'Student')}</strong><small>Student ID: ${escape(student.student_id || 'Not available')}</small></div></div><div class="ip-profile-details"><div><span>Contact Number</span><strong>${escape(student.contact_number || 'Not provided')}</strong></div><div><span>Parent / Guardian</span><strong>${escape(student.parent_name || 'Not provided')}</strong></div><div><span>Academic Year</span><strong>${escape(student.registered_school_year || student.active_school_year || 'Not assigned')}</strong></div><div><span>Registered Block</span><strong>${escape(student.block_label || 'Not assigned')}</strong></div><div><span>Total Cases</span><strong>${escape(count)}</strong></div><div><span>Report Type</span><strong>Clinical Case Summary</strong></div></div></section><div class="ip-record-toolbar student-progress-toolbar"><div class="procedure-tabs ip-detail-tabs">${procedureFilters.map(([key, label]) => `<button type="button" class="procedure-tab ip-detail-tab${key === 'all' ? ' active' : ''}" data-ip-filter="${key}">${label}</button>`).join('')}</div><button class="ip-btn ip-export" id="ipExport" type="button"><i class="fas fa-file-word" aria-hidden="true"></i> Export PRC Form</button></div>`;
@@ -324,10 +356,22 @@
         ? window.createInstructorProcedureProgressHeading(group, filterKey)
         : null;
       const rowsHtml = group.length
-        ? group.map((row) => `<tr><td>${escape(row.patient_name || '-')}<br>${escape(row.patient_address || '')}</td><td>${escape(row.case_no || '-')}</td><td>${escape(row.complete_diagnosis || '-')}</td><td>${escape(row.date_time_performed || '-')}</td><td>${escape(row.facility_name || '-')}<br>${escape(row.facility_address || '')}<br>${escape(row.facility_contact_number || '')}</td><td>${escape(row.supervisor_printed_name || '-')}<br>${escape(row.supervisor_contact_number || '')}</td><td>${escape(row.supervisor_position_designation || '-')}</td><td>${escape(row.supervisor_license_no || '-')}<br>${escape(row.supervisor_license_expiry_date || '')}</td></tr>`).join('')
+        ? group.map((row) => {
+            const rowElement = document.createElement('tr');
+            [
+              [row.patient_name || '-', row.patient_address || ''],
+              [row.case_no || '-'],
+              [row.complete_diagnosis || '-'],
+              [formatPreviewDateTime(row.date_time_performed)],
+              [row.facility_name || '-', row.facility_address || '', row.facility_contact_number || ''],
+              [row.supervisor_printed_name || '-', row.supervisor_contact_number || ''],
+              [row.supervisor_position_designation || '-'],
+              [row.supervisor_license_no || '-', formatPreviewDate(row.supervisor_license_expiry_date)],
+            ].forEach((values, index) => appendPreviewCell(rowElement, values, [3, 7].includes(index)));
+            return rowElement.outerHTML;
+          }).join('')
         : '<tr><td class="ip-no-records" colspan="8">No records for this procedure.</td></tr>';
-      const diagnosisHeader = ['delivery-handled', 'delivery-assisted'].includes(filterKey) ? 'Complete Diagnosis<br>(Gravida, Para)' : filterKey === 'internal-exam' ? 'Internal Examination<br>(Cervical Dilation, Effacement, BOW,<br>Presentation and Station)' : 'Complete Diagnosis';
-      section.innerHTML = `<div class="ip-table-wrap ip-clinical-table-wrap prc-source-table-wrap"><table class="ip-clinical-table prc-source-table" aria-label="${escape(procedure)} clinical records"><colgroup><col style="width:23.23%"><col style="width:6.11%"><col style="width:15.63%"><col style="width:8.83%"><col style="width:20.38%"><col style="width:15.63%"><col style="width:10.87%"><col style="width:10.87%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">${diagnosisHeader}</th><th rowspan="2">Date &amp; Time Performed</th><th rowspan="2">Full Name, Address of Facility &amp; Contact Number</th><th colspan="3">Supervised by</th></tr><tr><th>Printed Name and Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+      section.innerHTML = `<div class="ip-table-wrap ip-clinical-table-wrap clinical-form-table-container prc-procedure-table-container prc-source-table-wrap"><table class="ip-clinical-table clinical-form-table procedure-records-table prc-procedure-table prc-source-table" aria-label="${escape(procedure)} clinical records"><colgroup><col style="width:20.83%"><col style="width:5.48%"><col style="width:14.01%"><col style="width:7.92%"><col style="width:18.27%"><col style="width:14.01%"><col style="width:9.74%"><col style="width:9.74%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">${diagnosisHeaders[filterKey] || 'Complete Diagnosis'}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
       if (progressHeading) {
         progressHeading.classList.add('ip-procedure-heading');
         progressHeading.querySelector('h3')?.classList.add('ip-procedure');
