@@ -2718,6 +2718,24 @@
     try { return await mysqlRequest('instructors'); }
     catch (error) { return mysqlRequest('instructor-directory'); }
   };
+  ApiClient.getActiveInstructorDirectory = async function () {
+    try { return await mysqlRequest('instructor-directory'); }
+    catch (error) {
+      try {
+        var response = await ApiClient.getInstructorAccounts();
+        var accounts = response && Array.isArray(response.accounts) ? response.accounts : [];
+        return {
+          ok: !!(response && response.ok),
+          accounts: accounts.filter(function (account) {
+            return !account.archived_at && String(account.status || 'active').toLowerCase() === 'active';
+          }),
+          message: response && response.message ? response.message : error.message
+        };
+      } catch (fallbackError) {
+        return { ok: false, accounts: [], message: fallbackError.message || error.message };
+      }
+    }
+  };
   ApiClient.createInstructorAccount = async function (username, password, displayName) {
     try { return await mysqlRequest('instructors', { method: 'POST', body: JSON.stringify({ username: username, password: password, display_name: displayName }) }); }
     catch (error) { return { ok: false, message: error.message }; }

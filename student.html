@@ -1531,7 +1531,7 @@
       </div>
     </div>
 
-    <script src="assets/js/api-client.js?v=20260903-validation-1"></script>
+<script src="assets/js/api-client.js?v=20260903-active-instructor-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -1776,7 +1776,9 @@
 
         let accounts = [];
         try {
-          const response = await ApiClient.getInstructorAccounts();
+          const response = typeof ApiClient.getActiveInstructorDirectory === "function"
+            ? await ApiClient.getActiveInstructorDirectory()
+            : await ApiClient.getInstructorAccounts();
           if (response && response.ok && Array.isArray(response.accounts)) {
             accounts = response.accounts;
           }
@@ -1785,7 +1787,7 @@
         }
 
         chatInstructorOptions = accounts
-          .filter((account) => !account.archived_at && String(account.status || "active").toLowerCase() !== "archived")
+          .filter((account) => !account.archived_at && String(account.status || "active").toLowerCase() === "active")
           .map((account) => ({
               id: account.id || account.username || `instructor_${Math.random().toString(36).slice(2, 7)}`,
               username: account.username || "instructor",
