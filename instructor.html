@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="assets/css/components/modals.css" />
     <link rel="stylesheet" href="assets/css/pages/reports.css" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
-<link rel="stylesheet" href="assets/css/pages/instructor-palette.css?v=20260901-overview-remarks-12" />
+<link rel="stylesheet" href="assets/css/pages/instructor-palette.css?v=20260905-current-records-search-18" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260824-3" />
     <link rel="stylesheet" href="assets/css/pages/instructor-annual-records-table.css?v=20260831-8" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
@@ -766,6 +766,11 @@
                 </div>
               </div>
               <div class="section-header-actions">
+                <label class="current-records-search" id="currentRecordsSearchControl" for="currentRecordsSearchInput" style="display:none">
+                  <i class="fas fa-search" aria-hidden="true"></i>
+                  <input id="currentRecordsSearchInput" type="search" placeholder="Search student ID or name..." autocomplete="off" />
+                </label>
+                <div class="current-records-search-results" id="currentRecordsSearchResults" role="listbox" hidden></div>
                 <button class="btn btn-secondary" id="currentRecordsBackToBlocks" type="button" style="display: none">
                   <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Blocks
                 </button>
@@ -2057,6 +2062,8 @@
       let activeType = "dashboard";
       let selectedCurrentRecordsStudent = null;
       let selectedCurrentRecordsBlock = null;
+      let currentRecordsSearchTerm = "";
+      let currentRecordsSearchStudents = [];
       const pendingCommentByCase = {};
       const isAdminQuickAccess =
         new URLSearchParams(window.location.search).get("from") === "admin" ||
@@ -5900,8 +5907,44 @@
         });
       }
 
+      async function renderCurrentRecordsSearchResults() {
+        const input = document.getElementById("currentRecordsSearchInput");
+        const results = document.getElementById("currentRecordsSearchResults");
+        if (!input || !results) return;
+        const term = String(input.value || "").trim().toLowerCase();
+        results.replaceChildren();
+        if (!term) { results.hidden = true; return; }
+        let searchStudents = currentRecordsSearchStudents;
+        if (!searchStudents.length) {
+          try {
+            const result = await ApiClient.getAllAssignedStudents();
+            searchStudents = result && result.ok && Array.isArray(result.students) ? result.students : [];
+            currentRecordsSearchStudents = searchStudents;
+          } catch (error) { searchStudents = []; }
+        }
+        const matches = searchStudents.filter((student) =>
+          `${student.student_id || student.id || ""} ${student.student_name || student.name || ""} ${student.block_label || student.block || ""}`.toLowerCase().includes(term),
+        ).slice(0, 8);
+        const control = document.getElementById("currentRecordsSearchControl");
+        if (control) results.style.width = `${Math.round(control.getBoundingClientRect().width)}px`;
+        results.hidden = false;
+        if (!matches.length) {
+          results.innerHTML = '<div class="current-records-search-empty">No matching current-year student found.</div>';
+          return;
+        }
+        matches.forEach((student) => {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.setAttribute("role", "option");
+          option.dataset.currentRecordsStudent = String(student.student_id || "");
+          option.innerHTML = `<i class="fas fa-user-graduate" aria-hidden="true"></i><span><strong>${escapeHtml(student.student_name || "Student")}</strong><small>${escapeHtml(student.student_id || "No ID")} · ${escapeHtml(student.block_label || "No block")}</small></span>`;
+          results.appendChild(option);
+        });
+      }
+
       async function renderCurrentRecordsStudentRoster() {
         const roster = document.getElementById("currentRecordsStudentRoster");
+        const searchControl = document.getElementById("currentRecordsSearchControl");
         const body = document.getElementById("currentRecordsStudentRosterBody");
         const empty = document.getElementById("currentRecordsStudentRosterEmpty");
         const back = document.getElementById("currentRecordsBackToBlocks");
@@ -5911,6 +5954,7 @@
         const columnThree = document.getElementById("currentRecordsColumnThree");
         const columnFour = document.getElementById("currentRecordsColumnFour");
         if (!roster || !body) return;
+        if (searchControl) searchControl.style.setProperty("display", selectedCurrentRecordsBlock ? "none" : "flex", "important");
         const [studentResult, cases] = await Promise.all([
           ApiClient.getAllAssignedStudents(),
           ApiClient.getAllCasesForInstructor("", ""),
@@ -5924,12 +5968,17 @@
               String(a.student_name || "").localeCompare(String(b.student_name || "")),
             ).filter((student) => !activeYear || String(student.registered_school_year || "") === String(activeYear))
           : [];
+        currentRecordsSearchStudents = students;
         const registeredBlocksResult = await ApiClient.getStudentBlocks(activeYear || "");
         const registeredBlocks = registeredBlocksResult && registeredBlocksResult.ok && Array.isArray(registeredBlocksResult.blocks)
           ? registeredBlocksResult.blocks
           : [];
         body.innerHTML = "";
         roster.classList.toggle("showing-block-students", Boolean(selectedCurrentRecordsBlock));
+        if (searchControl) searchControl.style.setProperty("display", selectedCurrentRecordsBlock ? "none" : "flex", "important");
+        if (selectedCurrentRecordsBlock) {
+          document.getElementById("currentRecordsSearchResults")?.setAttribute("hidden", "hidden");
+        }
 
         if (!selectedCurrentRecordsBlock) {
           const blocks = registeredBlocks.map((registeredBlock) => {
@@ -5947,6 +5996,9 @@
           }).sort((a, b) =>
             `${a.schoolYear} ${a.label}`.localeCompare(`${b.schoolYear} ${b.label}`),
           );
+          // The search behaves like Annual Records: it provides student suggestions
+          // and opens the selected student's records; it does not alter the block list.
+          const visibleBlocks = blocks;
           if (back) back.style.display = "none";
           if (levelTitle) levelTitle.textContent = "Registered Blocks";
           if (levelSubtitle) levelSubtitle.textContent = "Choose a block to view its students and clinical records.";
@@ -5955,9 +6007,9 @@
           if (columnFour) columnFour.textContent = "Students";
           if (empty) {
             empty.textContent = "No registered blocks found.";
-            empty.style.display = blocks.length ? "none" : "block";
+            empty.style.display = visibleBlocks.length ? "none" : "block";
           }
-          blocks.forEach((block, index) => {
+          visibleBlocks.forEach((block, index) => {
             const row = document.createElement("tr");
             row.tabIndex = 0;
             row.style.cursor = "pointer";
@@ -5980,7 +6032,7 @@
             });
             body.appendChild(row);
           });
-          if (countActive) countActive.textContent = String(blocks.length);
+          if (countActive) countActive.textContent = String(visibleBlocks.length);
           return;
         }
 
@@ -6239,6 +6291,7 @@
 
         const currentRecordsRoster = document.getElementById("currentRecordsStudentRoster");
         if (isMyRecords && !selectedCurrentRecordsStudent) {
+          document.getElementById("currentRecordsSearchControl")?.style.setProperty("display", "flex", "important");
           if (currentRecordsRoster) currentRecordsRoster.style.display = "block";
           if (mainRecordsWrapper) mainRecordsWrapper.style.display = "none";
           if (instructorProcedureTabs) instructorProcedureTabs.style.display = "none";
@@ -6249,6 +6302,9 @@
           return;
         }
         if (currentRecordsRoster) currentRecordsRoster.style.display = "none";
+        document.getElementById("currentRecordsSearchControl")?.style.setProperty("display", "none", "important");
+        const currentRecordsSearchResults = document.getElementById("currentRecordsSearchResults");
+        if (currentRecordsSearchResults) currentRecordsSearchResults.hidden = true;
 
         yearlyReportView.style.display = "none";
         activeTable.style.setProperty(
@@ -7339,6 +7395,28 @@
         "click",
         showInstructorAddStudentModal,
       );
+      document.getElementById("currentRecordsSearchInput")?.addEventListener("input", (event) => {
+        currentRecordsSearchTerm = event.target.value || "";
+        renderCurrentRecordsSearchResults();
+      });
+      document.getElementById("currentRecordsSearchResults")?.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-current-records-student]");
+        if (!option) return;
+        const studentId = option.dataset.currentRecordsStudent || "";
+        const student = currentRecordsSearchStudents.find((item) => String(item.student_id || "") === studentId);
+        if (!student) return;
+        selectedCurrentRecordsBlock = {
+          id: student.block_id || student.block_label,
+          label: student.block_label || "Registered block",
+          schoolYear: student.registered_school_year || "",
+        };
+        selectedCurrentRecordsStudent = { student_id: student.student_id, student_name: student.student_name, block_label: student.block_label };
+        const input = document.getElementById("currentRecordsSearchInput");
+        const results = document.getElementById("currentRecordsSearchResults");
+        if (input) input.value = student.student_name || student.student_id || "";
+        if (results) results.hidden = true;
+        setActiveSection("my-records", { preserveCurrentRecordsBlock: true, preserveSelectedStudent: true });
+      });
       instructorStudentsAddCancelBtn?.addEventListener(
         "click",
         closeInstructorStudentsAddModal,

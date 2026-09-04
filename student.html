@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260828-6" />
+    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260904-8" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
     <style id="student-settings-minimal-styles">
@@ -3428,9 +3428,10 @@
           table.setAttribute("aria-labelledby", title.id);
           table.innerHTML = `
             <colgroup>
-              <col style="width:19%"><col style="width:5%"><col style="width:13%">
-              <col style="width:7%"><col style="width:17%"><col style="width:13%">
-              <col style="width:9%"><col style="width:8%"><col style="width:9%">
+              <col style="width:17%"><col style="width:5%"><col style="width:12%">
+              <col style="width:7%"><col style="width:16%"><col style="width:12%">
+              <col style="width:8%"><col style="width:7%"><col style="width:7%">
+              <col style="width:9%">
             </colgroup>
             <thead>
               <tr>
@@ -3440,6 +3441,7 @@
                 <th rowspan="2">Date &amp; Time<br>Performed</th>
                 <th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th>
                 <th colspan="3">Supervised by</th>
+                <th rowspan="2">Status</th>
                 <th rowspan="2">Actions</th>
               </tr>
               <tr>
@@ -3488,6 +3490,28 @@
             });
             row.appendChild(td);
           });
+          const statusCell = document.createElement("td");
+          statusCell.style.textAlign = "center";
+          statusCell.style.verticalAlign = "middle";
+          statusCell.style.padding = "10px 8px";
+          const reviewStatus = getProcedureRecordReviewStatus(rec);
+          statusCell.className = `record-status-cell status-${reviewStatus || "submitted"}`;
+          const statusLabels = { verified: "Verified", invalid: "Invalid", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Needs Revision", submitted: "Submitted", resubmitted: "Submitted" };
+          const statusIcons = { verified: "fa-circle-check", invalid: "fa-circle-xmark", reviewed: "fa-clock", under_review: "fa-clock", needs_revision: "fa-triangle-exclamation", submitted: "fa-clock", resubmitted: "fa-clock" };
+          const statusStyle = {
+            verified: "background-color:#d1fae5 !important;color:#047857 !important;border:1px solid #34d399 !important;",
+            invalid: "background-color:#ffe4e6 !important;color:#be123c !important;border:1px solid #fb7185 !important;",
+            needs_revision: "background-color:#ffedd5 !important;color:#c2410c !important;border:1px solid #fb923c !important;",
+            reviewed: "background-color:#fef3c7 !important;color:#a16207 !important;border:1px solid #fbbf24 !important;",
+            submitted: "background-color:#bfdbfe !important;color:#1e3a8a !important;border:1px solid #2563eb !important;",
+            resubmitted: "background-color:#bfdbfe !important;color:#1e3a8a !important;border:1px solid #2563eb !important;",
+            under_review: "background-color:#fef3c7 !important;color:#a16207 !important;border:1px solid #fbbf24 !important;",
+          }[reviewStatus] || "background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;";
+          const statusCellBackgrounds = { verified: "#ecfdf5", invalid: "#fff1f2", needs_revision: "#fff7ed", reviewed: "#fffbeb", submitted: "#eff6ff" };
+          statusCell.style.setProperty("background", "#fff", "important");
+          const statusKey = reviewStatus || "submitted";
+          statusCell.innerHTML = `<span class="record-status-badge ${statusKey}" style="${statusStyle}display:inline-flex !important;align-items:center;justify-content:center;gap:3px;min-width:0 !important;padding:3px 6px !important;border-radius:999px !important;font-size:8px !important;font-weight:900 !important;line-height:1.1;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;box-shadow:0 1px 2px rgba(15,23,42,.08);"><i class="fas ${statusIcons[statusKey] || "fa-clock"}" aria-hidden="true"></i>${statusLabels[statusKey] || "Submitted"}</span>`;
+          row.appendChild(statusCell);
           const actions = document.createElement("td");
           const requestStatus = getEditRequestStatus(rec);
           const instructorComments = getInstructorComments(rec);
@@ -3870,11 +3894,13 @@
             suturing: 0,
             "iv-insertion": 0,
           };
+          const verifiedCounts = { ...procCounts };
 
           cases.forEach((rec) => {
             const key = normalizeProcedureKey(rec.procedure_name);
             if (procCounts[key] !== undefined) {
               procCounts[key]++;
+              if (String(rec.record_status || rec.recordStatus || '').toLowerCase() === 'verified') verifiedCounts[key]++;
             }
           });
 
@@ -3900,6 +3926,7 @@
           };
           Object.entries(dashboardStats).forEach(([procedureKey, config]) => {
             const count = procCounts[procedureKey] || 0;
+            const verifiedCount = verifiedCounts[procedureKey] || 0;
             const progress = Math.min(100, Math.round((count / config.target) * 100));
             const number = document.getElementById(config.numberId);
             const target = document.getElementById(`stat-target-${procedureKey}`);
@@ -3912,6 +3939,13 @@
               const fill = progressBar.querySelector("span");
               if (fill) fill.style.width = `${progress}%`;
               progressBar.classList.toggle("is-complete", count >= config.target);
+            }
+            const procedureTab = document.querySelector(`[data-progress-procedure="${procedureKey}"]`);
+            const locked = verifiedCount >= config.target;
+            if (procedureTab) {
+              procedureTab.disabled = locked;
+              procedureTab.title = locked ? "Locked: required verified cases completed" : "";
+              procedureTab.classList.toggle("is-locked", locked);
             }
           });
           const total = cases.length;

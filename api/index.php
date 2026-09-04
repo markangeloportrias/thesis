@@ -897,6 +897,17 @@ try {
         if ($method === 'POST') {
             requireFields($data, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$data['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
+            // Students may not add more records once the verified requirement is met.
+            // Keep this server-side so the limit cannot be bypassed by calling the API directly.
+            $procedureTargets = ['delivery-handled' => 20, 'delivery-assisted' => 20, 'internal-exam' => 20, 'suturing' => 5, 'iv-insertion' => 5];
+            $procedureKey = trim((string)$data['procedure_key']);
+            if ($user['role'] === 'student' && isset($procedureTargets[$procedureKey])) {
+                $verifiedStmt = $pdo->prepare("SELECT COUNT(*) FROM case_records WHERE student_id=? AND procedure_key=? AND record_status='verified' AND archived_at IS NULL");
+                $verifiedStmt->execute([(string)$data['student_id'], $procedureKey]);
+                if ((int)$verifiedStmt->fetchColumn() >= $procedureTargets[$procedureKey]) {
+                    respond(['ok' => false, 'message' => 'This procedure is locked because you reached the required number of verified cases.'], 409);
+                }
+            }
             validateContactNumberInput($data['facility_contact_number'] ?? null, 'Facility contact number');
             validateContactNumberInput($data['supervisor_contact_number'] ?? null, 'Supervisor contact number');
             $requestedAcademicYear = trim((string)($data['academic_year'] ?? ''));

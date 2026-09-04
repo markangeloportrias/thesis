@@ -118,6 +118,39 @@ html body.role-student #summaryTabSection table.prc-procedure-table tbody tr:nth
 }
 
 /* Record controls stay in their own final Actions column. */
+html body.role-student table.prc-procedure-table tbody td:nth-last-child(2) {
+  white-space: nowrap;
+  text-align: center;
+  font-weight: 700;
+  color: #334155;
+}
+table.prc-procedure-table .record-status-badge {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  padding: 6px 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  line-height: 1.1;
+  letter-spacing: .01em;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+}
+table.prc-procedure-table .record-status-badge.verified { background: #ecfdf5 !important; border-color: #86efac !important; color: #047857 !important; }
+table.prc-procedure-table .record-status-badge.invalid { background: #fff1f2 !important; border-color: #fda4af !important; color: #be123c !important; }
+table.prc-procedure-table .record-status-badge.needs_revision { background: #fff7ed !important; border-color: #fdba74 !important; color: #c2410c !important; }
+table.prc-procedure-table .record-status-badge.reviewed { background: #fffbeb !important; border-color: #fcd34d !important; color: #a16207 !important; }
+table.prc-procedure-table .record-status-badge.submitted { background: #eff6ff !important; border-color: #93c5fd !important; color: #1d4ed8 !important; }
+table.prc-procedure-table td.record-status-cell.status-verified { background: #ecfdf5 !important; }
+table.prc-procedure-table td.record-status-cell.status-invalid { background: #fff1f2 !important; }
+table.prc-procedure-table td.record-status-cell.status-needs_revision { background: #fff7ed !important; }
+table.prc-procedure-table td.record-status-cell.status-reviewed { background: #fffbeb !important; }
+table.prc-procedure-table td.record-status-cell.status-submitted { background: #eff6ff !important; }
+
 html body.role-student table.prc-procedure-table tbody td:last-child .case-actions {
   display: flex !important;
   justify-content: center !important;
