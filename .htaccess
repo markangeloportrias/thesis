@@ -5,7 +5,8 @@ Options -MultiViews
 # existing HTML files, relative assets, session checks, and page scripts remain
 # unchanged at runtime.
 # Avoid a trailing slash because these pages use relative asset URLs.
-RewriteRule ^(login|student|instructor|admin|admin-dashboard)/$ /THESIS6/$1 [R=302,L,NE]
+RewriteCond %{REQUEST_URI} ^(.*/)(login|student|instructor|admin|admin-dashboard)/$ [NC]
+RewriteRule ^(login|student|instructor|admin|admin-dashboard)/$ %1$2 [R=302,L,NE]
 RewriteRule ^login$ login.html [L]
 RewriteRule ^student$ student.html [L]
 RewriteRule ^instructor$ instructor.html [L]
@@ -15,4 +16,5 @@ RewriteRule ^admin-dashboard$ admin-dashboard.html [L]
 # Canonicalize direct legacy URLs so .html is not left visible in the address
 # bar. THE_REQUEST prevents this redirect from firing after an internal rewrite.
 RewriteCond %{THE_REQUEST} \s/+[^\s?]+/(login|student|instructor|admin|admin-dashboard)\.html(?:[?\s]) [NC]
-RewriteRule ^(login|student|instructor|admin|admin-dashboard)\.html$ /THESIS6/$1 [R=302,L,NE]
+RewriteCond %{REQUEST_URI} ^(.*/)(login|student|instructor|admin|admin-dashboard)\.html(?:\?.*)?$ [NC]
+RewriteRule ^(login|student|instructor|admin|admin-dashboard)\.html$ %1$1 [R=302,L,NE]
