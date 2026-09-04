@@ -3629,3 +3629,142 @@ html body.role-student:not(.student-dark) #deliveryInputPane .pane-actions .prim
   background: #ffd500 !important;
   box-shadow: 0 9px 18px rgba(253, 197, 0, 0.34) !important;
 }
+
+/* Shared status message box for successful, failed, and informational actions. */
+html body:is(.role-admin, .role-instructor, .role-student) .message:empty {
+  display: none !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .message:not(:empty) {
+  display: block !important;
+  min-height: 0 !important;
+  margin: 10px 0 !important;
+  padding: 10px 12px !important;
+  border: 1px solid #cfe0ff !important;
+  border-radius: 8px !important;
+  background: #f5f9ff !important;
+  color: #00509d !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .message.success:not(:empty) {
+  border-color: #b9e6ca !important;
+  background: #f0fbf4 !important;
+  color: #148b54 !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .message.error:not(:empty) {
+  border-color: #f2c2c2 !important;
+  background: #fff5f5 !important;
+  color: #c0392b !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .message.warning:not(:empty) {
+  border-color: #f1d89a !important;
+  background: #fffaf0 !important;
+  color: #9a6700 !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .settings-feedback.message:not(:empty) {
+  display: block !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) .student-settings-edit-fields .settings-feedback.message:not(:empty) {
+  flex: 1 1 auto;
+  margin: 0 !important;
+}
+
+/* Floating pop-up notification used for completed dashboard actions. */
+.portal-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  width: min(360px, calc(100vw - 40px));
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.portal-toast {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 13px;
+  border: 1px solid #cfe0ff;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(0, 41, 107, 0.16);
+  color: #00509d;
+  opacity: 0;
+  pointer-events: auto;
+  transform: translateY(-10px) scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.portal-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.portal-toast-icon {
+  font-size: 17px;
+  text-align: center;
+}
+
+.portal-toast-content {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.portal-toast-close {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.portal-toast-close:hover,
+.portal-toast-close:focus-visible {
+  background: rgba(0, 80, 157, 0.1);
+  outline: 0;
+}
+
+.portal-toast-success {
+  border-color: #b9e6ca;
+  background: #f0fbf4;
+  color: #148b54;
+}
+
+.portal-toast-error {
+  border-color: #f2c2c2;
+  background: #fff5f5;
+  color: #c0392b;
+}
+
+.portal-toast-warning {
+  border-color: #f1d89a;
+  background: #fffaf0;
+  color: #9a6700;
+}
+
+@media (max-width: 560px) {
+  .portal-toast-container {
+    top: 12px;
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+}

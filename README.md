@@ -1,15 +1,19 @@
 # MIDWIFE Clinical Portal
 
-Role-specific web entry points remain at the project root:
+Role-specific pages are available through clean browser routes (Apache rewrites
+these internally to the existing HTML files, so scripts and assets continue to
+work unchanged):
 
-- `login.html`
-- `student.html`
-- `instructor.html`
-- `admin-dashboard.html`
+- `/THESIS6/login`
+- `/THESIS6/student`
+- `/THESIS6/instructor`
+- `/THESIS6/admin-dashboard` (also `/THESIS6/admin`)
+
+The `.html` URLs remain backward-compatible and redirect to these clean routes.
 
 Start Apache and MySQL in XAMPP, import `database/schema.sql`, configure a
 6–12 digit `THESIS_INITIAL_ADMIN_PIN` in the Apache environment for a new
-database, then open `http://localhost/THESIS6/login.html`. Existing portal
+database, then open `http://localhost/THESIS6/login`. Existing portal
 credentials are upgraded to secure password hashes automatically on the next
 API request.
 

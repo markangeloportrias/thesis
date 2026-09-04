@@ -203,12 +203,11 @@
 #prcPreviewOverlay .prc-export-table {
   margin: 0 !important;
   border: 1px solid #000 !important;
-  outline: 1px solid #000 !important;
-  outline-offset: -1px;
   border-collapse: collapse !important;
   border-spacing: 0 !important;
   border-radius: 0 !important;
   table-layout: fixed !important;
+  overflow: visible !important;
   color: #000 !important;
   background: #fff !important;
   font-family: Arial, Helvetica, sans-serif !important;
@@ -216,7 +215,14 @@
 
 #prcPreviewOverlay .prc-export-table thead,
 #prcPreviewOverlay .prc-export-table tbody,
-#prcPreviewOverlay .prc-export-table tr { background: #fff !important; }
+#prcPreviewOverlay .prc-export-table tr,
+#prcPreviewOverlay .prc-export-table th,
+#prcPreviewOverlay .prc-export-table td {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  background: #fff !important;
+}
 
 #prcPreviewOverlay .prc-export-table th,
 #prcPreviewOverlay .prc-export-table td {
@@ -230,6 +236,7 @@
   white-space: normal !important;
   word-break: normal !important;
   overflow-wrap: break-word;
+  background-clip: border-box !important;
 }
 
 #prcPreviewOverlay .prc-export-table th,
@@ -240,7 +247,7 @@
 }
 
 #prcPreviewOverlay .prc-export-table thead th {
-  border-width: 1.5px !important;
+  border-width: 1px !important;
   border-color: #000 !important;
   border-style: solid !important;
 }

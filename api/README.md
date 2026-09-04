@@ -20,9 +20,13 @@ temporary 6â€“12 digit `THESIS_ADMIN_RECOVERY_PIN`. Reload the API, sign in
 with that recovery PIN, choose a new PIN when prompted, then remove the
 variable. It affects only malformed, truncated bcrypt credentials.
 
-Administrators can create and restore authenticated JSON database snapshots
-from System Settings. Restore replaces portal business records but preserves
-the current administrator account and active session.
+Administrators can download an authenticated SQL database backup from System
+Settings. The backup uses `INSERT IGNORE` statements, so importing it directly
+into the selected MariaDB database preserves rows that already exist and adds
+only records that are missing. The System Settings importer accepts these `.sql`
+backups as well as older authenticated `.json` snapshots, and performs the same
+conflict-safe merge inside a transaction. Existing administrator credentials
+and active sessions are not replaced.
 
 The API never accepts HTTP `DELETE`. Archive endpoints use
 `PATCH /api/{resource}/{id}/archive`; retained records can be restored where

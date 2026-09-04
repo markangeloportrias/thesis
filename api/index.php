@@ -2,6 +2,14 @@
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 
+function validateContactNumberInput($value, string $label = 'Contact number'): void
+{
+    $contactNumber = trim((string)($value ?? ''));
+    if ($contactNumber !== '' && !preg_match('/^\d{11}$/', $contactNumber)) {
+        respond(['ok' => false, 'message' => $label . ' must contain exactly 11 digits.'], 422);
+    }
+}
+
 function normalizeCaseRoleValue(string $value): string
 {
     $value = preg_replace('/\s+/', '', trim($value)) ?? '';
@@ -205,15 +213,8 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
     $restoreTables = array_values(array_filter(PORTAL_BACKUP_TABLES, static fn(string $table): bool => array_key_exists($table, $backupTables)));
     if (!$restoreTables) respond(['ok' => false, 'message' => 'The backup does not contain portal records.'], 422);
 
-    $deleteOrder = array_reverse(PORTAL_BACKUP_TABLES);
     $pdo->beginTransaction();
     try {
-        foreach ($deleteOrder as $table) {
-            if (in_array($table, $restoreTables, true) && databaseTableExists($pdo, $table)) {
-                $pdo->exec("DELETE FROM `$table`");
-            }
-        }
-
         foreach (PORTAL_BACKUP_TABLES as $table) {
             if (!in_array($table, $restoreTables, true) || !databaseTableExists($pdo, $table)) continue;
             $allowedColumns = array_flip(databaseTableColumns($pdo, $table));
@@ -224,7 +225,9 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
                 $columns = array_keys($row);
                 $quotedColumns = implode(',', array_map(static fn(string $column): string => "`$column`", $columns));
                 $placeholders = implode(',', array_fill(0, count($columns), '?'));
-                $stmt = $pdo->prepare("INSERT INTO `$table` ($quotedColumns) VALUES ($placeholders)");
+                // Merge backups safely: existing primary/unique-key rows remain
+                // untouched, while rows not present locally are restored.
+                $stmt = $pdo->prepare("INSERT IGNORE INTO `$table` ($quotedColumns) VALUES ($placeholders)");
                 $stmt->execute(array_values($row));
             }
         }
@@ -251,7 +254,7 @@ try {
         if ($method === 'GET') respond(['ok' => true, 'backup' => createPortalBackup($pdo, $user)]);
         if ($method === 'POST' && $id === 'restore') {
             if (($data['confirmation'] ?? '') !== 'RESTORE') {
-                respond(['ok' => false, 'message' => 'Type RESTORE to confirm this database replacement.'], 422);
+                respond(['ok' => false, 'message' => 'Type RESTORE to confirm merging this database backup.'], 422);
             }
             restorePortalBackup($pdo, (array)($data['backup'] ?? []), $user);
             respond(['ok' => true]);
@@ -320,7 +323,7 @@ try {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
         $blockId=trim((string)($_GET['block_id']??''));
-        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?='' OR b.id=?) AND (?='' OR y.label=?) ORDER BY s.student_name");
+        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?='' OR b.id=?) AND (?='' OR y.label=?) ORDER BY s.student_name");
         $stmt->execute([$blockId,$blockId,$year,$year]);
         respond(['ok'=>true,'students'=>$stmt->fetchAll()]);
     }
@@ -427,8 +430,10 @@ try {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['student_id', 'student_name', 'password', 'parent_name', 'contact_number']); // Password is the student's initial login credential.
             if (!credentialIsStrong((string)$data['password'])) respond(['ok'=>false,'message'=>'Initial password must contain at least 8 characters.'],422);
-            $stmt = $pdo->prepare('INSERT INTO students (student_id, student_name, password, parent_name, contact_number) VALUES (?, ?, ?, ?, ?)');
-            $stmt->execute([$data['student_id'], $data['student_name'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['parent_name'] ?? null, $data['contact_number'] ?? null]);
+            validateContactNumberInput($data['contact_number'] ?? null);
+            validateContactNumberInput($data['parent_contact'] ?? null, 'Parent/Guardian contact');
+            $stmt = $pdo->prepare('INSERT INTO students (student_id, student_name, password, parent_name, contact_number, parent_contact) VALUES (?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$data['student_id'], $data['student_name'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['parent_name'] ?? null, $data['contact_number'] ?? null, $data['parent_contact'] ?? null]);
             audit($pdo, $user, 'create', 'student', (string)$data['student_id']);
             respond(['ok' => true, 'student_id' => $data['student_id']], 201);
         }
@@ -512,6 +517,8 @@ try {
         }
         if ($method === 'PATCH' && $id !== '' && $action === '') {
             if (!in_array($user['role'], ['admin', 'instructor'], true) && !($user['role'] === 'student' && $user['user_uid'] === $id)) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            if (array_key_exists('contact_number', $data)) validateContactNumberInput($data['contact_number']);
+            if (array_key_exists('parent_contact', $data)) validateContactNumberInput($data['parent_contact'], 'Parent/Guardian contact');
             $fields=[];$params=[];foreach(['student_name','parent_name','contact_number','parent_contact','profile_photo'] as $field){if(array_key_exists($field,$data)){$fields[]="$field=?";$params[]=$data[$field];}}
             $passwordChanged = false;
             if(!empty($data['password'])){
@@ -545,6 +552,7 @@ try {
         if ($method === 'POST' && $id === '') {
             if ($user['role'] !== 'admin') respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['username', 'password', 'display_name']);
+            validateContactNumberInput($data['contact_number'] ?? null);
             $uid = 'ins_' . bin2hex(random_bytes(8));
             $stmt = $pdo->prepare('INSERT INTO instructor_accounts (account_uid, username, password, display_name, contact_number, role_title) VALUES (?, ?, ?, ?, ?, ?)');
             $stmt->execute([$uid, $data['username'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['display_name'], $data['contact_number'] ?? null, $data['role'] ?? 'Clinical Instructor']);
@@ -559,6 +567,7 @@ try {
                 ? ['username'=>'username','display_name'=>'display_name','contact_number'=>'contact_number','profile_photo'=>'profile_photo','role'=>'role_title','status'=>'status']
                 : ['contact_number'=>'contact_number','profile_photo'=>'profile_photo'];
             foreach ($allowedFields as $inputKey=>$column) {
+                if ($inputKey === 'contact_number' && array_key_exists($inputKey, $data)) validateContactNumberInput($data[$inputKey]);
                 if (array_key_exists($inputKey,$data)) {$fields[]="$column=?";$params[]=$data[$inputKey];}
             }
             if ($user['role'] === 'admin' && !empty($data['password'])) {$fields[]='password=?';$params[]=password_hash((string)$data['password'],PASSWORD_DEFAULT);}
@@ -642,11 +651,11 @@ try {
             $year = trim((string)($_GET['school_year'] ?? ''));
             $blockId = trim((string)($_GET['block_id'] ?? ''));
             if (($_GET['unassigned'] ?? '0') === '1') {
-                $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number FROM students s WHERE s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.student_id=s.student_id AND a.archived_at IS NULL AND y.label=?) ORDER BY s.student_name');
+                $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact FROM students s WHERE s.archived_at IS NULL AND NOT EXISTS (SELECT 1 FROM student_block_assignments a JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.student_id=s.student_id AND a.archived_at IS NULL AND y.label=?) ORDER BY s.student_name');
                 $stmt->execute([$year]);
                 respond(['ok' => true, 'students' => $stmt->fetchAll()]);
             }
-            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?=\'\' OR b.id=?) AND (?=\'\' OR y.label=?) ORDER BY s.student_name');
+            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?=\'\' OR b.id=?) AND (?=\'\' OR y.label=?) ORDER BY s.student_name');
             $stmt->execute([$blockId,$blockId,$year,$year]);
             respond(['ok' => true, 'students' => $stmt->fetchAll()]);
         }
@@ -829,6 +838,8 @@ try {
                 'supervisor_contact_number', 'supervisor_position_designation', 'supervisor_license_no',
                 'supervisor_license_expiry_date',
             ];
+            if (array_key_exists('facility_contact_number', $data)) validateContactNumberInput($data['facility_contact_number'], 'Facility contact number');
+            if (array_key_exists('supervisor_contact_number', $data)) validateContactNumberInput($data['supervisor_contact_number'], 'Supervisor contact number');
             $fields = [];
             $params = [];
             foreach ($editableFields as $field) {
@@ -886,6 +897,8 @@ try {
         if ($method === 'POST') {
             requireFields($data, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$data['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
+            validateContactNumberInput($data['facility_contact_number'] ?? null, 'Facility contact number');
+            validateContactNumberInput($data['supervisor_contact_number'] ?? null, 'Supervisor contact number');
             $requestedAcademicYear = trim((string)($data['academic_year'] ?? ''));
             $yearStmt = $pdo->prepare("SELECT y.label
                 FROM student_block_assignments a

@@ -12,7 +12,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <link rel="stylesheet" href="assets/css/pages/login.css" />
-    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260810-21" />
+    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-1" />
     <style>
       /* Intro logo only: modern heartbeat reveal before the login screen. */
       body:has(.portal-container) .portal-splash-logo-wrap {
@@ -588,7 +588,9 @@
                 <div class="toast-content">
                     <div class="toast-message">${message}</div>
                 </div>
-                <div class="toast-close" aria-label="Close Notification"><i class="fas fa-times"></i></div>
+                <button type="button" class="toast-close" aria-label="Close Notification">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
             `;
 
         container.appendChild(toast);
@@ -598,17 +600,20 @@
           dismissToast(toast);
         });
 
-        // Auto dismiss
+        // Auto dismiss after 3 seconds
         setTimeout(() => {
           dismissToast(toast);
-        }, 4500);
+        }, 3000);
       }
 
       function dismissToast(toast) {
+        if (!toast || toast.dataset.dismissed === "true") return;
+        toast.dataset.dismissed = "true";
         toast.classList.add("toast-fade-out");
-        toast.addEventListener("transitionend", () => {
-          toast.remove();
-        });
+        const removeToast = () => toast.remove();
+        toast.addEventListener("transitionend", removeToast, { once: true });
+        // Ensure removal even if the transition is unavailable or interrupted.
+        setTimeout(removeToast, 350);
       }
 
       // Card Shake Microinteraction
@@ -798,7 +803,7 @@
               showToast("Credentials verified. Opening portal...", "success");
 
               setTimeout(() => {
-                window.location.href = "student.html";
+                window.location.href = "student";
               }, 800);
             } else {
               const errorMessage = data.message || "Invalid student ID or password.";
@@ -936,7 +941,7 @@
             );
             showToast("Access authorized. Welcome, Instructor.", "success");
             setTimeout(() => {
-              window.location.href = "instructor.html";
+              window.location.href = "instructor";
             }, 800);
           } else {
             instructorLoginInFlight = false;
@@ -985,7 +990,7 @@
               "success",
             );
             setTimeout(() => {
-              window.location.href = "admin-dashboard.html";
+              window.location.href = "admin-dashboard";
             }, 700);
           } else {
             adminLoginInFlight = false;

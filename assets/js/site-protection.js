@@ -92,5 +92,27 @@
     };
   }
 
-  window.PortalValidation = { begin, fingerprint, normalize };
+  function isContactNumberField(field) {
+    if (!(field instanceof HTMLInputElement)) return false;
+    if (field.hasAttribute("data-contact-number")) return true;
+    return ["contact", "contactNumber", "parentContact"].includes(field.name);
+  }
+
+  function isValidContactNumber(value) {
+    const contactNumber = String(value == null ? "" : value).trim();
+    return !contactNumber || /^\d{11}$/.test(contactNumber);
+  }
+
+  document.addEventListener("input", (event) => {
+    const field = event.target;
+    if (!isContactNumberField(field)) return;
+    field.value = field.value.replace(/\D/g, "").slice(0, 11);
+  });
+
+  window.PortalValidation = {
+    begin,
+    fingerprint,
+    normalize,
+    isValidContactNumber,
+  };
 })();

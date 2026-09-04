@@ -21,11 +21,11 @@
     <link rel="stylesheet" href="assets/css/components/tables.css?v=20260728-1" />
     <link rel="stylesheet" href="assets/css/components/modals.css" />
     <link rel="stylesheet" href="assets/css/pages/reports.css" />
-    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260810-20" />
+    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/admin-palette.css?v=20260901-student-buttons-1" />
     <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260827-1" />
     <link rel="stylesheet" href="assets/css/pages/instructor-annual-records-table.css?v=20260831-9" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260831-1" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
     <style id="admin-notifications-single-search-field">
       html body.role-admin #notificationsCard .notifications-search {
         box-sizing: border-box !important;
@@ -502,6 +502,7 @@
                         <th>Name</th>
                         <th>Registered Year</th>
                         <th>Parent</th>
+                        <th>Parent Contact</th>
                         <th>Contact</th>
                         <th style="width: 220px">Actions</th>
                       </tr>
@@ -522,6 +523,7 @@
                           <th>Student ID</th>
                           <th>Name</th>
                           <th>Parent</th>
+                          <th>Parent Contact</th>
                           <th>Contact</th>
                           <th>Archived</th>
                           <th style="width: 220px">Actions</th>
@@ -953,13 +955,13 @@
 
                 <section class="system-tool-panel">
                   <h3><i class="fas fa-database"></i> Backup &amp; Restore</h3>
-                  <p>Download a database backup or restore a previously exported portal snapshot.</p>
+                    <p>Download a SQL database backup or merge a previously exported portal backup.</p>
                   <div class="row">
-                    <button class="btn btn-primary" id="downloadBackupBtn" type="button"><i class="fas fa-download"></i> Download Backup</button>
-                    <button class="btn btn-secondary" id="chooseRestoreBtn" type="button"><i class="fas fa-upload"></i> Restore Backup</button>
-                    <input id="restoreBackupInput" type="file" accept="application/json,.json" hidden />
+                    <button class="btn btn-primary" id="downloadBackupBtn" type="button"><i class="fas fa-download"></i> Download SQL Backup</button>
+                    <button class="btn btn-secondary" id="chooseRestoreBtn" type="button"><i class="fas fa-upload"></i> Import Backup</button>
+                    <input id="restoreBackupInput" type="file" accept=".sql,.json,application/sql,application/json" hidden />
                   </div>
-                  <small>Restoring replaces database records. The current administrator account and active session are preserved.</small>
+                  <small>Importing merges missing records and preserves existing records. The current administrator account and active session are preserved.</small>
                 </section>
               </div>
 
@@ -1133,22 +1135,10 @@
       </div>
     </div>
 
-    <div
-      class="prc-preview-overlay"
-      id="prcPreviewOverlay"
-      aria-hidden="true"
-    >
-      <div
-        class="prc-preview-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="prcPreviewTitle"
-      >
+    <div class="prc-preview-overlay" id="prcPreviewOverlay" aria-hidden="true">
+      <div class="prc-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="prcPreviewTitle">
         <div class="prc-preview-toolbar">
-          <div>
-            <strong id="prcPreviewTitle">PRC Form Preview</strong>
-            <span>Review the landscape form before downloading.</span>
-          </div>
+          <div><strong id="prcPreviewTitle">PRC Form Preview</strong><span>Review the landscape form before downloading.</span></div>
           <div class="prc-preview-toolbar-controls">
             <label class="prc-preview-zoom-control" for="prcPreviewZoomRange">
               <span>Zoom</span>
@@ -1158,25 +1148,18 @@
               <span class="prc-preview-zoom-value" id="prcPreviewZoomValue">100%</span>
               <button type="button" class="prc-preview-zoom-reset" id="prcPreviewZoomResetBtn">Reset</button>
             </label>
-            <button type="button" class="prc-preview-close" id="prcPreviewCloseBtn" aria-label="Close preview">
-              <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
+            <button type="button" class="prc-preview-close" id="prcPreviewCloseBtn" aria-label="Close preview"><i class="fas fa-times" aria-hidden="true"></i></button>
           </div>
         </div>
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
-          <button type="button" class="btn btn-secondary" id="prcPreviewCancelBtn">
-            Back
-          </button>
-          <button type="button" class="btn btn-primary" id="prcPreviewDownloadBtn">
-            <i class="fas fa-download" aria-hidden="true"></i>
-            Download DOCX Form
-          </button>
+          <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn"><i class="fas fa-download" aria-hidden="true"></i> Download DOCX Form</button>
         </div>
       </div>
     </div>
 
-    <script src="assets/js/api-client.js?v=20260903-validation-1"></script>
+    <script src="assets/js/api-client.js?v=20260903-validation-2"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -1184,7 +1167,7 @@
           sessionStorage.removeItem("currentAdmin");
           sessionStorage.removeItem("thesis_admin_quick_access");
           sessionStorage.removeItem("thesis_api_token");
-          window.location.replace("login.html");
+          window.location.replace("login");
         };
         window.__portalAdminSessionReady = ApiClient.getSession()
           .then((session) => {
@@ -1309,6 +1292,7 @@
       const archivedStudentsEmpty = document.getElementById("archivedStudentsEmpty");
       const archivedStudentsCount = document.getElementById("archivedStudentsCount");
       const archivedStudentsBtnLabel = document.getElementById("archivedStudentsBtnLabel");
+      const deletedArchivedStudentIds = new Set();
       let adminEditRequests = [];
       let viewingArchivedEditRequests = false;
       let adminNotifications = [];
@@ -1629,12 +1613,46 @@
           await showMessageDialog(result?.message || "Unable to create the database backup.", "Backup Failed");
           return;
         }
-        const payload = JSON.stringify(result.backup, null, 2);
-        const blob = new Blob([payload], { type: "application/json" });
+        const snapshot = result.backup;
+        const encodeBackupComment = (value) => {
+          const bytes = new TextEncoder().encode(JSON.stringify(value));
+          let binary = "";
+          bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+          return btoa(binary);
+        };
+        const sqlLiteral = (value) => {
+          if (value === null || value === undefined) return "NULL";
+          if (typeof value === "boolean") return value ? "1" : "0";
+          return "'" + String(value)
+            .replace(/\\/g, "\\\\")
+            .replace(/\0/g, "\\0")
+            .replace(/\r/g, "\\r")
+            .replace(/\n/g, "\\n")
+            .replace(/'/g, "\\'") + "'";
+        };
+        const sql = [
+          "-- MIDWIFE Clinical Portal merge backup",
+          "-- Existing primary/unique-key rows are preserved during import.",
+          `-- MIDWIFE_BACKUP_JSON_BASE64:${encodeBackupComment(snapshot)}`,
+          "SET NAMES utf8mb4;",
+          "SET FOREIGN_KEY_CHECKS=1;",
+          "START TRANSACTION;",
+        ];
+        Object.entries(snapshot.tables || {}).forEach(([table, rows]) => {
+          if (!/^[A-Za-z0-9_]+$/.test(table) || !Array.isArray(rows)) return;
+          rows.forEach((row) => {
+            if (!row || typeof row !== "object") return;
+            const columns = Object.keys(row).filter((column) => /^[A-Za-z0-9_]+$/.test(column));
+            if (!columns.length) return;
+            sql.push(`INSERT IGNORE INTO \`${table}\` (${columns.map((column) => `\`${column}\``).join(",")}) VALUES (${columns.map((column) => sqlLiteral(row[column])).join(",")});`);
+          });
+        });
+        sql.push("COMMIT;", "SET FOREIGN_KEY_CHECKS=1;", "");
+        const blob = new Blob([sql.join("\n")], { type: "application/sql" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `midwife-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        link.download = `midwife-backup-${new Date().toISOString().slice(0, 10)}.sql`;
         link.click();
         URL.revokeObjectURL(url);
         await showMessageDialog("Database backup downloaded successfully.", "Backup Ready");
@@ -1643,17 +1661,27 @@
       async function restorePortalBackup(file) {
         if (!file) return;
         try {
-          const parsed = JSON.parse(await file.text());
+          const text = await file.text();
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (_) {
+            const encoded = text.match(/^-- MIDWIFE_BACKUP_JSON_BASE64:([^\r\n]+)$/m)?.[1]?.trim();
+            if (!encoded) throw new Error("Invalid backup file. Choose a MIDWIFE .sql or .json backup.");
+            const binary = atob(encoded);
+            const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+            parsed = JSON.parse(new TextDecoder().decode(bytes));
+          }
           if (parsed.app !== "midwife-clinical-portal" || !parsed.tables) {
             throw new Error("Invalid backup file.");
           }
           if (!await showOptionPane(
-            "Restore this backup? Current browser data will be replaced.",
-            { title: "Restore Backup", confirmLabel: "Restore" },
+            "Import this backup? Existing records will be preserved; only missing records will be added.",
+            { title: "Merge Backup", confirmLabel: "Import" },
           )) return;
           const result = await ApiClient.restoreDatabaseBackup(parsed);
           if (!result?.ok) throw new Error(result?.message || "Unable to restore the database backup.");
-          await showMessageDialog("Backup restored successfully. The dashboard will reload.", "Backup Restored");
+          await showMessageDialog("Backup imported successfully. Existing records were preserved.", "Backup Imported");
           window.location.reload();
         } catch (error) {
           await showMessageDialog(error.message || "Unable to restore the selected backup.", "Restore Failed");
@@ -1759,9 +1787,23 @@
         return CASE_PROCEDURE_LABELS[key] || titleCase(key || value || "");
       }
 
+      function showAdminStatusMessage(element, text, type) {
+        if (!element) return;
+        const message = String(text || "").trim();
+        if (typeof window.showPortalToast === "function") {
+          element.textContent = "";
+          element.className = "message";
+          element.style.display = "none";
+          if (message) window.showPortalToast(message, type);
+          return;
+        }
+        element.textContent = message;
+        element.className = "message" + (type ? " " + type : "");
+        element.style.display = message ? "" : "none";
+      }
+
       function showInstructorMessage(text, type) {
-        instructorMessage.textContent = text;
-        instructorMessage.className = "message" + (type ? " " + type : "");
+        showAdminStatusMessage(instructorMessage, text, type);
       }
 
       async function getAdminCaseRecords() {
@@ -2302,15 +2344,11 @@
       }
 
       function showStudentsNavMessage(text, type) {
-        if (!studentsNavMessage) return;
-        studentsNavMessage.textContent = text || "";
-        studentsNavMessage.className = "message" + (type ? " " + type : "");
+        showAdminStatusMessage(studentsNavMessage, text, type);
       }
 
       function showYearlyNavMessage(text, type) {
-        if (!yearlyNavMessage) return;
-        yearlyNavMessage.textContent = text || "";
-        yearlyNavMessage.className = "message" + (type ? " " + type : "");
+        showAdminStatusMessage(yearlyNavMessage, text, type);
       }
 
       function closeStudentsAddModal() {
@@ -2367,6 +2405,14 @@
             input.type = field.type || "text";
             if (field.placeholder) input.placeholder = field.placeholder;
             if (field.maxlength) input.maxLength = field.maxlength;
+            if (["contact_number", "parent_contact"].includes(field.key)) {
+              input.type = "tel";
+              input.inputMode = "numeric";
+              input.maxLength = 11;
+              input.minLength = 11;
+              input.pattern = "[0-9]{11}";
+              input.dataset.contactNumber = "true";
+            }
           }
           wrap.appendChild(input);
           studentsAddBody.appendChild(wrap);
@@ -2504,6 +2550,12 @@
               key: "contact_number",
               label: "Contact",
               placeholder: "Contact number",
+            },
+            {
+              id: "modalStudentParentContact",
+              key: "parent_contact",
+              label: "Parent/Guardian Contact",
+              placeholder: "11-digit contact number",
             },
           ],
           onSubmit: async (values) => submitNewStudentInBlock(values),
@@ -2794,8 +2846,10 @@
             : [];
         const filtered = getBlockStudentsFiltered(students);
         if (studentsTbody) studentsTbody.innerHTML = "";
-        if (studentsEmpty)
-          studentsEmpty.style.display = filtered.length ? "none" : "block";
+        if (studentsEmpty) {
+          const showingArchived = archivedStudentsPanel?.style.display !== "none";
+          studentsEmpty.style.display = showingArchived || filtered.length ? "none" : "block";
+        }
         filtered.forEach((s, index) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
@@ -2804,6 +2858,7 @@
           <td>${s.student_name || ""}</td>
           <td>${s.registered_school_year || studentsNav.schoolYear || ""}</td>
           <td>${s.parent_name || ""}</td>
+          <td>${s.parent_contact || ""}</td>
           <td>${s.contact_number || ""}</td>
           <td class="action-cell">
             <button class="mini-btn" data-action="edit" data-id="${s.student_id || ""}">Edit</button>
@@ -2818,7 +2873,7 @@
         if (!archivedStudentsTbody) return;
         const result = await ApiClient.getArchivedStudents();
         const archived = result && result.ok && Array.isArray(result.students)
-          ? result.students
+          ? result.students.filter((student) => !deletedArchivedStudentIds.has(String(student.student_id || "")))
           : [];
         archivedStudentsTbody.innerHTML = "";
         if (archivedStudentsCount) archivedStudentsCount.textContent = String(archived.length);
@@ -2833,6 +2888,7 @@
             <td>${student.student_id || ""}</td>
             <td>${student.student_name || ""}</td>
             <td>${student.parent_name || ""}</td>
+            <td>${student.parent_contact || ""}</td>
             <td>${student.contact_number || ""}</td>
             <td>${archivedDate}</td>
             <td><button class="mini-btn" type="button" data-restore-student="${student.student_id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-delete-archived-student="${student.student_id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></td>
@@ -2891,6 +2947,7 @@
           if (button) button.disabled = true;
           const result = await ApiClient.permanentlyDeleteStudent(studentId);
           if (result && result.ok) {
+            deletedArchivedStudentIds.add(String(studentId || ""));
             showStudentsNavMessage("Archived student and archived data permanently deleted.", "success");
             await renderArchivedStudents();
             await renderStudentBlocks();
@@ -2946,6 +3003,12 @@
         if (!String(payload.contact_number || "").trim()) {
           return { ok: false, message: "Enter the student's contact number." };
         }
+        if (!/^\d{11}$/.test(String(payload.contact_number).trim())) {
+          return { ok: false, message: "Contact number must contain exactly 11 digits." };
+        }
+        if (payload.parent_contact && !/^\d{11}$/.test(String(payload.parent_contact).trim())) {
+          return { ok: false, message: "Parent/Guardian contact must contain exactly 11 digits." };
+        }
         const result = await ApiClient.registerStudentInBlock(
           studentsNav.blockId,
           studentsNav.schoolYear,
@@ -2989,8 +3052,8 @@
           <form class="admin-settings-edit-form" id="studentEditForm">
             <label>Student name<input name="studentName" type="text" value="${escapeHtml(target.student_name || "")}" autocomplete="name" required></label>
             <label>Parent/Guardian name<input name="parentName" type="text" value="${escapeHtml(target.parent_name || "")}" autocomplete="name" required></label>
-            <label>Contact number<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel"></label>
-            <label>Parent/Guardian contact<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel"></label>
+          <label>Contact number<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
+            <label>Parent/Guardian contact<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
             <label>New password <span class="muted">(leave blank to keep current)</span><input name="studentPassword" type="password" autocomplete="new-password" minlength="8"></label>
           </form>`;
         const accepted = await response;
@@ -3003,6 +3066,14 @@
         const nextPassword = form?.querySelector("[name='studentPassword']")?.value.trim() || "";
         if (!nextName || !nextParent) {
           showStudentsNavMessage("Student and parent names are required.", "error");
+          return;
+        }
+        const invalidContact = [
+          ["Contact number", nextContact],
+          ["Parent/Guardian contact", nextParentContact],
+        ].find(([, value]) => value && !/^\d{11}$/.test(value));
+        if (invalidContact) {
+          showStudentsNavMessage(`${invalidContact[0]} must contain exactly 11 digits.`, "error");
           return;
         }
 
@@ -4540,10 +4611,7 @@
         setButtonLoading(exportYearlyPrcBtn, true);
         try {
           const annualRecords = (await ApiClient.getJoinedCases(yearlyNav.studentId, "", ""))
-            .filter((record) =>
-              String(record.student_id || "").trim() === String(yearlyNav.studentId || "").trim() &&
-              recordMatchesSchoolYear(record, yearlyNav.schoolYear),
-            );
+            .filter((record) => recordMatchesSchoolYear(record, yearlyNav.schoolYear));
           await studentPrcExportInstructor({
             student: {
               student_id: yearlyNav.studentId,
@@ -5242,33 +5310,37 @@
         studentPrcExportStudent = exportStudent;
         exportButton?.setAttribute("disabled", "disabled");
         try {
-          const sourceRecords = Array.isArray(options?.records)
-            ? options.records
-            : await ApiClient.getJoinedCases(exportStudent.student_id, "", "");
-          const records = sourceRecords.filter((record) =>
-            String(record.student_id || "") === String(exportStudent.student_id || ""),
-          );
-          const logoSource = await studentPrcGetLogoDataUrl();
+          const [sourceRecords, logoSource] = await Promise.all([
+            Array.isArray(options?.records)
+              ? Promise.resolve(options.records)
+              : ApiClient.getJoinedCases(exportStudent.student_id, "", ""),
+            studentPrcGetLogoDataUrl(),
+          ]);
+          // Match the student exporter: records returned by the selected-student
+          // request are already scoped.  Filter only a caller-supplied mixed list.
+          const records = Array.isArray(options?.records)
+            ? sourceRecords.filter((record) => {
+                const recordStudentId = record.student_id || record.studentId;
+                return !recordStudentId || String(recordStudentId) === String(exportStudent.student_id || "");
+              })
+            : sourceRecords;
           const forms = studentPrcBuildExportForms(records, logoSource);
           studentPrcPreviewRecords = records;
           const pages = document.getElementById("prcPreviewPages");
-          if (pages) {
-            pages.innerHTML = forms;
+          const overlay = document.getElementById("prcPreviewOverlay");
+          if (!pages || !overlay) throw new Error("The PRC preview dialog is unavailable.");
+          pages.innerHTML = forms;
+          pages.scrollTop = 0;
+          pages.scrollLeft = 0;
+          overlay.classList.add("is-open");
+          overlay.setAttribute("aria-hidden", "false");
+          requestAnimationFrame(() => {
             pages.scrollTop = 0;
             pages.scrollLeft = 0;
-          }
-          const overlay = document.getElementById("prcPreviewOverlay");
-          overlay?.classList.add("is-open");
-          overlay?.setAttribute("aria-hidden", "false");
-          requestAnimationFrame(() => {
-            if (adminPrcPreviewPages) {
-              adminPrcPreviewPages.scrollTop = 0;
-              adminPrcPreviewPages.scrollLeft = 0;
-            }
           });
         } catch (error) {
           console.error("Unable to prepare the PRC form preview.", error);
-          window.alert("Unable to prepare the PRC form preview. Please try again.");
+          window.alert(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`);
         } finally {
           exportButton?.removeAttribute("disabled");
         }
@@ -6548,7 +6620,7 @@
         sessionStorage.removeItem(AUTH_KEY);
         sessionStorage.removeItem("currentAdmin");
         sessionStorage.removeItem("thesis_admin_quick_access");
-        window.location.href = "login.html";
+        window.location.href = "login";
       });
 
       addInstructorBtn?.addEventListener("click", () => {
@@ -6639,23 +6711,21 @@
         const current = currentInput.value.trim();
         const next = newInput.value.trim();
         const confirmation = confirmInput.value.trim();
-        message.className = "message error";
         if (!/^\d{6,12}$/.test(next)) {
-          message.textContent = "New PIN must contain 6 to 12 digits.";
+          showAdminStatusMessage(message, "New PIN must contain 6 to 12 digits.", "error");
           return;
         }
         if (next !== confirmation) {
-          message.textContent = "New PIN entries do not match.";
+          showAdminStatusMessage(message, "New PIN entries do not match.", "error");
           return;
         }
         const result = await ApiClient.updateAdminPin(current, next);
         if (!result?.ok) {
-          message.textContent = result?.message || "Unable to update the administrator PIN.";
+          showAdminStatusMessage(message, result?.message || "Unable to update the administrator PIN.", "error");
           return;
         }
         currentInput.value = newInput.value = confirmInput.value = "";
-        message.className = "message success";
-        message.textContent = "Administrator PIN updated successfully.";
+        showAdminStatusMessage(message, "Administrator PIN updated successfully.", "success");
         await addAuditEntry("Administrator PIN updated", "Security credential changed");
         clearAdminPinChangeRequirement();
         await showMessageDialog("Administrator passkey has been saved successfully.", "Passkey Saved");
@@ -6775,6 +6845,8 @@
         if (activeStudentsTable) activeStudentsTable.style.display = "none";
         if (studentsEmpty) studentsEmpty.style.display = "none";
         if (archivedStudentsBtnLabel) archivedStudentsBtnLabel.textContent = "Student List";
+        toggleArchivedStudentsBtn?.classList.add("btn-primary");
+        toggleArchivedStudentsBtn?.classList.remove("btn-secondary");
         await renderArchivedStudents();
       }
 
@@ -6785,6 +6857,8 @@
         if (activeSearchRow) activeSearchRow.style.display = "";
         if (activeStudentsTable) activeStudentsTable.style.display = "";
         if (archivedStudentsBtnLabel) archivedStudentsBtnLabel.textContent = "Archived Students";
+        toggleArchivedStudentsBtn?.classList.add("btn-secondary");
+        toggleArchivedStudentsBtn?.classList.remove("btn-primary");
         await renderBlockStudents();
         await renderArchivedStudents();
       }
@@ -7014,7 +7088,7 @@
           startAdminDashboard();
         });
     </script>
-    <script src="assets/js/modern-shell.js?v=20260903-student-preview-1"></script>
-    <script src="assets/js/site-protection.js?v=20260903-validation-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260903-portal-toast-1"></script>
+    <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

@@ -108,6 +108,68 @@
   });
 })();
 
+/* Shared dashboard pop-up messages. */
+(function portalToastSystem() {
+  if (typeof document === "undefined") return;
+
+  const icons = {
+    success: "fa-check-circle",
+    error: "fa-circle-exclamation",
+    warning: "fa-triangle-exclamation",
+    info: "fa-circle-info",
+  };
+
+  function getContainer() {
+    let container = document.getElementById("portalToastContainer");
+    if (container) return container;
+    container = document.createElement("div");
+    container.id = "portalToastContainer";
+    container.className = "portal-toast-container";
+    container.setAttribute("aria-live", "polite");
+    container.setAttribute("aria-atomic", "false");
+    document.body.appendChild(container);
+    return container;
+  }
+
+  function dismiss(toast) {
+    if (!toast || toast.dataset.closing === "true") return;
+    toast.dataset.closing = "true";
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => toast.remove(), 220);
+  }
+
+  window.showPortalToast = function showPortalToast(text, type = "info") {
+    const message = String(text || "").trim();
+    if (!message) return null;
+
+    const normalizedType = icons[type] ? type : "info";
+    const toast = document.createElement("div");
+    toast.className = `portal-toast portal-toast-${normalizedType}`;
+    toast.setAttribute("role", "status");
+
+    const icon = document.createElement("i");
+    icon.className = `fas ${icons[normalizedType]} portal-toast-icon`;
+    icon.setAttribute("aria-hidden", "true");
+
+    const content = document.createElement("span");
+    content.className = "portal-toast-content";
+    content.textContent = message;
+
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "portal-toast-close";
+    close.setAttribute("aria-label", "Close notification");
+    close.innerHTML = '<i class="fas fa-times" aria-hidden="true"></i>';
+    close.addEventListener("click", () => dismiss(toast));
+
+    toast.append(icon, content, close);
+    getContainer().appendChild(toast);
+    window.requestAnimationFrame(() => toast.classList.add("is-visible"));
+    window.setTimeout(() => dismiss(toast), 3000);
+    return toast;
+  };
+})();
+
 /* Keep database-backed screens honest when XAMPP is stopped. The HTML shell
    remains available for design testing, but previously rendered database rows
    and totals are removed as soon as the API health check fails. */

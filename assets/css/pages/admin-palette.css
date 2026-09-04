@@ -433,7 +433,7 @@ html body.role-admin:has(#studentsListPanel.active) #studentsListBackBtn:hover {
   background: #eaf3fb !important;
   color: #00296b !important;
 }
-html body.role-admin:has(#studentsListPanel.active) #toggleArchivedStudentsBtn {
+html body.role-admin:has(#studentsListPanel.active) #toggleArchivedStudentsBtn.btn-secondary {
   border-color: #bfd4e8 !important;
   background: #ffffff !important;
   color: #003f88 !important;

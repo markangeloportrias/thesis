@@ -16,11 +16,11 @@
     <link rel="stylesheet" href="assets/css/layout/app-shell.css?v=20260827-3" />
     <link rel="stylesheet" href="assets/css/pages/student.css?v=20260903-archive-delete-1" />
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
-    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260810-22" />
+    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
     <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260828-6" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260831-1" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
     <style id="student-settings-minimal-styles">
       html body.role-student #settingsTab.settings-minimal {
         padding: 28px !important;
@@ -1258,9 +1258,9 @@
               </div>
               <div class="settings-grid student-settings-edit-fields">
                 <div class="form-group"><label>Student Name</label><div id="settingsDisplayName" class="readonly-value" style="box-sizing: border-box !important; height: 36px !important; min-height: 36px !important; padding: 0 12px !important; font-size: 11px !important"><i class="fas fa-user"></i>Student</div></div>
-                <div class="form-group"><label>Contact Number</label><input id="settingsContactNumber" type="tel" placeholder="Contact number" autocomplete="tel" inputmode="numeric" maxlength="50" data-contact-number /></div>
+                <div class="form-group"><label>Contact Number</label><input id="settingsContactNumber" type="tel" placeholder="Contact number" autocomplete="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number /></div>
                 <div class="form-group"><label>Parent / Guardian Name</label><input id="settingsParentName" type="text" placeholder="Parent or guardian name" autocomplete="name" /></div>
-                <div class="form-group"><label>Parent / Guardian Contact</label><input id="settingsParentContact" type="tel" placeholder="Contact number" autocomplete="tel" inputmode="numeric" maxlength="50" data-contact-number /></div>
+                <div class="form-group"><label>Parent / Guardian Contact</label><input id="settingsParentContact" type="tel" placeholder="Contact number" autocomplete="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number /></div>
               </div>
             </section>
             <section class="settings-minimal-card settings-minimal-security-card" aria-labelledby="settingsSecurityHeading">
@@ -1280,7 +1280,7 @@
                 <div class="form-group" style="grid-column: 1 / -1"><label>Confirm New Password</label><input id="settingsConfirmPassword" type="password" autocomplete="new-password" /></div>
               </div>
             </section>
-            <div class="pane-actions student-settings-edit-fields"><span id="settingsFeedback" style="margin-right:auto; color:var(--success); font-size:13px"></span><button class="primary" id="saveSettingsBtn" type="button">Save Settings</button></div>
+            <div class="pane-actions student-settings-edit-fields"><span id="settingsFeedback" class="settings-feedback message success" aria-live="polite"></span><button class="primary" id="saveSettingsBtn" type="button">Save Settings</button></div>
           </div>
         </section>
 
@@ -1440,7 +1440,7 @@
             <div class="clinical-form-grid">
               <div class="form-group"><label>Facility Name</label><input type="text" id="inputFacilityName" placeholder="Facility name" /></div>
               <div class="form-group"><label>Facility Address</label><input type="text" id="inputFacilityAddress" placeholder="Facility address" /></div>
-              <div class="form-group"><label>Facility Contact</label><input type="tel" id="inputFacilityContact" placeholder="Contact number" inputmode="numeric" maxlength="50" data-contact-number /></div>
+              <div class="form-group"><label>Facility Contact</label><input type="tel" id="inputFacilityContact" placeholder="Contact number" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number /></div>
             </div>
           </section>
 
@@ -1448,7 +1448,7 @@
             <h3 class="clinical-form-section-title"><i class="fas fa-user-doctor" aria-hidden="true"></i><span>Supervisor and license details</span></h3>
             <div class="clinical-form-grid">
               <div class="form-group"><label>Supervisor Name</label><input type="text" id="inputSupervisorName" placeholder="Full name" /></div>
-              <div class="form-group"><label>Supervisor Contact</label><input type="tel" id="inputSupervisorContact" placeholder="Contact number" inputmode="numeric" maxlength="50" data-contact-number /></div>
+              <div class="form-group"><label>Supervisor Contact</label><input type="tel" id="inputSupervisorContact" placeholder="Contact number" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number /></div>
               <div class="form-group"><label>Position / Designation</label><input type="text" id="inputSupervisorPosition" placeholder="Position" /></div>
               <div class="form-group"><label>License Number</label><input type="text" id="inputLicenseNo" placeholder="License number" /></div>
               <div class="form-group"><label>License Expiry Date</label><input type="date" id="inputLicenseExpiry" /></div>
@@ -1531,7 +1531,7 @@
       </div>
     </div>
 
-<script src="assets/js/api-client.js?v=20260903-active-instructor-1"></script>
+<script src="assets/js/api-client.js?v=20260903-active-instructor-2"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -1539,7 +1539,7 @@
           sessionStorage.removeItem("currentStudent");
           sessionStorage.removeItem("thesis_api_token");
           localStorage.removeItem("currentStudentId");
-          window.location.replace("login.html");
+          window.location.replace("login");
         };
         ApiClient.getSession()
           .then((session) => {
@@ -1906,7 +1906,7 @@
             sessionStorage.removeItem("currentStudent");
             sessionStorage.removeItem("thesis_api_token");
             localStorage.removeItem("currentStudentId");
-            window.location.replace("login.html?account=paused");
+            window.location.replace("login?account=paused");
             return;
           }
         }
@@ -1938,14 +1938,14 @@
           sessionStorage.removeItem("currentStudent");
           sessionStorage.removeItem("thesis_api_token");
           localStorage.removeItem("currentStudentId");
-          window.location.replace("login.html?account=paused");
+            window.location.replace("login?account=paused");
           return;
         }
 
         sessionStorage.removeItem("currentStudent");
         sessionStorage.removeItem("thesis_api_token");
         localStorage.removeItem("currentStudentId");
-        window.location.replace("login.html");
+          window.location.replace("login");
       });
 
       function displayStudentDashboard() {
@@ -3267,7 +3267,7 @@
         if (invalidContact) {
           showOptionPane({
             title: "Invalid Contact Number",
-            message: `${invalidContact[0]} must contain digits only.`,
+            message: `${invalidContact[0]} must contain exactly 11 digits.`,
           });
           return false;
         }
@@ -5041,9 +5041,9 @@
       function openStudentSettingsEditor(scope = "all") {
         const fields = {
           profile: `
-            <label>Contact Number<input name="contact" type="tel" value="${escapeHtml(currentStudent?.contact_number || "")}" autocomplete="tel" inputmode="numeric" maxlength="50" data-contact-number></label>
+            <label>Contact Number<input name="contact" type="tel" value="${escapeHtml(currentStudent?.contact_number || "")}" autocomplete="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
             <label>Parent / Guardian Name<input name="parent" type="text" value="${escapeHtml(currentStudent?.parent_name || "")}" autocomplete="name"></label>
-            <label>Parent / Guardian Contact<input name="parentContact" type="tel" value="${escapeHtml(currentStudent?.parent_contact || "")}" autocomplete="tel" inputmode="numeric" maxlength="50" data-contact-number></label>`,
+            <label>Parent / Guardian Contact<input name="parentContact" type="tel" value="${escapeHtml(currentStudent?.parent_contact || "")}" autocomplete="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>`,
           password: `
             <label>Current Password<input name="currentPassword" type="password" autocomplete="current-password"></label>
             <label>New Password<input name="newPassword" type="password" autocomplete="new-password"></label>
@@ -5108,13 +5108,13 @@
 
       function isValidContactNumber(value) {
         const contactNumber = String(value || "").trim();
-        return !contactNumber || /^\d{1,50}$/.test(contactNumber);
+        return !contactNumber || /^\d{11}$/.test(contactNumber);
       }
 
       document.addEventListener("input", (event) => {
         const field = event.target;
         if (!(field instanceof HTMLInputElement) || !field.hasAttribute("data-contact-number")) return;
-        field.value = field.value.replace(/\D/g, "").slice(0, 50);
+        field.value = field.value.replace(/\D/g, "").slice(0, 11);
       });
 
       document.getElementById("saveSettingsBtn")?.addEventListener("click", async () => {
@@ -5130,7 +5130,7 @@
         if (invalidContact) {
           showOptionPane({
             title: "Invalid Contact Number",
-            message: `${invalidContact[0]} must contain digits only.`,
+            message: `${invalidContact[0]} must contain exactly 11 digits.`,
           });
           return;
         }
@@ -6362,7 +6362,7 @@
                 await ApiClient.logout();
                 sessionStorage.removeItem("currentStudent");
                 localStorage.removeItem("currentStudentId");
-                window.location.href = "login.html";
+                window.location.href = "login";
               },
             },
           ],
@@ -6387,7 +6387,7 @@
         }
       });
     </script>
-    <script src="assets/js/modern-shell.js?v=20260828-2"></script>
-    <script src="assets/js/site-protection.js?v=20260903-validation-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260903-portal-toast-1"></script>
+    <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

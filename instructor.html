@@ -21,11 +21,11 @@
     <link rel="stylesheet" href="assets/css/components/tables.css?v=20260813-1" />
     <link rel="stylesheet" href="assets/css/components/modals.css" />
     <link rel="stylesheet" href="assets/css/pages/reports.css" />
-    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260810-20" />
+    <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
 <link rel="stylesheet" href="assets/css/pages/instructor-palette.css?v=20260901-overview-remarks-12" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260824-3" />
     <link rel="stylesheet" href="assets/css/pages/instructor-annual-records-table.css?v=20260831-8" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260831-1" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
     <style id="instructor-sidebar-photo-highlight">
       html body.role-instructor .sidebar-user-avatar {
         box-sizing: border-box;
@@ -725,7 +725,7 @@
                   </div>
                 </div>
                 <input id="settingsInstructorContact" type="hidden" />
-                <span class="settings-feedback" id="settingsFeedback" aria-live="polite"></span>
+                <span class="settings-feedback message" id="settingsFeedback" aria-live="polite"></span>
               </section>
 
               <section class="settings-minimal-category settings-minimal-category--account" aria-labelledby="settingsAccountHeading">
@@ -1120,7 +1120,7 @@
                 ></div>
                 <div
                   id="instructorStudentsNavMessage"
-                  style="min-height: 18px; font-size: 13px; margin-bottom: 8px"
+                  class="message"
                 ></div>
 
                 <div
@@ -1237,6 +1237,7 @@
                           <th>Name</th>
                           <th>Registered Year</th>
                           <th>Parent</th>
+                          <th>Parent Contact</th>
                           <th>Contact</th>
                           <th class="block-students-actions-header" style="text-align: center !important; text-indent: 0 !important;">Actions</th>
                         </tr>
@@ -1261,6 +1262,7 @@
                             <th>Student ID</th>
                             <th>Name</th>
                             <th>Parent</th>
+                            <th>Parent Contact</th>
                             <th>Contact</th>
                             <th>Archived</th>
                             <th>Actions</th>
@@ -1283,10 +1285,7 @@
     <div class="prc-preview-overlay" id="prcPreviewOverlay" aria-hidden="true">
       <div class="prc-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="prcPreviewTitle">
         <div class="prc-preview-toolbar">
-          <div>
-            <strong id="prcPreviewTitle">PRC Form Preview</strong>
-            <span>Review the landscape form before downloading.</span>
-          </div>
+          <div><strong id="prcPreviewTitle">PRC Form Preview</strong><span>Review the landscape form before downloading.</span></div>
           <div class="prc-preview-toolbar-controls">
             <label class="prc-preview-zoom-control" for="prcPreviewZoomRange">
               <span>Zoom</span>
@@ -1296,18 +1295,13 @@
               <span class="prc-preview-zoom-value" id="prcPreviewZoomValue">100%</span>
               <button type="button" class="prc-preview-zoom-reset" id="prcPreviewZoomResetBtn">Reset</button>
             </label>
-            <button type="button" class="prc-preview-close" id="prcPreviewCloseBtn" aria-label="Close preview">
-              <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
+            <button type="button" class="prc-preview-close" id="prcPreviewCloseBtn" aria-label="Close preview"><i class="fas fa-times" aria-hidden="true"></i></button>
           </div>
         </div>
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
-          <button type="button" class="btn btn-secondary" id="prcPreviewCancelBtn">Back</button>
-          <button type="button" class="btn btn-primary" id="prcPreviewDownloadBtn">
-            <i class="fas fa-download" aria-hidden="true"></i>
-            Download DOCX Form
-          </button>
+          <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn"><i class="fas fa-download" aria-hidden="true"></i> Download DOCX Form</button>
         </div>
       </div>
     </div>
@@ -1426,13 +1420,13 @@
 
     <!-- Chat overlay removed — messaging is now in the sidebar -->
 
-    <script src="assets/js/api-client.js?v=20260903-validation-1"></script>
+    <script src="assets/js/api-client.js?v=20260903-validation-2"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
           sessionStorage.removeItem("currentInstructor");
           sessionStorage.removeItem("thesis_api_token");
-          window.location.replace("login.html");
+          window.location.replace("login");
         };
         ApiClient.getSession()
           .then((session) => {
@@ -1973,6 +1967,7 @@
       const instructorArchivedStudentsCount = document.getElementById(
         "instructorArchivedStudentsCount",
       );
+      const deletedArchivedStudentIds = new Set();
       const instructorArchivedStudentsBtnLabel = document.getElementById(
         "instructorArchivedStudentsBtnLabel",
       );
@@ -3029,8 +3024,8 @@
           await ApiClient.logout();
           sessionStorage.removeItem("currentInstructor");
           window.location.href = isAdminQuickAccess
-            ? "admin-dashboard.html"
-            : "login.html";
+            ? "admin-dashboard"
+            : "login";
         });
       }
 
@@ -3247,8 +3242,15 @@
       function setInstructorSettingsFeedback(message, isError) {
         const feedback = document.getElementById("settingsFeedback");
         if (!feedback) return;
-        feedback.textContent = message || "";
-        feedback.style.color = isError ? "#dc2626" : "var(--success)";
+        const text = String(message || "").trim();
+        if (typeof window.showPortalToast === "function") {
+          feedback.textContent = "";
+          feedback.className = "settings-feedback message";
+          if (text) window.showPortalToast(text, isError ? "error" : "success");
+          return;
+        }
+        feedback.textContent = text;
+        feedback.className = `settings-feedback message${text ? (isError ? " error" : " success") : ""}`;
       }
 
       function openInstructorSettingsEditor() {
@@ -3273,7 +3275,7 @@
         });
         globalOptionPaneMessage.innerHTML = `
           <form class="settings-edit-form" id="instructorSettingsEditForm">
-            <label>Contact Number<input name="contact" type="tel" value="${escapeHtml(currentInstructor?.contact_number || "")}" autocomplete="tel" inputmode="numeric"></label>
+            <label>Contact Number<input name="contact" type="tel" value="${escapeHtml(currentInstructor?.contact_number || "")}" autocomplete="tel" inputmode="numeric" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
           </form>`;
       }
 
@@ -3283,6 +3285,10 @@
 
         if (!currentInstructor) {
           setInstructorSettingsFeedback("No active instructor account found.", true);
+          return;
+        }
+        if (nextContact && !/^\d{11}$/.test(nextContact)) {
+          setInstructorSettingsFeedback("Contact number must contain exactly 11 digits.", true);
           return;
         }
 
@@ -3945,6 +3951,26 @@
       }
 
       let studentPrcPreviewRecords = [];
+      let studentPrcLogoDataUrl = "";
+
+      async function studentPrcGetLogoDataUrl() {
+        if (studentPrcLogoDataUrl) return studentPrcLogoDataUrl;
+        const logoPath = "assets/images/prc-form-image1.jpeg";
+        try {
+          const response = await fetch(logoPath);
+          if (!response.ok) throw new Error("PRC logo could not be loaded.");
+          const logoBlob = await response.blob();
+          studentPrcLogoDataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(logoBlob);
+          });
+        } catch (error) {
+          studentPrcLogoDataUrl = logoPath;
+        }
+        return studentPrcLogoDataUrl;
+      }
 
       function studentPrcBuildExportFooter() {
         return `<div class="prc-export-footer">
@@ -4492,15 +4518,21 @@
         studentPrcExportStudent = exportStudent;
         exportButton?.setAttribute("disabled", "disabled");
         try {
-          const sourceRecords = Array.isArray(options?.records)
-            ? options.records
-            : await ApiClient.getJoinedCases(exportStudent.student_id, "", "");
-          const records = sourceRecords.filter((record) =>
-            String(record.student_id || "") === String(exportStudent.student_id || ""),
-          );
-          // Use the local image URL directly. Image loading is asynchronous in
-          // the rendered preview and must never block opening the dialog.
-          const logoSource = "assets/images/prc-form-image1.jpeg";
+          const [sourceRecords, logoSource] = await Promise.all([
+            Array.isArray(options?.records)
+              ? Promise.resolve(options.records)
+              : ApiClient.getJoinedCases(exportStudent.student_id, "", ""),
+            studentPrcGetLogoDataUrl(),
+          ]);
+          // The API request is already scoped to the selected student—the same
+          // way the student exporter loads its own records.  Only narrow an
+          // explicitly supplied mixed list when it actually carries a student ID.
+          const records = Array.isArray(options?.records)
+            ? sourceRecords.filter((record) => {
+                const recordStudentId = record.student_id || record.studentId;
+                return !recordStudentId || String(recordStudentId) === String(exportStudent.student_id || "");
+              })
+            : sourceRecords;
           const forms = studentPrcBuildExportForms(records, logoSource);
           studentPrcPreviewRecords = records;
           const pages = document.getElementById("prcPreviewPages");
@@ -4517,7 +4549,7 @@
           });
         } catch (error) {
           console.error("Unable to prepare the PRC form preview.", error);
-          window.alert("Unable to prepare the PRC form preview. Please try again.");
+          window.alert(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`);
         } finally {
           exportButton?.removeAttribute("disabled");
         }
@@ -4802,14 +4834,17 @@
 
       function showInstructorStudentsMessage(text, type) {
         if (!instructorStudentsNavMessage) return;
-        instructorStudentsNavMessage.textContent = text || "";
-        instructorStudentsNavMessage.style.display = text ? "block" : "none";
-        instructorStudentsNavMessage.style.color =
-          type === "error"
-            ? "#c0392b"
-            : type === "success"
-              ? "#148b54"
-              : "var(--text-secondary)";
+        const message = String(text || "").trim();
+        if (typeof window.showPortalToast === "function") {
+          instructorStudentsNavMessage.textContent = "";
+          instructorStudentsNavMessage.className = "message";
+          instructorStudentsNavMessage.style.display = "none";
+          if (message) window.showPortalToast(message, type);
+          return;
+        }
+        instructorStudentsNavMessage.textContent = message;
+        instructorStudentsNavMessage.style.display = message ? "block" : "none";
+        instructorStudentsNavMessage.className = "message" + (type ? ` ${type}` : "");
       }
 
       function closeInstructorStudentsAddModal() {
@@ -4876,6 +4911,14 @@
               "width:100%; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); box-sizing:border-box;";
             if (field.placeholder) input.placeholder = field.placeholder;
             if (field.maxlength) input.maxLength = field.maxlength;
+            if (["contact_number", "parent_contact"].includes(field.key)) {
+              input.type = "tel";
+              input.inputMode = "numeric";
+              input.maxLength = 11;
+              input.minLength = 11;
+              input.pattern = "[0-9]{11}";
+              input.dataset.contactNumber = "true";
+            }
           }
           if (field.value !== undefined && field.value !== null) {
             input.value = String(field.value);
@@ -4972,6 +5015,12 @@
               key: "contact_number",
               label: "Contact",
               placeholder: "Contact number",
+            },
+            {
+              id: "instructorModalStudentParentContact",
+              key: "parent_contact",
+              label: "Parent/Guardian Contact",
+              placeholder: "11-digit contact number",
             },
           ],
           onSubmit: async (values) => submitInstructorNewStudentInBlock(values),
@@ -5687,7 +5736,8 @@
         if (instructorBlockStudentsTbody)
           instructorBlockStudentsTbody.innerHTML = "";
         if (instructorBlockStudentsEmpty) {
-          instructorBlockStudentsEmpty.style.display = filtered.length
+          const showingArchived = instructorArchivedStudentsPanel?.style.display !== "none";
+          instructorBlockStudentsEmpty.style.display = showingArchived || filtered.length
             ? "none"
             : "block";
         }
@@ -5701,6 +5751,7 @@
             </td>
             <td>${escapeHtml(s.registered_school_year || instructorStudentsNav.schoolYear || "")}</td>
             <td>${escapeHtml(s.parent_name || "")}</td>
+            <td>${escapeHtml(s.parent_contact || "")}</td>
             <td>${escapeHtml(s.contact_number || "")}</td>
             <td class="action-cell">
               <button class="mini-btn" type="button" data-student-action="edit" data-id="${escapeHtml(s.student_id || "")}"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
@@ -5727,6 +5778,12 @@
         }
         if (!String(payload.contact_number || "").trim()) {
           return { ok: false, message: "Enter the student's contact number." };
+        }
+        if (!/^\d{11}$/.test(String(payload.contact_number).trim())) {
+          return { ok: false, message: "Contact number must contain exactly 11 digits." };
+        }
+        if (payload.parent_contact && !/^\d{11}$/.test(String(payload.parent_contact).trim())) {
+          return { ok: false, message: "Parent/Guardian contact must contain exactly 11 digits." };
         }
         const result = await ApiClient.registerStudentInBlock(
           instructorStudentsNav.blockId,
@@ -5783,6 +5840,13 @@
               value: target.contact_number || "",
             },
             {
+              id: "instructorModalEditStudentParentContact",
+              key: "parent_contact",
+              label: "Parent/Guardian Contact",
+              placeholder: "11-digit contact number",
+              value: target.parent_contact || "",
+            },
+            {
               id: "instructorModalEditStudentPassword",
               key: "password",
               label: "New Password (optional)",
@@ -5800,10 +5864,17 @@
             if (!values.contact_number) {
               return { ok: false, message: "Enter the student's contact number." };
             }
+            if (!/^\d{11}$/.test(values.contact_number)) {
+              return { ok: false, message: "Contact number must contain exactly 11 digits." };
+            }
+            if (values.parent_contact && !/^\d{11}$/.test(values.parent_contact)) {
+              return { ok: false, message: "Parent/Guardian contact must contain exactly 11 digits." };
+            }
             const payload = {
               student_name: values.student_name,
               parent_name: values.parent_name,
               contact_number: values.contact_number,
+              parent_contact: values.parent_contact,
             };
             if (values.password) payload.password = values.password;
             const updateResult = await ApiClient.updateStudent(
@@ -6420,6 +6491,75 @@
         return raw;
       }
 
+      function formatAuditAction(value) {
+        const action = String(value || "").trim().replace(/[_-]+/g, " ");
+        if (!action) return "Record update";
+        if (/^record\b/i.test(action)) return action;
+        if (/^review$/i.test(action)) return "Review update";
+        return action.replace(/\b\w/g, (letter) => letter.toUpperCase());
+      }
+
+      function formatAuditDate(value) {
+        if (!value) return "Date unavailable";
+        const raw = String(value).trim();
+        const date = new Date(raw.includes(" ") && !raw.includes("T") ? raw.replace(" ", "T") : raw);
+        return Number.isNaN(date.getTime())
+          ? raw
+          : date.toLocaleString([], {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            });
+      }
+
+      function recordHistoryItem(entry) {
+        let details = entry?.details;
+        if (typeof details === "string") {
+          try {
+            details = JSON.parse(details);
+          } catch (error) {
+            details = {};
+          }
+        }
+        details = details && typeof details === "object" ? details : {};
+
+        const previousStatus = entry?.previous_status || details.previous_status || details.previousStatus;
+        const newStatus = entry?.new_status || details.new_status || details.newStatus || details.status;
+        const statusText = previousStatus && newStatus
+          ? `Status changed from ${previousStatus} to ${newStatus}.`
+          : newStatus
+            ? `Status set to ${newStatus}.`
+            : "";
+        const remarks = cleanRecordHistoryValue(entry?.remarks || details.remarks || details.comment || details.message);
+        const body = [statusText, remarks ? `Remarks: ${remarks}` : ""].filter(Boolean).join(" ");
+
+        const explicitAuthor = String(entry?.actor_name || entry?.author_name || entry?.user_name || "").trim();
+        const role = String(entry?.actor_role || entry?.user_role || "").trim().toLowerCase();
+        const author = explicitAuthor && !/^ins_[a-z0-9_-]+$/i.test(explicitAuthor)
+          ? explicitAuthor
+          : role === "instructor"
+            ? "Clinical Instructor"
+            : role === "admin"
+              ? "Administrator"
+              : role === "student"
+                ? "Student"
+                : role === "system"
+                  ? "System"
+                  : "";
+
+        const date = entry?.created_at || entry?.date_time || entry?.updated_at;
+        return {
+          kind: "history",
+          date,
+          formattedDate: formatAuditDate(date),
+          label: formatAuditAction(entry?.action_name || entry?.action || entry?.event),
+          author,
+          body,
+        };
+      }
+
       function renderRecordHistoryPane(items, state) {
         globalOptionPaneMessage.replaceChildren();
         if (state === "loading" || state === "error") {
@@ -6670,7 +6810,7 @@
         if (!instructorArchivedStudentsTbody) return;
         const result = await ApiClient.getArchivedStudents();
         const archived = result && result.ok && Array.isArray(result.students)
-          ? result.students
+          ? result.students.filter((student) => !deletedArchivedStudentIds.has(String(student.student_id || "")))
           : [];
         instructorArchivedStudentsTbody.innerHTML = "";
         if (instructorArchivedStudentsCount)
@@ -6687,6 +6827,7 @@
             <td>${escapeHtml(student.student_id || "")}</td>
             <td>${escapeHtml(student.student_name || "")}</td>
             <td>${escapeHtml(student.parent_name || "")}</td>
+            <td>${escapeHtml(student.parent_contact || "")}</td>
             <td>${escapeHtml(student.contact_number || "")}</td>
             <td>${archivedDate}</td>
             <td><button class="mini-btn" type="button" data-instructor-restore-student="${escapeHtml(student.student_id || "")}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-instructor-delete-archived-student="${escapeHtml(student.student_id || "")}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></td>
@@ -6877,6 +7018,7 @@
         if (button) button.disabled = true;
         const result = await ApiClient.permanentlyDeleteStudent(studentId);
         if (result && result.ok) {
+          deletedArchivedStudentIds.add(String(studentId || ""));
           showInstructorStudentsMessage("Archived student and archived data permanently deleted.", "success");
           await renderInstructorArchivedStudents();
           await renderInstructorStudentBlocks();
@@ -6906,12 +7048,13 @@
           const result = await ApiClient.getRecordHistory(currentReviewRecord.id);
           if (result && result.ok === false) throw new Error(result.message || "Unable to load record history.");
           const history = result?.history || [];
-          showOptionMessage(
-            "Record History",
-            history.length
-              ? history.map((entry) => `${new Date(entry.date_time || entry.created_at).toLocaleString()} — ${entry.action}${entry.remarks ? `: ${entry.remarks}` : ""}`).join("\n")
-              : "No revision or review history is available for this record.",
-          );
+          showGlobalOptionPane({
+            title: "Record History",
+            message: "",
+            recordHistory: true,
+          });
+          renderRecordHistoryPane(history.map(recordHistoryItem));
+          return;
         } catch (error) {
           showOptionMessage("History Failed", error?.message || "Unable to load record history.");
         }
@@ -7489,8 +7632,8 @@
         window.__updateEmptyTables = updateEmptyTables;
       })();
     </script>
-    <script src="assets/js/modern-shell.js?v=20260903-student-preview-1"></script>
-    <script src="assets/js/site-protection.js?v=20260903-validation-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260903-portal-toast-1"></script>
+    <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>
 

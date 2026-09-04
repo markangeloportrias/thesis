@@ -773,6 +773,7 @@
       var pwd = normalize(password);
       var pName = normalize(parentName);
       var pContact = normalize(contactNumber);
+      var pParentContact = normalize(options.parent_contact || '');
       var sy = normalizeSchoolYearRange(options.school_year || '');
       var blockId = normalize(options.block_id || '');
 
@@ -781,6 +782,12 @@
       }
       if (!name || !pwd || !pName || !pContact) {
         return { ok: false, message: 'All student fields are required.' };
+      }
+      if (!/^\d{11}$/.test(pContact)) {
+        return { ok: false, message: 'Contact number must contain exactly 11 digits.' };
+      }
+      if (pParentContact && !/^\d{11}$/.test(pParentContact)) {
+        return { ok: false, message: 'Parent/Guardian contact must contain exactly 11 digits.' };
       }
 
       var students = getStudents();
@@ -800,6 +807,7 @@
         enrolled.password = pwd;
         enrolled.parent_name = pName;
         enrolled.contact_number = pContact;
+        enrolled.parent_contact = pParentContact;
         students = students.map(function (item) {
           return normalize(item.student_id) === id ? enrolled : item;
         });
@@ -812,6 +820,7 @@
             student_name: enrolled.student_name,
             parent_name: enrolled.parent_name,
             contact_number: enrolled.contact_number,
+            parent_contact: enrolled.parent_contact || '',
             registered_school_year: sy,
             active_school_year: sy
           }
@@ -825,6 +834,7 @@
         password: pwd,
         parent_name: pName,
         contact_number: pContact,
+        parent_contact: pParentContact,
         created_at: new Date().toISOString(),
         enrollments: {}
       };
@@ -848,6 +858,7 @@
           student_name: student.student_name,
           parent_name: student.parent_name,
           contact_number: student.contact_number,
+          parent_contact: student.parent_contact || '',
           registered_school_year: sy,
           active_school_year: sy
         }
@@ -871,6 +882,7 @@
           student_name: student.student_name,
           parent_name: student.parent_name || '',
           contact_number: student.contact_number || '',
+          parent_contact: student.parent_contact || '',
           profile_photo: student.profile_photo || '',
           registered_school_year: getStudentActiveSchoolYear(student),
           active_school_year: getStudentActiveSchoolYear(student)
@@ -893,6 +905,7 @@
           student_name: student.student_name,
           parent_name: student.parent_name || '',
           contact_number: student.contact_number || '',
+          parent_contact: student.parent_contact || '',
           profile_photo: student.profile_photo || '',
           registered_school_year: getStudentActiveSchoolYear(student),
           active_school_year: getStudentActiveSchoolYear(student)
@@ -1976,7 +1989,8 @@
         payload.contact_number,
         {
           school_year: yearLabel,
-          block_id: bid
+          block_id: bid,
+          parent_contact: payload.parent_contact
         }
       );
     },
@@ -2084,7 +2098,8 @@
         payload.student_name,
         payload.password,
         payload.parent_name,
-        payload.contact_number
+        payload.contact_number,
+        { parent_contact: payload.parent_contact }
       );
     },
 
