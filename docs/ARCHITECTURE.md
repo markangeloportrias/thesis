@@ -3,7 +3,7 @@
 The portal follows a simple layered structure suitable for a PHP/XAMPP deployment.
 
 ```
-Browser entry points (root HTML pages)
+Browser entry points (clean routes, internally rewritten to root HTML pages)
         |
         +-- assets/css     Shared and role-specific presentation
         +-- assets/js      Shared browser behavior and API client
@@ -18,6 +18,7 @@ Browser entry points (root HTML pages)
 
 | Location | Responsibility |
 | --- | --- |
+| `.htaccess` | Maps `/login`, `/student`, `/instructor`, and `/admin-dashboard` (plus `/admin`) to the existing HTML pages and redirects legacy `.html` URLs. |
 | Root HTML files | Page markup and page-specific behavior for a role. |
 | `assets/css/base` | Shared variables, reset rules, and typography defaults. |
 | `assets/css/layout` | Application shell and sidebar behavior. |
