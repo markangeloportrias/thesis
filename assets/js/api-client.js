@@ -2613,6 +2613,13 @@
       if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
       var byBlock = await mysqlRequest('assignments?block_id=' + encodeURIComponent(blockId));
       if (byBlock && byBlock.ok && Array.isArray(byBlock.students) && byBlock.students.length) return byBlock;
+      var allAssignments = await mysqlRequest('assignments');
+      if (allAssignments && allAssignments.ok && Array.isArray(allAssignments.students)) {
+        var matchedAssignments = allAssignments.students.filter(function (student) {
+          return String(student && student.block_id || '') === String(blockId || '');
+        });
+        if (matchedAssignments.length) return { ok: true, students: matchedAssignments };
+      }
       if (result && result.ok) return result;
     } catch (error) {}
     try {
@@ -2620,6 +2627,13 @@
       if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
       var directoryByBlock = await mysqlRequest('assignment-directory?block_id=' + encodeURIComponent(blockId));
       if (directoryByBlock && directoryByBlock.ok && Array.isArray(directoryByBlock.students)) return directoryByBlock;
+      var allDirectoryAssignments = await mysqlRequest('assignment-directory');
+      if (allDirectoryAssignments && allDirectoryAssignments.ok && Array.isArray(allDirectoryAssignments.students)) {
+        var matchedDirectoryAssignments = allDirectoryAssignments.students.filter(function (student) {
+          return String(student && student.block_id || '') === String(blockId || '');
+        });
+        if (matchedDirectoryAssignments.length) return { ok: true, students: matchedDirectoryAssignments };
+      }
       return result;
     } catch (error) {
       return { ok: false, message: error.message, students: [] };
