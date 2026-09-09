@@ -352,8 +352,8 @@ try {
     if ($resource === 'block-directory' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
-        $stmt=$pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL AND (?='' OR y.label=?) GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label");
-        $stmt->execute([$year,$year]);
+        $stmt=$pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL ".($year !== '' ? 'AND y.label=?' : '')." GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label");
+        $stmt->execute($year !== '' ? [$year] : []);
         respond(['ok'=>true,'blocks'=>$stmt->fetchAll()]);
     }
 
@@ -361,8 +361,8 @@ try {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
         $blockId=trim((string)($_GET['block_id']??''));
-        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?='' OR b.id=?) AND (?<>'' OR ?='' OR y.label=?) ORDER BY s.student_name");
-        $stmt->execute([$blockId,$blockId,$blockId,$year,$year]);
+        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL ".($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : ''))." ORDER BY s.student_name");
+        $stmt->execute($blockId !== '' ? [$blockId] : ($year !== '' ? [$year] : []));
         respond(['ok'=>true,'students'=>$stmt->fetchAll()]);
     }
 
@@ -660,8 +660,9 @@ try {
     if ($resource === 'blocks') {
         $user = currentUser($pdo, ['admin', 'instructor']);
         if ($method === 'GET') {
-            $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL AND (? = \'\' OR y.label = ?) GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');
-            $year = (string)($_GET['school_year'] ?? ''); $stmt->execute([$year, $year]);
+            $year = trim((string)($_GET['school_year'] ?? ''));
+            $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL '.($year !== '' ? 'AND y.label=?' : '').' GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');
+            $stmt->execute($year !== '' ? [$year] : []);
             respond(['ok' => true, 'blocks' => $stmt->fetchAll()]);
         }
         if ($method === 'POST') {
@@ -693,8 +694,8 @@ try {
                 $stmt->execute([$year]);
                 respond(['ok' => true, 'students' => $stmt->fetchAll()]);
             }
-            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?=\'\' OR b.id=?) AND (?<>\'\' OR ?=\'\' OR y.label=?) ORDER BY s.student_name');
-            $stmt->execute([$blockId,$blockId,$blockId,$year,$year]);
+            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL '.($blockId !== '' ? 'AND b.id=?' : ($year !== '' ? 'AND y.label=?' : '')).' ORDER BY s.student_name');
+            $stmt->execute($blockId !== '' ? [$blockId] : ($year !== '' ? [$year] : []));
             respond(['ok' => true, 'students' => $stmt->fetchAll()]);
         }
         if ($method === 'POST') {
@@ -1294,6 +1295,9 @@ try {
 
     respond(['ok' => false, 'message' => 'Endpoint not found.'], 404);
 } catch (PDOException $error) {
+    if (in_array($resource, ['blocks', 'block-directory', 'assignments', 'assignment-directory'], true)) {
+        error_log('Portal roster SQL error ['.$resource.']: '.$error->getMessage());
+    }
     $duplicate = $error->getCode() === '23000';
     respond(['ok' => false, 'message' => $duplicate ? 'That record already exists.' : 'Database operation failed.'], $duplicate ? 409 : 500);
 } catch (Throwable $error) {

@@ -2632,13 +2632,13 @@
           if (matchedStudents.length) return { ok: true, students: matchedStudents };
         }
       }
-      if (result && result.ok) return result;
+      // An empty primary roster must still try the directory endpoint.
     } catch (error) {}
     try {
       result = await mysqlRequest('assignment-directory?' + query);
       if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
       var directoryByBlock = await mysqlRequest('assignment-directory?block_id=' + encodeURIComponent(blockId));
-      if (directoryByBlock && directoryByBlock.ok && Array.isArray(directoryByBlock.students)) return directoryByBlock;
+      if (directoryByBlock && directoryByBlock.ok && Array.isArray(directoryByBlock.students) && directoryByBlock.students.length) return directoryByBlock;
       var allDirectoryAssignments = await mysqlRequest('assignment-directory');
       if (allDirectoryAssignments && allDirectoryAssignments.ok && Array.isArray(allDirectoryAssignments.students)) {
         var matchedDirectoryAssignments = allDirectoryAssignments.students.filter(function (student) {
@@ -2650,7 +2650,9 @@
         var directoryStudents = await mysqlRequest('students');
         if (directoryStudents && directoryStudents.ok && Array.isArray(directoryStudents.students)) {
           var matchedDirectoryStudents = directoryStudents.students.filter(function (student) {
-            return String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
+            var requestedYear = normalizeSchoolYearRange(schoolYear || '');
+            var studentYear = normalizeSchoolYearRange(student && student.registered_school_year || '');
+            return requestedYear && studentYear === requestedYear && String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
           });
           if (matchedDirectoryStudents.length) return { ok: true, students: matchedDirectoryStudents };
         }
