@@ -2306,7 +2306,7 @@
     if (!status && record.checked_by) status = 'Verified';
     if (!status) status = 'Submitted';
     return {
-      id: record.id,
+      id: record.id || record.case_id || record.caseId || record.case_record_id || '',
       student_id: record.student_id,
       student_name: record.student_name,
       instructor_id: record.instructor_uid || record.instructor_id || '',
