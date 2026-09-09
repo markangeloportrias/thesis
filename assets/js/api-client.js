@@ -2539,8 +2539,22 @@
   };
   ApiClient.getStudentBlocks = async function (schoolYear) {
     var query='school_year='+encodeURIComponent(normalize(schoolYear));
-    try { return await mysqlRequest('blocks?' + query); }
-    catch (error) { return mysqlRequest('block-directory?' + query); }
+    try {
+      var primary = await mysqlRequest('blocks?' + query);
+      if (primary && primary.ok && Array.isArray(primary.blocks) && primary.blocks.length) {
+        return primary;
+      }
+      // Some existing deployments expose the block list through the legacy
+      // directory route even though the summary endpoint already has counts.
+      // Retry it when the primary route returns no rows for a selected year.
+      var directory = await mysqlRequest('block-directory?' + query);
+      if (directory && directory.ok && Array.isArray(directory.blocks) && directory.blocks.length) {
+        return directory;
+      }
+      return primary && primary.ok ? primary : directory;
+    } catch (error) {
+      return mysqlRequest('block-directory?' + query);
+    }
   };
   ApiClient.createStudentBlock = async function (label, createdBy, schoolYear) {
     try { return await mysqlRequest('blocks', { method: 'POST', body: JSON.stringify({ label: normalize(label), school_year: normalize(schoolYear) }) }); }
