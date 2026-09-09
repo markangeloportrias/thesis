@@ -1928,10 +1928,10 @@
         });
 
         // Dashboard totals must reflect MySQL, never stale browser storage.
-        fetch("api/dashboard-stats", { cache: "no-store" })
-          .then((response) => {
-            if (!response.ok) throw new Error("Database statistics unavailable.");
-            return response.json();
+        ApiClient.request("dashboard-stats")
+          .then((result) => {
+            if (!result || !result.ok) throw new Error("Database statistics unavailable.");
+            return result;
           })
           .then((result) => {
             const counts = result && result.ok ? result.counts || {} : {};
