@@ -2607,8 +2607,23 @@
   };
   ApiClient.getBlockStudents = async function (blockId, schoolYear) {
     var query='block_id='+encodeURIComponent(blockId)+'&school_year='+encodeURIComponent(normalize(schoolYear));
-    try { return await mysqlRequest('assignments?' + query); }
-    catch (error) { return mysqlRequest('assignment-directory?' + query); }
+    var result;
+    try {
+      result = await mysqlRequest('assignments?' + query);
+      if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
+      var byBlock = await mysqlRequest('assignments?block_id=' + encodeURIComponent(blockId));
+      if (byBlock && byBlock.ok && Array.isArray(byBlock.students) && byBlock.students.length) return byBlock;
+      if (result && result.ok) return result;
+    } catch (error) {}
+    try {
+      result = await mysqlRequest('assignment-directory?' + query);
+      if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
+      var directoryByBlock = await mysqlRequest('assignment-directory?block_id=' + encodeURIComponent(blockId));
+      if (directoryByBlock && directoryByBlock.ok && Array.isArray(directoryByBlock.students)) return directoryByBlock;
+      return result;
+    } catch (error) {
+      return { ok: false, message: error.message, students: [] };
+    }
   };
   ApiClient.getAllAssignedStudents = async function () {
     try { return await mysqlRequest('assignments'); }
