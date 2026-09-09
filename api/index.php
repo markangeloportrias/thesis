@@ -659,6 +659,9 @@ try {
 
     if ($resource === 'blocks') {
         $user = currentUser($pdo, ['admin', 'instructor']);
+        $blockAction = $action !== ''
+            ? $action
+            : trim((string)($_GET['action'] ?? $data['action'] ?? ''));
         if ($method === 'GET') {
             $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL AND (? = \'\' OR y.label = ?) GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');
             $year = (string)($_GET['school_year'] ?? ''); $stmt->execute([$year, $year]);
@@ -673,7 +676,7 @@ try {
             if ($stmt->rowCount() > 0) audit($pdo, $user, 'create', 'student_block', $blockId, ['label' => $data['label'], 'school_year' => $data['school_year']]);
             respond(['ok' => $stmt->rowCount() > 0, 'id' => $blockId], 201);
         }
-        if ($method === 'PATCH' && $id !== '' && $action === '') {
+        if ($method === 'PATCH' && $id !== '' && $blockAction === '') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['label']);
             $stmt = $pdo->prepare('UPDATE student_blocks SET label=? WHERE id=? AND archived_at IS NULL');
@@ -681,7 +684,7 @@ try {
             if ($stmt->rowCount() > 0) audit($pdo, $user, 'update', 'student_block', $id, ['label' => $data['label']]);
             respond(['ok' => $stmt->rowCount() > 0]);
         }
-        if ($method === 'PATCH' && $id !== '' && $action === 'archive') {
+        if ($method === 'PATCH' && $id !== '' && $blockAction === 'archive') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $blockStmt = $pdo->prepare('SELECT b.id,b.label,y.label AS school_year FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id WHERE b.id=? AND b.archived_at IS NULL');
             $blockStmt->execute([$id]);
