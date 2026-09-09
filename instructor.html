@@ -1197,7 +1197,7 @@
                     id="instructorBlocksEmpty"
                     style="display: none"
                   >
-                    No blocks for this school year yet.
+                    No blocks for the selected academic year yet.
                   </div>
                 </div>
 
@@ -5677,6 +5677,11 @@
           instructorBlocksEmpty.style.display = blocks.length
             ? "none"
             : "block";
+          if (!blocks.length) {
+            instructorBlocksEmpty.textContent = result && !result.ok
+              ? result.message || "Unable to load blocks for this academic year."
+              : `No blocks have been created for ${instructorStudentsNav.schoolYear} yet.`;
+          }
         }
         const studentsViewCount = document.getElementById("studentsViewCount");
         if (studentsViewCount) studentsViewCount.textContent = String(blocks.length);

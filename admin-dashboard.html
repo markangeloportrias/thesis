@@ -452,7 +452,7 @@
                   </table>
                 </div>
                 <div class="empty" id="blocksEmpty">
-                  No blocks for this school year yet.
+                  No blocks for the selected academic year yet.
                 </div>
               </div>
 
@@ -2748,8 +2748,14 @@
             ? result.blocks
             : [];
         if (blocksTbody) blocksTbody.innerHTML = "";
-        if (blocksEmpty)
+        if (blocksEmpty) {
           blocksEmpty.style.display = blocks.length ? "none" : "block";
+          if (!blocks.length) {
+            blocksEmpty.textContent = result && !result.ok
+              ? result.message || "Unable to load blocks for this academic year."
+              : `No blocks have been created for ${studentsNav.schoolYear} yet.`;
+          }
+        }
         blocks.forEach((block, index) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
