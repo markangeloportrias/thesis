@@ -2605,7 +2605,7 @@
     try { return await mysqlRequest('blocks/' + encodeURIComponent(blockId), { method: 'PATCH', body: JSON.stringify({ label: normalize(label) }) }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.getBlockStudents = async function (blockId, schoolYear) {
+  ApiClient.getBlockStudents = async function (blockId, schoolYear, blockLabel) {
     var query='block_id='+encodeURIComponent(blockId)+'&school_year='+encodeURIComponent(normalize(schoolYear));
     var result;
     try {
@@ -2620,6 +2620,18 @@
         });
         if (matchedAssignments.length) return { ok: true, students: matchedAssignments };
       }
+      if (blockLabel) {
+        var allStudents = await mysqlRequest('students');
+        if (allStudents && allStudents.ok && Array.isArray(allStudents.students)) {
+          var matchedStudents = allStudents.students.filter(function (student) {
+            var sameBlock = String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
+            var studentYear = normalizeSchoolYearRange(student && (student.registered_school_year || student.school_year || ''));
+            var requestedYear = normalizeSchoolYearRange(schoolYear || '');
+            return sameBlock && (!requestedYear || !studentYear || studentYear === requestedYear);
+          });
+          if (matchedStudents.length) return { ok: true, students: matchedStudents };
+        }
+      }
       if (result && result.ok) return result;
     } catch (error) {}
     try {
@@ -2633,6 +2645,15 @@
           return String(student && student.block_id || '') === String(blockId || '');
         });
         if (matchedDirectoryAssignments.length) return { ok: true, students: matchedDirectoryAssignments };
+      }
+      if (blockLabel) {
+        var directoryStudents = await mysqlRequest('students');
+        if (directoryStudents && directoryStudents.ok && Array.isArray(directoryStudents.students)) {
+          var matchedDirectoryStudents = directoryStudents.students.filter(function (student) {
+            return String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
+          });
+          if (matchedDirectoryStudents.length) return { ok: true, students: matchedDirectoryStudents };
+        }
       }
       return result;
     } catch (error) {
