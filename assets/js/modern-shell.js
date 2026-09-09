@@ -170,6 +170,41 @@
   };
 })();
 
+/* Show connection changes consistently on every portal page. */
+(function portalConnectionStatus() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  const style = document.createElement("style");
+  style.textContent = `
+    #portalConnectionMessage { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 10000; display: none; padding: 10px 16px; border-radius: 8px; font: 600 13px Arial, sans-serif; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+    #portalConnectionMessage.is-offline { display: block; color: #8a1118; background: #fff1f2; border: 1px solid #e1aeb3; }
+    #portalConnectionMessage.is-online { display: block; color: #126332; background: #effcf3; border: 1px solid #a9d9b7; }
+  `;
+  document.head.appendChild(style);
+
+  const message = document.createElement("div");
+  message.id = "portalConnectionMessage";
+  message.setAttribute("role", "status");
+  message.setAttribute("aria-live", "polite");
+  document.body.appendChild(message);
+
+  let lastState = null;
+  let onlineTimer = 0;
+  function updateConnectionMessage(isOnline, notify) {
+    if (lastState === isOnline && !notify) return;
+    lastState = isOnline;
+    window.clearTimeout(onlineTimer);
+    message.className = isOnline ? "is-online" : "is-offline";
+    message.innerHTML = isOnline
+      ? '<i class="fas fa-wifi" aria-hidden="true"></i> Internet connection restored.'
+      : '<i class="fas fa-wifi-slash" aria-hidden="true"></i> No internet connection. Some data may not load.';
+    if (isOnline) onlineTimer = window.setTimeout(() => { message.className = ""; }, 4000);
+  }
+  window.addEventListener("online", () => updateConnectionMessage(true, true));
+  window.addEventListener("offline", () => updateConnectionMessage(false, true));
+  updateConnectionMessage(navigator.onLine !== false, false);
+})();
+
 /* Keep database-backed screens honest when XAMPP is stopped. The HTML shell
    remains available for design testing, but previously rendered database rows
    and totals are removed as soon as the API health check fails. */
