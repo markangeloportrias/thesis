@@ -1072,7 +1072,7 @@
             adminLoginInFlight = false;
             adminSubmitBtn.classList.remove("is-loading");
             adminSubmitBtn.disabled = false;
-            showToast("Unauthorized PIN. Access denied.", "error");
+            showToast(result?.message || "Unauthorized PIN. Access denied.", "error");
           }
         } catch (error) {
           adminLoginInFlight = false;
