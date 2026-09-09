@@ -1431,7 +1431,7 @@
     <!-- Chat overlay removed — messaging is now in the sidebar -->
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
-    <script src="assets/js/api-client.js?v=20260909-block-loader-1"></script>
+    <script src="assets/js/api-client.js?v=20260909-block-delete-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -5565,7 +5565,7 @@
             <td><strong>${escapeHtml(block.label || block.id || "")}</strong></td>
             <td>${block.student_count || 0}</td>
             <td>${block.record_count || 0}</td>
-            <td class="action-cell"><button class="mini-btn admin-directory-action" type="button">Open</button></td>
+            <td class="action-cell"><div class="block-directory-actions"><button class="mini-btn admin-directory-action" type="button">Open</button><button class="mini-btn danger" type="button" data-block-action="delete" data-id="${escapeHtml(String(block.id || ""))}" data-label="${escapeHtml(block.label || block.id || "")}" aria-label="Delete ${escapeHtml(block.label || block.id || "block")}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></div></td>
           `;
           yearlyBlocksTbody.appendChild(tr);
         });
@@ -5579,6 +5579,27 @@
             ? result.blocks
             : [];
         renderYearlyBlockRows();
+      }
+
+      async function deleteYearlyRecordsBlock(blockId, blockLabel) {
+        const label = String(blockLabel || blockId || "this block").trim();
+        const confirmed = await showOptionConfirm(
+          "Delete Block",
+          `Delete "${label}"? The block will be removed from active listings, while historical clinical records are preserved. Blocks with assigned students cannot be deleted.`,
+          "Delete",
+          "Cancel",
+        );
+        if (!confirmed) return;
+        const result = await ApiClient.deleteStudentBlock(blockId);
+        if (!result || !result.ok) {
+          showOptionMessage(
+            "Delete Block Failed",
+            (result && result.message) || "Unable to delete this block.",
+          );
+          return;
+        }
+        await renderYearlyRecordsBlocks();
+        showOptionMessage("Block Deleted", `"${label}" was removed successfully.`);
       }
 
       async function renderYearlyRecordsStudents() {
@@ -5707,6 +5728,7 @@
                 <button class="block-open-action" type="button" aria-label="View students in ${escapeHtml(blockLabel)}">
                   <span>View students</span>
                 </button>
+                <button class="mini-btn danger" type="button" data-block-action="delete" data-id="${escapeHtml(String(block.id || ""))}" data-label="${escapeHtml(blockLabel)}" aria-label="Delete ${escapeHtml(blockLabel || "block")}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>
               </div>
             </td>
           `;
@@ -5753,10 +5775,24 @@
       }
 
       async function deleteInstructorStudentBlock(blockId) {
-        showInstructorStudentsMessage(
-          "Permanent block deletion is disabled to preserve historical records.",
-          "error",
+        const confirmed = await showOptionConfirm(
+          "Delete Block",
+          "Delete this block? It will be removed from active listings, while historical clinical records are preserved. Blocks with assigned students cannot be deleted.",
+          "Delete",
+          "Cancel",
         );
+        if (!confirmed) return;
+        const result = await ApiClient.deleteStudentBlock(blockId);
+        if (result && result.ok) {
+          showInstructorStudentsMessage("Block deleted.", "success");
+          await renderInstructorStudentBlocks();
+          await renderInstructorSchoolYears();
+        } else {
+          showInstructorStudentsMessage(
+            (result && result.message) || "Unable to delete block.",
+            "error",
+          );
+        }
       }
 
       function getInstructorBlockStudentsFiltered(students) {
@@ -7435,6 +7471,15 @@
           );
           return;
         }
+        const deleteBtn = e.target.closest("button[data-block-action='delete']");
+        if (deleteBtn) {
+          e.stopPropagation();
+          deleteInstructorStudentBlock(
+            deleteBtn.getAttribute("data-id"),
+            deleteBtn.getAttribute("data-label") || "",
+          );
+          return;
+        }
         const openRow = e.target.closest("tr[data-block-open]");
         if (openRow) {
           openInstructorStudentsBlock(
@@ -7609,6 +7654,15 @@
         openYearlyRecordsYear(row.getAttribute("data-year-open") || "");
       });
       yearlyBlocksTbody?.addEventListener("click", (e) => {
+        const deleteBtn = e.target.closest("button[data-block-action='delete']");
+        if (deleteBtn) {
+          e.stopPropagation();
+          deleteYearlyRecordsBlock(
+            deleteBtn.getAttribute("data-id"),
+            deleteBtn.getAttribute("data-label") || "",
+          );
+          return;
+        }
         const row = e.target.closest("tr[data-block-open]");
         if (!row) return;
         openYearlyRecordsBlock(

@@ -673,13 +673,32 @@ try {
             if ($stmt->rowCount() > 0) audit($pdo, $user, 'create', 'student_block', $blockId, ['label' => $data['label'], 'school_year' => $data['school_year']]);
             respond(['ok' => $stmt->rowCount() > 0, 'id' => $blockId], 201);
         }
-        if ($method === 'PATCH' && $id !== '') {
+        if ($method === 'PATCH' && $id !== '' && $action === '') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['label']);
             $stmt = $pdo->prepare('UPDATE student_blocks SET label=? WHERE id=? AND archived_at IS NULL');
             $stmt->execute([$data['label'], $id]);
             if ($stmt->rowCount() > 0) audit($pdo, $user, 'update', 'student_block', $id, ['label' => $data['label']]);
             respond(['ok' => $stmt->rowCount() > 0]);
+        }
+        if ($method === 'PATCH' && $id !== '' && $action === 'archive') {
+            if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $blockStmt = $pdo->prepare('SELECT b.id,b.label,y.label AS school_year FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id WHERE b.id=? AND b.archived_at IS NULL');
+            $blockStmt->execute([$id]);
+            $block = $blockStmt->fetch();
+            if (!$block) respond(['ok'=>false,'message'=>'Block not found or already deleted.'],404);
+
+            $assignmentStmt = $pdo->prepare('SELECT COUNT(*) FROM student_block_assignments WHERE block_id=? AND archived_at IS NULL');
+            $assignmentStmt->execute([$id]);
+            if ((int)$assignmentStmt->fetchColumn() > 0) {
+                respond(['ok'=>false,'message'=>'This block still has assigned students. Move or remove them before deleting the block.'],422);
+            }
+
+            $stmt = $pdo->prepare("UPDATE student_blocks SET status='archived', archived_at=NOW() WHERE id=? AND archived_at IS NULL");
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() === 0) respond(['ok'=>false,'message'=>'Block could not be deleted.'],409);
+            audit($pdo, $user, 'archive', 'student_block', $id, ['label' => $block['label'], 'school_year' => $block['school_year']]);
+            respond(['ok'=>true]);
         }
     }
 

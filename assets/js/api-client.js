@@ -2605,6 +2605,16 @@
     try { return await mysqlRequest('blocks/' + encodeURIComponent(blockId), { method: 'PATCH', body: JSON.stringify({ label: normalize(label) }) }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
+  ApiClient.deleteStudentBlock = async function (blockId) {
+    try {
+      return await mysqlRequest('blocks/' + encodeURIComponent(blockId) + '/archive', {
+        method: 'PATCH',
+        body: '{}'
+      });
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
   ApiClient.getBlockStudents = async function (blockId, schoolYear) {
     var query='block_id='+encodeURIComponent(blockId)+'&school_year='+encodeURIComponent(normalize(schoolYear));
     try { return await mysqlRequest('assignments?' + query); }
