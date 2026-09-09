@@ -2696,6 +2696,13 @@
           const result = await ApiClient.getCaseComments(rec.id, archived);
           if (result?.ok) comments = result.comments || [];
         }
+        const seenFeedback = new Set();
+        comments = comments.filter((comment) => {
+          const key = [comment.author_name, comment.comment_text, comment.created_at].join("|");
+          if (seenFeedback.has(key)) return false;
+          seenFeedback.add(key);
+          return true;
+        });
         if (!archived && !comments.length) comments = getInstructorComments(rec);
         if (!archived) {
           rec.feedbackComments = comments;
