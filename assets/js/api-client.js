@@ -2607,9 +2607,9 @@
   };
   ApiClient.deleteStudentBlock = async function (blockId) {
     try {
-      return await mysqlRequest('blocks/' + encodeURIComponent(blockId) + '/archive?action=archive', {
+      return await mysqlRequest('blocks/' + encodeURIComponent(blockId) + '/archive', {
         method: 'PATCH',
-        body: JSON.stringify({ action: 'archive' })
+        body: '{}'
       });
     } catch (error) {
       return { ok: false, message: error.message };
