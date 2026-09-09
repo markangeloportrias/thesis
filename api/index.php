@@ -951,7 +951,7 @@ try {
                 validateContactNumberInput($reviewRecord['facility_contact_number'], 'Facility contact number');
                 validateContactNumberInput($reviewRecord['supervisor_contact_number'], 'Supervisor contact number');
             }
-            $stmt = $pdo->prepare('UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=IF(?="verified",?,NULL),checked_at=IF(?="verified",NOW(),NULL),instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL');
+            $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=IF(?='verified',?,NULL),checked_at=IF(?='verified',NOW(),NULL),instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL");
             $stmt->execute([$status, $data['remarks'] ?? null, $status, $instructorName, $status, $instructorId, $instructorName, $id]);
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
             $pdo->commit();
