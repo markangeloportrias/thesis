@@ -2067,6 +2067,11 @@
       const notificationsView = document.getElementById("notifications-view");
       const mainRecordsWrapper = document.getElementById("mainRecordsWrapper");
       const yearlySummaryTbody = null; // deprecated - use yearlyStudentSummaryTbody instead
+
+      function showDatabaseLoading(tbody, colspan, message) {
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;padding:24px;color:#5f7495"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> ${escapeHtml(message || "Loading...")}</td></tr>`;
+      }
       const refreshYearlyInstructorBtn = null; // deprecated - use yearlyRefreshBtn instead
 
       let activeType = "dashboard";
@@ -5573,6 +5578,7 @@
 
       async function renderYearlyRecordsBlocks() {
         if (!yearlyRecordsNav.year || !yearlyBlocksTbody) return;
+        showDatabaseLoading(yearlyBlocksTbody, 5, "Loading blocks...");
         const result = await ApiClient.getStudentBlocks(yearlyRecordsNav.year);
         yearlyBlocks =
           result && result.ok && Array.isArray(result.blocks)
@@ -5583,6 +5589,7 @@
 
       async function renderYearlyRecordsStudents() {
         if (!yearlyRecordsNav.year || !yearlyRecordsNav.blockId || !yearlyStudentSummaryTbody) return;
+        showDatabaseLoading(yearlyStudentSummaryTbody, 4, "Loading students...");
         const [rosterResult, cases] = await Promise.all([
           ApiClient.getBlockStudents(yearlyRecordsNav.blockId, yearlyRecordsNav.year, yearlyRecordsNav.blockLabel),
           ApiClient.getAllCasesForInstructor("", ""),
@@ -5665,6 +5672,7 @@
 
       async function renderInstructorStudentBlocks() {
         if (!instructorStudentsNav.schoolYear) return;
+        showDatabaseLoading(instructorBlocksTbody, 4, "Loading blocks...");
         const result = await ApiClient.getStudentBlocks(
           instructorStudentsNav.schoolYear,
         );
@@ -5776,6 +5784,7 @@
       async function renderInstructorBlockStudents() {
         if (!instructorStudentsNav.blockId || !instructorStudentsNav.schoolYear)
           return;
+        showDatabaseLoading(instructorBlockStudentsTbody, 6, "Loading students...");
         const result = await ApiClient.getBlockStudents(
           instructorStudentsNav.blockId,
           instructorStudentsNav.schoolYear,

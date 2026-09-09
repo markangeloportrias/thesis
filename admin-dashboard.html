@@ -1448,6 +1448,11 @@
       const yearlyStudentListTbody = document.getElementById(
         "yearlyStudentListTbody",
       );
+
+      function showDatabaseLoading(tbody, colspan, message) {
+        if (!tbody) return;
+        tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center;padding:24px;color:#5f7495"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> ${escapeHtml(message || "Loading...")}</td></tr>`;
+      }
       const yearlyStudentListEmpty = document.getElementById(
         "yearlyStudentListEmpty",
       );
@@ -2864,6 +2869,7 @@
 
       async function renderBlockStudents() {
         if (!studentsNav.blockId || !studentsNav.schoolYear) return;
+        showDatabaseLoading(studentsTbody, 8, "Loading students...");
         const result = await ApiClient.getBlockStudents(
           studentsNav.blockId,
           studentsNav.schoolYear,
@@ -4057,6 +4063,7 @@
 
       async function renderYearlyBlocks() {
         if (!yearlyNav.schoolYear) return;
+        showDatabaseLoading(yearlyBlocksTbody, 5, "Loading blocks...");
         const [result, allCases, assignmentsResult] = await Promise.all([
           ApiClient.getStudentBlocks(yearlyNav.schoolYear),
           ApiClient.getJoinedCases("", "", "").catch(() => []),
@@ -4101,6 +4108,7 @@
 
       async function renderYearlyStudentList() {
         if (!yearlyNav.blockId || !yearlyNav.schoolYear) return;
+        showDatabaseLoading(yearlyStudentListTbody, 5, "Loading students...");
         const [result, allCases] = await Promise.all([
           ApiClient.getBlockStudents(yearlyNav.blockId, yearlyNav.schoolYear, yearlyNav.blockLabel),
           ApiClient.getJoinedCases("", "", "").catch(() => []),
@@ -5968,6 +5976,7 @@
         activeCasesBlockId = String(blockId || "");
         activeCasesBlockLabel = blockLabel || "";
         activeCasesStudentId = "";
+        showDatabaseLoading(document.getElementById("casesStudentsTbody"), 5, "Loading students...");
         const result = await ApiClient.getBlockStudents(activeCasesBlockId, activeCasesYear, activeCasesBlockLabel);
         const students = result && result.ok && Array.isArray(result.students) ? result.students : [];
         const allCases = await getAdminCaseRecords();
