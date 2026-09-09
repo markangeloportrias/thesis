@@ -2606,56 +2606,23 @@
     catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.getBlockStudents = async function (blockId, schoolYear, blockLabel) {
-    var query='block_id='+encodeURIComponent(blockId)+'&school_year='+encodeURIComponent(normalize(schoolYear));
+    var blockQuery = 'block_id=' + encodeURIComponent(blockId);
     var result;
     try {
-      result = await mysqlRequest('assignments?' + query);
+      result = await mysqlRequest('assignments?' + blockQuery);
       if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
-      var byBlock = await mysqlRequest('assignments?block_id=' + encodeURIComponent(blockId));
-      if (byBlock && byBlock.ok && Array.isArray(byBlock.students) && byBlock.students.length) return byBlock;
-      var allAssignments = await mysqlRequest('assignments');
-      if (allAssignments && allAssignments.ok && Array.isArray(allAssignments.students)) {
-        var matchedAssignments = allAssignments.students.filter(function (student) {
-          return String(student && student.block_id || '') === String(blockId || '');
-        });
-        if (matchedAssignments.length) return { ok: true, students: matchedAssignments };
-      }
-      if (blockLabel) {
-        var allStudents = await mysqlRequest('students');
-        if (allStudents && allStudents.ok && Array.isArray(allStudents.students)) {
-          var matchedStudents = allStudents.students.filter(function (student) {
-            var sameBlock = String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
-            var studentYear = normalizeSchoolYearRange(student && (student.registered_school_year || student.school_year || ''));
-            var requestedYear = normalizeSchoolYearRange(schoolYear || '');
-            return sameBlock && (!requestedYear || !studentYear || studentYear === requestedYear);
-          });
-          if (matchedStudents.length) return { ok: true, students: matchedStudents };
-        }
-      }
-      // An empty primary roster must still try the directory endpoint.
     } catch (error) {}
     try {
-      result = await mysqlRequest('assignment-directory?' + query);
-      if (result && result.ok && Array.isArray(result.students) && result.students.length) return result;
-      var directoryByBlock = await mysqlRequest('assignment-directory?block_id=' + encodeURIComponent(blockId));
-      if (directoryByBlock && directoryByBlock.ok && Array.isArray(directoryByBlock.students) && directoryByBlock.students.length) return directoryByBlock;
-      var allDirectoryAssignments = await mysqlRequest('assignment-directory');
-      if (allDirectoryAssignments && allDirectoryAssignments.ok && Array.isArray(allDirectoryAssignments.students)) {
-        var matchedDirectoryAssignments = allDirectoryAssignments.students.filter(function (student) {
-          return String(student && student.block_id || '') === String(blockId || '');
-        });
-        if (matchedDirectoryAssignments.length) return { ok: true, students: matchedDirectoryAssignments };
-      }
+      result = await mysqlRequest('assignment-directory?' + blockQuery);
+      if (result && result.ok && Array.isArray(result.students)) return result;
       if (blockLabel) {
-        var directoryStudents = await mysqlRequest('students');
-        if (directoryStudents && directoryStudents.ok && Array.isArray(directoryStudents.students)) {
-          var matchedDirectoryStudents = directoryStudents.students.filter(function (student) {
-            var requestedYear = normalizeSchoolYearRange(schoolYear || '');
-            var studentYear = normalizeSchoolYearRange(student && student.registered_school_year || '');
-            return requestedYear && studentYear === requestedYear && String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
-          });
-          if (matchedDirectoryStudents.length) return { ok: true, students: matchedDirectoryStudents };
-        }
+        var allStudents = await mysqlRequest('students');
+        if (allStudents && allStudents.ok && Array.isArray(allStudents.students)) return {
+          ok: true,
+          students: allStudents.students.filter(function (student) {
+            return String(student && student.block_label || '').trim().toLowerCase() === String(blockLabel).trim().toLowerCase();
+          })
+        };
       }
       return result;
     } catch (error) {
