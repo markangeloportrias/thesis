@@ -4237,3 +4237,34 @@ html body.role-student #settingsTab .settings-edit-button {
     border-bottom: 1px solid #edf2f7 !important;
   }
 }
+
+/* Keep review state visible while the Student sidebar changes the workspace width. */
+html body.role-student #recordProcedureTables .procedure-records-table {
+  --student-record-actions-width: 108px;
+}
+
+html body.role-student #recordProcedureTables .procedure-records-table thead tr:first-child th:last-child,
+html body.role-student #recordProcedureTables .procedure-records-table tbody td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  min-width: var(--student-record-actions-width);
+  box-shadow: -1px 0 0 rgba(0, 63, 136, 0.18);
+}
+
+html body.role-student #recordProcedureTables .procedure-records-table thead tr:first-child th:nth-last-child(2),
+html body.role-student #recordProcedureTables .procedure-records-table tbody td:nth-last-child(2) {
+  position: sticky;
+  right: var(--student-record-actions-width);
+  z-index: 3;
+  min-width: 104px;
+  box-shadow: -1px 0 0 rgba(0, 63, 136, 0.18);
+}
+
+html body.role-student #recordProcedureTables .procedure-records-table thead tr:first-child :is(th:last-child, th:nth-last-child(2)) {
+  z-index: 5;
+}
+
+html body.role-student #recordProcedureTables .record-status-cell {
+  white-space: nowrap;
+}

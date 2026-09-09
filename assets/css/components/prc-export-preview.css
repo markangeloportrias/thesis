@@ -219,6 +219,13 @@
 #prcPreviewOverlay .prc-export-table th,
 #prcPreviewOverlay .prc-export-table td {
   border-radius: 0 !important;
+  /* Dashboard sticky/blurred headers obscure collapsed borders and merged cells. */
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
   box-shadow: none !important;
   transform: none !important;
   background: #fff !important;
@@ -234,8 +241,9 @@
   background: #fff !important;
   vertical-align: middle !important;
   white-space: normal !important;
-  word-break: normal !important;
-  overflow-wrap: break-word;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  hyphens: auto !important;
   background-clip: border-box !important;
 }
 

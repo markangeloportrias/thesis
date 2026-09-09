@@ -630,6 +630,8 @@ html body.role-instructor #edit-requests-view .edit-requests-list .request-item-
 }
 html body.role-instructor #edit-requests-view .request-item-header,
 html body.role-instructor #edit-requests-view .request-item-meta { display: contents !important; }
+/* Status already shows the decision; do not place the legacy decision block over Procedure. */
+html body.role-instructor #edit-requests-view .request-item-meta + .request-item-meta { display: none !important; }
 html body.role-instructor #edit-requests-view .request-item-title {
   grid-column: 1 !important;
   grid-row: 1 !important;
@@ -1228,6 +1230,17 @@ html body.role-instructor :is(
   font: 500 11px/1.25 Arial, Helvetica, sans-serif !important;
   text-align: left !important;
   vertical-align: middle !important;
+}
+
+/* Stack patient, facility, and supervisor details like the student tables. */
+html body.role-instructor .prc-source-table .record-detail-cell > :is(.record-detail-primary, .record-detail-secondary) {
+  display: block;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+html body.role-instructor .prc-source-table .record-detail-cell > .record-detail-secondary {
+  margin-top: 3px;
 }
 
 /* Annual Records button palette. */
@@ -4418,6 +4431,17 @@ html body.role-instructor .content-section #active-title {
   flex-wrap: wrap !important;
   gap: 7px !important;
   margin: 0 !important;
+}
+
+html body.role-instructor .content-section #active-title-text.current-records-student-name {
+  color: #00296b !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .instructor-current-procedure-section .summary-procedure-heading h3 {
+  font: 800 15px/1.2 Inter, Arial, Helvetica, sans-serif !important;
 }
 
 html body.role-instructor .content-section #active-subtitle {

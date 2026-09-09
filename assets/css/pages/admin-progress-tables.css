@@ -1,0 +1,78 @@
+/* Match Student My Progress, scoped to the visible admin clinical progress tables. */
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords .clinical-form-table-container {
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  overflow-x: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table {
+  width: 100% !important;
+  min-width: 980px !important;
+  table-layout: fixed !important;
+  border: 1px solid #000 !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  border-radius: 0 !important;
+  outline: 0 !important;
+  background: #fff !important;
+  color: #00296b !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table :is(thead, thead tr, thead th) {
+  box-sizing: border-box !important;
+  background: #dcecf6 !important;
+  color: #000 !important;
+  border: 1px solid #000 !important;
+  border-radius: 0 !important;
+  padding: 7px 8px !important;
+  font: 700 12px/1.1 Cambria, "Times New Roman", serif !important;
+  letter-spacing: normal !important;
+  text-align: center !important;
+  text-transform: none !important;
+  vertical-align: middle !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+  box-shadow: none !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table thead th {
+  height: auto !important;
+  min-height: 40px !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody tr {
+  height: 58px !important;
+  min-height: 58px !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody tr td {
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: 48px !important;
+  padding: 8px 9px !important;
+  border: 1px solid #000 !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #00296b !important;
+  font: 500 11px/1.25 Arial, Helvetica, sans-serif !important;
+  text-align: left !important;
+  vertical-align: middle !important;
+  overflow-wrap: anywhere !important;
+  box-shadow: none !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody td :is(span, small, div) {
+  color: inherit !important;
+  font: inherit !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody tr:hover td {
+  background: #f7fbff !important;
+}

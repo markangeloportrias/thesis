@@ -22,10 +22,11 @@
     <link rel="stylesheet" href="assets/css/components/modals.css" />
     <link rel="stylesheet" href="assets/css/pages/reports.css" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
-<link rel="stylesheet" href="assets/css/pages/instructor-palette.css?v=20260905-current-records-search-18" />
+<link rel="stylesheet" href="assets/css/pages/instructor-palette.css?v=20260907-student-heading-2" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260824-3" />
     <link rel="stylesheet" href="assets/css/pages/instructor-annual-records-table.css?v=20260831-8" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260906-internal-header-1" />
+    <link rel="stylesheet" href="assets/css/components/mobile-access-block.css?v=20260908-1" />
     <style id="instructor-sidebar-photo-highlight">
       html body.role-instructor .sidebar-user-avatar {
         box-sizing: border-box;
@@ -355,8 +356,11 @@
         }
       }
     </style>
+    <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
+    <link rel="stylesheet" href="assets/css/components/clinical-grid-borders.css?v=20260907-2" />
   </head>
   <body>
+    <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
     <div class="dashboard">
       <!-- Header -->
       <div class="header">
@@ -1306,7 +1310,8 @@
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
           <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
-          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn"><i class="fas fa-download" aria-hidden="true"></i> Download DOCX Form</button>
+          <button type="button" class="btn-secondary" id="prcPreviewDraftBtn">Download Draft</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download Verified Form</button>
         </div>
       </div>
     </div>
@@ -1425,6 +1430,7 @@
 
     <!-- Chat overlay removed — messaging is now in the sidebar -->
 
+    <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/api-client.js?v=20260903-validation-2"></script>
     <script>
       (() => {
@@ -1840,6 +1846,10 @@
 
       async function sendInstructorMessage(text) {
         if (!activeChatKey) return;
+        if (/\b(?:asshole|bastard|bitch|bullshit|dick|fuck(?:ing)?|gag[oi]|pakyu|putang\s*ina|puta|shit|tanga|bobo|ulol)\b/i.test(text)) {
+          showOptionMessage("Message Warning", "Please revise your message. Inappropriate language is not allowed.");
+          return false;
+        }
         const conv = instructorChats[activeChatKey];
         const editingMessage = instructorEditingChatMessage;
         const result = editingMessage
@@ -2175,40 +2185,31 @@
         const group = document.createElement("div");
         group.className = "procedure-progress-group";
         group.setAttribute("aria-label", `${procedureLabel} record progress`);
+        group.classList.add('progress-simplified');
         group.append(
           createInstructorProcedureProgressMetric({
-            name: "Required",
-            count: safeRecords.length,
+            name: "Verified",
+            count: verifiedCount,
             maximum: target,
             kind: "required",
             procedureLabel,
           }),
-          createInstructorProcedureProgressMetric({
-            name: "Verified",
-            count: verifiedCount,
-            maximum: safeRecords.length,
-            kind: "verified",
-            procedureLabel,
-          }),
-          createInstructorProcedureProgressMetric({
-            name: "Invalid",
-            count: invalidCount,
-            maximum: safeRecords.length,
-            kind: "invalid",
-            procedureLabel,
-          }),
         );
+        const remaining = document.createElement('div');
+        remaining.className = 'progress-next-step';
+        remaining.textContent = `${Math.max(0, target - verifiedCount)} remaining${invalidCount ? `; ${invalidCount} invalid` : ""}`;
+        group.append(remaining);
         return group;
       }
 
-      function createInstructorProcedureProgressHeading(records, procedureKey) {
+      function createInstructorProcedureProgressHeading(records, procedureKey, showRecordCount = true) {
         const safeRecords = Array.isArray(records) ? records : [];
         const procedureLabel =
           instructorProcedureProgressLabels[procedureKey] || "Clinical Records";
         const heading = document.createElement("div");
         heading.className = "summary-procedure-heading";
         const title = document.createElement("h3");
-        title.textContent = `${procedureLabel} (${safeRecords.length})`;
+        title.textContent = procedureLabel;
         heading.append(
           title,
           createInstructorProcedureProgressGroup(
@@ -2253,6 +2254,7 @@
             createInstructorProcedureProgressHeading(
               procedureRecords,
               procedureKey,
+              container !== instructorStudentProcedureTables,
             ),
           );
           container.appendChild(row);
@@ -2291,6 +2293,7 @@
             createInstructorProcedureProgressHeading(
               procedureRecords,
               procedureKey,
+              container !== instructorStudentProcedureTables,
             ),
           );
 
@@ -2303,12 +2306,8 @@
           }
           table.setAttribute("aria-label", `${procedureLabel} clinical records`);
           table.innerHTML = `<colgroup><col style="width:15%"><col style="width:6%"><col style="width:18%"><col style="width:8%"><col style="width:16%"><col style="width:13%"><col style="width:9%"><col style="width:8%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">Complete Diagnosis</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th><th rowspan="2">Actions</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead>`;
-          table.style.setProperty("border", "1px solid #000", "important");
-          table.style.setProperty("border-collapse", "collapse", "important");
           if (container === instructorYearlyProcedureTables) {
-            table.querySelectorAll("thead th").forEach((headerCell) => {
-              headerCell.style.setProperty("border", "1px solid #000", "important");
-            });
+            table.classList.add("instructor-yearly-procedure-table");
           }
           const body = document.createElement("tbody");
 
@@ -2471,6 +2470,24 @@
         if (fill) fill.style.width = `${percent}%`;
       }
 
+      function openDashboardRecordInCurrentRecords(record) {
+        if (!record?.student_id) return;
+        selectedCurrentRecordsBlock = {
+          id: record.block_id || record.block_label || "",
+          label: record.block_label || "Registered block",
+          schoolYear: record.registered_school_year || record.academic_year || "",
+        };
+        selectedCurrentRecordsStudent = {
+          student_id: record.student_id,
+          student_name: record.student_name || "Student",
+          block_label: selectedCurrentRecordsBlock.label,
+        };
+        setActiveSection("my-records", {
+          preserveCurrentRecordsBlock: true,
+          preserveSelectedStudent: true,
+        });
+      }
+
       function renderDashboardRecentRecords(records) {
         if (!dashboardRecentRecordsBody) return;
 
@@ -2554,24 +2571,15 @@
             <td><span class="record-status-badge" data-status="${escapeHtml(status)}">${escapeHtml(status)}</span></td>
             <td class="recent-record-actions-cell">
               <div class="recent-record-actions">
-                <button class="recent-record-action recent-record-view" type="button" data-dashboard-record-view aria-label="View ${escapeHtml(caseLabel)}">
-                  <i class="far fa-eye" aria-hidden="true"></i><span>View</span>
-                </button>
-                <button class="recent-record-action recent-record-comment" type="button" data-dashboard-record-comment aria-label="Comment on ${escapeHtml(caseLabel)}">
-                  <i class="far fa-comment" aria-hidden="true"></i><span>Comment</span>
+                <button class="recent-record-action recent-record-view" type="button" data-dashboard-record-details aria-label="Open ${escapeHtml(caseLabel)} in Current Records">
+                  <i class="fas fa-clipboard-list" aria-hidden="true"></i><span>Details</span>
                 </button>
               </div>
             </td>
           `;
           row
-            .querySelector("[data-dashboard-record-view]")
-            ?.addEventListener("click", () => showRecordDetail(record));
-          row
-            .querySelector("[data-dashboard-record-comment]")
-            ?.addEventListener("click", () => handleTableComment(record));
-          row.addEventListener("click", (event) => {
-            if (!event.target.closest("button")) showRecordDetail(record);
-          });
+            .querySelector("[data-dashboard-record-details]")
+            ?.addEventListener("click", () => openDashboardRecordInCurrentRecords(record));
           dashboardRecentRecordsBody.appendChild(row);
         });
       }
@@ -3002,7 +3010,7 @@
                   <button class="request-delete-btn" data-delete-edit-request="${req.id}" data-case-no="${caseNum}">
                     <i class="fas fa-trash"></i> Delete
                   </button>
-                </div>` : `<div class="request-item-meta"><div>Decision: ${statusLabel}${req.rejectionRemarks ? ` — ${escapeHtml(req.rejectionRemarks)}` : ""}</div></div>`}
+                </div>` : ""}
                 ${!isPending ? `<div class="request-item-actions"><button class="request-delete-btn" data-delete-edit-request="${req.id}" data-case-no="${caseNum}"><i class="fas fa-trash"></i> Delete</button></div>` : ""}
               </div>
             `;
@@ -3646,6 +3654,13 @@
 
       function buildInstructorAnnualXlsx(yearLabel, records) {
         const headers = ["No.", "Academic Year", "Student ID", "Student Name", "Procedure", "Patient Name", "Patient Address", "Case No.", "Complete Diagnosis", "Date & Time Performed", "Facility Name", "Facility Address", "Facility Contact Number", "Supervisor Printed Name", "Supervisor Contact Number", "Supervisor Position / Designation", "Supervisor License No.", "Supervisor License Expiry Date", "Checked By"];
+        const procedureBlocks = [
+          { key: "delivery-handled", rows: 20 },
+          { key: "delivery-assisted", rows: 20 },
+          { key: "suturing", rows: 5 },
+          { key: "iv-insertion", rows: 5 },
+          { key: "internal-exam", rows: 20 },
+        ];
         const grouped = new Map();
         records.forEach((record) => {
           const key = String(record.student_id || record.student_name || "Unknown Student").trim() || "Unknown Student";
@@ -3675,10 +3690,35 @@
         const row = (values) => `<row>${values.map(cell).join("")}</row>`;
         const worksheetXml = (studentRecords) => {
           const first = studentRecords[0] || {};
-          const dataRows = studentRecords.map((record, index) => row([
-            index + 1, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
-          ])).join("");
-          return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${row(["Student ID", first.student_id || ""])}${row(["Student Name", first.student_name || ""])}${row([])}${row(headers)}${dataRows}</sheetData></worksheet>`;
+          const columnValues = [
+            headers,
+            ["Student ID", first.student_id || ""],
+            ["Student Name", first.student_name || ""],
+            ...studentRecords.map((record, index) => [
+              index + 1, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
+            ]),
+          ];
+          const columns = headers.map((_, columnIndex) => {
+            const longest = Math.max(...columnValues.map((values) => String(values[columnIndex] ?? "").split(/\r?\n/).reduce((length, line) => Math.max(length, line.length), 0)));
+            return `<col min="${columnIndex + 1}" max="${columnIndex + 1}" width="${Math.min(50, Math.max(10, longest + 2))}" bestFit="1" customWidth="1"/>`;
+          }).join("");
+          const blankRow = Array(headers.length).fill("");
+          let recordNumber = 1;
+          const dataRows = procedureBlocks.flatMap((block, blockIndex) => {
+            const procedureRecords = studentRecords.filter((record) =>
+              normalizeProcedureKey(record.procedure_key || record.procedure_name) === block.key,
+            );
+            const reservedRows = Math.max(block.rows, procedureRecords.length);
+            const rows = Array.from({ length: reservedRows }, (_, index) => {
+              const record = procedureRecords[index];
+              return row(record ? [
+                recordNumber++, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
+              ] : blankRow);
+            });
+            if (blockIndex < procedureBlocks.length - 1) rows.push(...Array.from({ length: 5 }, () => row(blankRow)));
+            return rows;
+          }).join("");
+          return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>${columns}</cols><sheetData>${row(["Student ID", first.student_id || ""])}${row(["Student Name", first.student_name || ""])}${row([])}${row(headers)}${dataRows}</sheetData></worksheet>`;
         };
         const workbookSheets = sheetDefinitions.map((sheet, index) => `<sheet name="${xlsxXmlEscape(sheet.name)}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join("");
         const workbookRelationships = sheetDefinitions.map((sheet, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${index + 1}.xml"/>`).join("");
@@ -3853,7 +3893,7 @@
         "delivery-assisted": "Complete Diagnosis(Gravida, Para)",
         suturing: "Complete Diagnosis",
         "iv-insertion": "Complete Diagnosis",
-        "internal-exam": "Internal Examination (Cervical Dilation,Effacement,BOW,Presentation and Station)",
+        "internal-exam": "Internal Examination (Cervical Dilation, Effacement, BOW, Presentation and Station)",
       };
       const STUDENT_PRC_FORM_TITLES = {
         "delivery-handled": "Record of Normal Deliveries Handled",
@@ -4013,9 +4053,9 @@
         </div>`;
       }
 
-      function studentPrcBuildExportForms(records, logoSource) {
-        const studentName = studentPrcExportStudent.student_name || studentPrcExportStudent.name || "";
-        const school = studentPrcExportStudent.school_name || studentPrcExportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
+      function studentPrcBuildExportForms(records, logoSource, exportStudent = studentPrcExportStudent) {
+        const studentName = exportStudent.student_name || exportStudent.name || "";
+        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         const recordsByProcedure = STUDENT_PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
           groupedRecords[procedureKey] = records
             .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
@@ -4066,7 +4106,7 @@
           .prc-export-school-label { margin-left: 72pt; }
           .prc-export-school { min-width: 205pt; }
           .prc-export-table { width: 92%; border: 1px solid #000; border-collapse: collapse; border-spacing: 0; table-layout: fixed; color: #000; background: #fff; }
-          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; word-wrap: break-word; }
+          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
           .prc-export-table th { font-size: 8pt; font-weight: 700; line-height: 1.1; }
           .prc-export-table td { height: 22pt; font-size: 8pt; font-weight: 400; line-height: 1.1; text-align: left; }
         </style></head><body><div class="Section1">${forms}</div></body></html>`;
@@ -4449,7 +4489,8 @@
         });
       }
 
-      async function studentPrcBuildTemplateDocx(records) {
+      async function studentPrcBuildTemplateDocx(records, options = {}) {
+        const exportStudent = options.student || studentPrcExportStudent;
         const response = await fetch(STUDENT_PRC_TEMPLATE_URL, { cache: "no-store" });
         if (!response.ok) throw new Error("The PRC Word template could not be loaded.");
         const entries = await studentPrcReadTemplateZip(await response.arrayBuffer());
@@ -4462,8 +4503,8 @@
         studentPrcSynchronizeTemplateWithPreview(xml);
         studentPrcEnsureTemplateUniqueDrawingIds(xml);
         // Preserve the supplied DOCX page geometry and table grid exactly.
-        const studentName = studentPrcExportStudent.student_name || studentPrcExportStudent.name || "";
-        const school = studentPrcExportStudent.school_name || studentPrcExportStudent.school || "";
+        const studentName = exportStudent.student_name || exportStudent.name || "";
+        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p")).forEach((paragraph) => {
           if (!studentPrcWordText(paragraph).includes("Name of Applicant:")) return;
           const textNodes = Array.from(paragraph.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
@@ -4489,6 +4530,7 @@
           studentPrcSetTemplateDiagnosisHeader(table, procedureKey);
           studentPrcFillTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount));
         });
+        if (options.draft) RecordQuality.markDraftDocument(xml, STUDENT_PRC_WORD_NS);
         documentEntry.data = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${new XMLSerializer().serializeToString(xml.documentElement)}`);
         return new Blob([studentPrcCreateDocxZip(entries)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
       }
@@ -4546,6 +4588,8 @@
           const overlay = document.getElementById("prcPreviewOverlay");
           if (!pages || !overlay) throw new Error("The PRC preview dialog is unavailable.");
           pages.innerHTML = forms;
+          RecordQuality.showPreflight(records, studentPrcExportStudent);
+          RecordQuality.markDraftPreview(pages, true);
           pages.scrollTop = 0;
           pages.scrollLeft = 0;
           overlay.classList.add("is-open");
@@ -4556,7 +4600,7 @@
           });
         } catch (error) {
           console.error("Unable to prepare the PRC form preview.", error);
-          window.alert(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`);
+          RecordQuality.notify(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`, 'Export Failed');
         } finally {
           exportButton?.removeAttribute("disabled");
         }
@@ -4576,29 +4620,39 @@
       document.getElementById("prcPreviewOverlay")?.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) studentPrcClosePreview();
       });
-      document.getElementById("prcPreviewDownloadBtn")?.addEventListener("click", async () => {
-        if (!studentPrcExportStudent?.student_id || !document.getElementById("prcPreviewPages")?.children.length) {
-          window.alert("Open the PRC form preview first, then click Download DOCX Form.");
-          return;
-        }
-        const button = document.getElementById("prcPreviewDownloadBtn");
-        button?.setAttribute("disabled", "disabled");
-        try {
-          const blob = await studentPrcBuildTemplateDocx(studentPrcPreviewRecords);
-          const link = document.createElement("a");
-          const fileUrl = URL.createObjectURL(blob);
-          link.href = fileUrl;
-          link.download = "PRC-clinical-forms-" + new Date().toISOString().slice(0, 10) + ".docx";
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
-        } catch (error) {
-          console.error("Unable to create the PRC DOCX file.", error);
-          window.alert(`Unable to create the PRC DOCX file. ${error?.message || "Please try again."}`);
-        } finally {
-          button?.removeAttribute("disabled");
-        }
+      document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const studentId = studentPrcExportStudent?.student_id;
+          if (!studentId || !document.getElementById('prcPreviewPages')?.children.length) {
+            RecordQuality.notify('Open a student PRC preview before downloading.', 'Select a Preview');
+            return;
+          }
+          const draft = button.id === 'prcPreviewDraftBtn';
+          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn');
+          buttons.forEach((item) => { item.disabled = true; });
+          try {
+            const snapshot = await RecordQuality.prepareExport(studentId, draft);
+            const blob = await studentPrcBuildTemplateDocx(snapshot.records, snapshot);
+            if (String(studentPrcExportStudent?.student_id) === String(studentId)) {
+              const pages = document.getElementById('prcPreviewPages');
+              pages.innerHTML = studentPrcBuildExportForms(snapshot.records, await studentPrcGetLogoDataUrl(), snapshot.student);
+              RecordQuality.showPreflight(snapshot.records, snapshot.student);
+              RecordQuality.markDraftPreview(pages, draft);
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.docx`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          } catch (error) {
+            RecordQuality.notify(error?.message || 'Unable to refresh and download the PRC form. Please try again.', 'Download Failed');
+          } finally {
+            buttons.forEach((item) => { item.disabled = false; });
+          }
+        });
       });
 
 
@@ -4749,18 +4803,6 @@
             const table = document.createElement("table");
             table.className = "clinical-form-table procedure-records-table";
             table.innerHTML = `<colgroup><col style="width:15%"><col style="width:6%"><col style="width:18%"><col style="width:8%"><col style="width:16%"><col style="width:13%"><col style="width:9%"><col style="width:8%"><col style="width:7%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">Complete Diagnosis</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th><th rowspan="2">Action</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead>`;
-            table.style.setProperty("border", "1px solid #000", "important");
-            table.style.setProperty("border-collapse", "collapse", "important");
-            table.querySelectorAll("thead th").forEach((headerCell) => {
-              headerCell.style.setProperty("border", "1px solid #000", "important");
-              headerCell.style.setProperty("border-radius", "0", "important");
-              headerCell.style.setProperty("box-sizing", "border-box", "important");
-              headerCell.style.setProperty(
-                "box-shadow",
-                "inset -1px 0 0 #000, inset 0 -1px 0 #000",
-                "important",
-              );
-            });
             const body = document.createElement("tbody");
             if (!records.length) {
               const row = document.createElement("tr");
@@ -6326,7 +6368,8 @@
         if (isDashboard) {
           if (selectedCurrentRecordsStudent) {
             if (activeTitleText) {
-              activeTitleText.textContent = `${selectedCurrentRecordsStudent.student_name || "Student"} — Records`;
+              activeTitleText.textContent = selectedCurrentRecordsStudent.student_name || "Student";
+              activeTitleText.classList.add("current-records-student-name");
             }
             if (activeSubtitle) {
               activeSubtitle.textContent = "Review all clinical records by procedure.";
@@ -6357,7 +6400,8 @@
           : list;
 
         if (selectedCurrentRecordsStudent && activeTitleText) {
-          activeTitleText.textContent = `${selectedCurrentRecordsStudent.student_name || "Student"} — Records`;
+          activeTitleText.textContent = selectedCurrentRecordsStudent.student_name || "Student";
+          activeTitleText.classList.add("current-records-student-name");
           if (activeSubtitle) {
             activeSubtitle.textContent = "Review all clinical records by procedure.";
           }
@@ -6527,6 +6571,10 @@
           </section>
         `;
 
+        detailContent.querySelectorAll('.detail-field').forEach((field) => {
+          const value = field.querySelector('.detail-value');
+          if (value && value.textContent.trim() === 'N/A') field.classList.add('record-quality-missing');
+        });
         detailOverlay.classList.add("active");
       }
 
@@ -6825,10 +6873,18 @@
           showOptionMessage("No Record Selected", "Open a clinical record before using a review action.");
           return;
         }
+        if (status === "Verified") {
+          const missing = RecordQuality.missing(currentReviewRecord);
+          if (missing.length) {
+            showOptionMessage('Record Incomplete', `Complete these fields before verification: ${missing.join(', ')}.`);
+            return;
+          }
+        }
         let remarks = "";
         try {
           if (status === "Changes Requested" || status === "Invalid") {
-            rejectRemarksInput.value = "";
+            const missingFields = RecordQuality.missing(currentReviewRecord);
+            rejectRemarksInput.value = missingFields.length ? `Please complete: ${missingFields.join(', ')}.` : "";
             remarks = await promptRejectRemarks(
               { studentId: currentReviewRecord.student_id, type: currentReviewRecord.procedure_name },
               currentReviewRecord.case_no,
@@ -6837,7 +6893,7 @@
           } else {
             const confirmed = await showOptionConfirm(
               "Verify Clinical Record",
-              "Verify this record as complete and correct? Verification is separate from correction authorization.",
+              "Verify this record as complete and correct?",
               "Verify Record",
               "Cancel",
             );
@@ -7267,6 +7323,8 @@
           instructorStudentsNav.blockLabel = "";
           instructorStudentsNav.level = "years";
         }
+        if (activeTitleText)
+          activeTitleText.classList.remove("current-records-student-name");
         if (activeTitleText)
           activeTitleText.textContent = isSummary
             ? "Annual Records"
@@ -7710,7 +7768,7 @@
         window.__updateEmptyTables = updateEmptyTables;
       })();
     </script>
-    <script src="assets/js/modern-shell.js?v=20260903-portal-toast-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260907-procedure-heading-count-2"></script>
     <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

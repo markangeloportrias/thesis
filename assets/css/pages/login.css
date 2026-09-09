@@ -978,6 +978,97 @@ html[data-theme="dark"] #themeToggleBtn i::before {
   text-decoration: underline;
 }
 
+.legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.legal-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.legal-link:hover,
+.legal-link:focus-visible {
+  text-decoration: underline;
+}
+
+.cookie-banner {
+  position: fixed;
+  z-index: 1500;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  max-width: 560px;
+  gap: 20px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid rgba(0, 63, 136, 0.18);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgba(15, 40, 77, 0.2);
+  color: var(--text-main);
+}
+
+.cookie-banner[hidden] {
+  display: none;
+}
+
+.cookie-banner strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cookie-banner p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cookie-banner .btn {
+  min-height: 34px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+
+.cookie-essential-btn {
+  border: 1px solid var(--primary);
+  background: #fff;
+  color: var(--primary);
+}
+
+@media (max-width: 700px) {
+  .cookie-banner {
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cookie-banner-actions {
+    justify-content: flex-start;
+  }
+}
+
 /* ==========================================================================
    MODAL DIALOG OVERLAYS (FROSTED GLASS EFFECT)
    ========================================================================== */

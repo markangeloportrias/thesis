@@ -352,13 +352,16 @@ function loginIsLocked(PDO $pdo, string $role, string $identity): bool
 function recordLoginFailure(PDO $pdo, string $role, string $identity): void
 {
     [$identityHash, $ipHash] = authAttemptIdentity($role, $identity);
+    // `failure_count` is assigned before `locked_until` in this upsert, so
+    // checking the updated value locks on the fifth failed attempt (not the
+    // fourth, which happened when the expression added one a second time).
     $stmt = $pdo->prepare("INSERT INTO auth_login_attempts (role_name, identity_hash, ip_hash, failure_count, first_failed_at, last_failed_at, locked_until)
         VALUES (?, ?, ?, 1, NOW(), NOW(), NULL)
         ON DUPLICATE KEY UPDATE
           failure_count = IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), 1, failure_count + 1),
           first_failed_at = IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), NOW(), first_failed_at),
           last_failed_at = NOW(),
-          locked_until = IF(IF(last_failed_at < DATE_SUB(NOW(), INTERVAL 15 MINUTE), 1, failure_count + 1) >= 5, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL)");
+          locked_until = IF(failure_count >= 5, DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL)");
     $stmt->execute([$role, $identityHash, $ipHash]);
 }
 

@@ -3403,14 +3403,25 @@ html body.role-admin #yearlyReportsCard #yearlyYearPanel table {
   min-width: 800px !important;
 }
 
+html body.role-admin #yearlyReportsCard #yearlyYearPanel table thead th:last-child {
+  text-indent: 0.5in;
+}
+
+html body.role-admin #yearlyReportsCard #yearlyYearPanel table :is(thead th, tbody td):nth-child(3),
+html body.role-admin #yearlyReportsCard #yearlyYearPanel table :is(thead th, tbody td):nth-child(4),
+html body.role-admin #yearlyReportsCard #yearlyYearPanel table :is(thead th, tbody td):nth-child(5) {
+  text-indent: 0.5in;
+}
+
 html body.role-admin #yearlyReportsCard #yearlyYearPanel .yearly-year-actions {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  width: 100%;
   flex-wrap: nowrap;
   gap: 4px;
   position: relative;
-  left: -0.5in;
+  left: 0;
 }
 
 html body.role-admin #yearlyReportsCard #yearlyYearPanel td.action-cell {

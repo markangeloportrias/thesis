@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 return [
     'database' => [
-        'host' => getenv('THESIS_DB_HOST') ?: '127.0.0.1',
+        'host' => getenv('THESIS_DB_HOST') ?: 'localhost',
         'port' => getenv('THESIS_DB_PORT') ?: '3306',
-        'name' => getenv('THESIS_DB_NAME') ?: 'thesis_portal',
-        'user' => getenv('THESIS_DB_USER') ?: 'root',
-        'password' => getenv('THESIS_DB_PASSWORD') ?: '',
+        'name' => getenv('THESIS_DB_NAME') ?: 'u948876618_midwife',
+        'user' => getenv('THESIS_DB_USER') ?: 'u948876618_midwife',
+        // Enter your database password between the empty quotes below.
+        'password' => getenv('Mid_wife123') ?: '',
     ],
     'session_hours' => 12,
     // Leave empty for same-origin XAMPP use. Set this when the browser app is

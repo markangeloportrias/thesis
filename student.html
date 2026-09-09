@@ -20,7 +20,8 @@
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
     <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260904-8" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260904-3" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260906-internal-header-1" />
+    <link rel="stylesheet" href="assets/css/components/mobile-access-block.css?v=20260908-1" />
     <style id="student-settings-minimal-styles">
       html body.role-student #settingsTab.settings-minimal {
         padding: 28px !important;
@@ -607,8 +608,10 @@
         object-fit: cover;
       }
     </style>
+    <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
   </head>
   <body>
+    <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
     <div class="dashboard">
       <!-- Slim Top Header -->
       <header class="header">
@@ -1429,9 +1432,7 @@
           <section class="clinical-form-section">
             <h3 class="clinical-form-section-title"><i class="fas fa-stethoscope" aria-hidden="true"></i><span>Clinical assessment</span></h3>
             <div class="clinical-form-grid">
-              <div class="form-group full-span"><label>Complete Diagnosis</label><textarea id="inputDiagnosis" placeholder="Complete diagnosis"></textarea></div>
-              <div class="form-group" data-internal-exam-field style="display: none"><label>Cervical Dilation / Effacement</label><input type="text" id="inputDilation" placeholder="e.g. 4cm / 50%" /></div>
-              <div class="form-group" data-internal-exam-field style="display: none"><label>Station / BOW / Presentation</label><input type="text" id="inputStation" placeholder="e.g. -2 / Intact / Cephalic" /></div>
+              <div class="form-group full-span"><label id="inputDiagnosisLabel">Complete Diagnosis</label><textarea id="inputDiagnosis" placeholder="Complete diagnosis"></textarea></div>
             </div>
           </section>
 
@@ -1488,7 +1489,8 @@
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
           <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
-          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn"><i class="fas fa-download" aria-hidden="true"></i> Download DOCX Form</button>
+          <button type="button" class="btn-secondary" id="prcPreviewDraftBtn">Download Draft</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download Verified Form</button>
         </div>
       </div>
     </div>
@@ -1531,7 +1533,8 @@
       </div>
     </div>
 
-<script src="assets/js/api-client.js?v=20260903-active-instructor-2"></script>
+<script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
+    <script src="assets/js/api-client.js?v=20260903-active-instructor-2"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -2206,6 +2209,7 @@
           </div>
         `;
 
+        content.prepend(RecordQuality.reviewPanel(caseRec));
         detailModal.classList.add("active");
       }
 
@@ -2397,7 +2401,7 @@
         "delivery-assisted": "Complete Diagnosis(Gravida, Para)",
         suturing: "Complete Diagnosis",
         "iv-insertion": "Complete Diagnosis",
-        "internal-exam": "Internal Examination (Cervical Dilation,Effacement,BOW,Presentation and Station)",
+        "internal-exam": "Internal Examination (Cervical Dilation, Effacement, BOW, Presentation and Station)",
       };
       const PRC_FORM_TITLES = {
         "delivery-handled": "Record of Normal Deliveries Handled",
@@ -3112,10 +3116,12 @@
         if (recordWorkspaceSubtitle) {
           recordWorkspaceSubtitle.textContent = activeProcedureConfig.subtitle;
         }
-        // Dynamic Form Field Toggling
-        document.querySelectorAll("[data-internal-exam-field]").forEach((field) => {
-          field.style.display = procedureKey === "internal-exam" ? "block" : "none";
-        });
+        const diagnosisLabel = document.getElementById("inputDiagnosisLabel");
+        if (diagnosisLabel) {
+          diagnosisLabel.textContent = nextKey === "internal-exam"
+            ? "Internal Examination (Cervical Dilation, Effacement, BOW, Presentation and Station)"
+            : "Complete Diagnosis";
+        }
         clearCaseRoleAvailability();
 
       }
@@ -3126,10 +3132,6 @@
         document.getElementById("inputCaseNo").value = "";
         document.getElementById("inputDateTime").value = "";
         document.getElementById("inputDiagnosis").value = "";
-        if (document.getElementById("inputDilation"))
-          document.getElementById("inputDilation").value = "";
-        if (document.getElementById("inputStation"))
-          document.getElementById("inputStation").value = "";
         document.getElementById("inputFacilityName").value = "";
         document.getElementById("inputFacilityAddress").value = "";
         document.getElementById("inputFacilityContact").value = "";
@@ -3181,13 +3183,6 @@
 
       function getDeliveryFormInputs() {
         let diagnosis = document.getElementById("inputDiagnosis").value.trim();
-
-        // Merge specialized fields into diagnosis for medical completeness
-        if (activeProcedureKey === "internal-exam") {
-          const d = document.getElementById("inputDilation")?.value.trim();
-          const s = document.getElementById("inputStation")?.value.trim();
-          if (d || s) diagnosis = `IE(${d}, St:${s}) | ` + diagnosis;
-        }
 
         return {
           patientName: document.getElementById("inputPatientName").value.trim(),
@@ -3408,7 +3403,7 @@
           heading.className = "summary-procedure-heading";
           const title = document.createElement("h3");
           title.id = `recordProcedureTitle-${procedureKey}`;
-          title.textContent = `${procedureLabel} (${procedureRecords.length})`;
+          title.textContent = procedureLabel;
 
           const progressGroup = createProcedureProgressGroup(
             procedureRecords,
@@ -4017,9 +4012,9 @@
       const PROCEDURE_TARGETS = {
         "delivery-handled": 20,
         "delivery-assisted": 20,
-        "internal-exam": 20,
         suturing: 5,
         "iv-insertion": 5,
+        "internal-exam": 20,
       };
       const PRC_PREVIEW_PROCEDURE_ORDER = [
         "delivery-handled",
@@ -4106,29 +4101,21 @@
         const group = document.createElement("div");
         group.className = "procedure-progress-group";
         group.setAttribute("aria-label", `${procedureLabel} record progress`);
+        group.classList.add('progress-simplified');
         group.append(
           createProcedureProgressMetric({
-            name: "Required",
-            count: safeRecords.length,
+            name: "Verified",
+            count: verifiedCount,
             maximum: target,
             kind: "required",
             procedureLabel,
           }),
-          createProcedureProgressMetric({
-            name: "Verified",
-            count: verifiedCount,
-            maximum: safeRecords.length,
-            kind: "verified",
-            procedureLabel,
-          }),
-          createProcedureProgressMetric({
-            name: "Invalid",
-            count: invalidCount,
-            maximum: safeRecords.length,
-            kind: "invalid",
-            procedureLabel,
-          }),
         );
+        const remaining = Math.max(0, target - verifiedCount);
+        const nextStep = document.createElement('div');
+        nextStep.className = 'progress-next-step';
+        nextStep.textContent = `${remaining} remaining${invalidCount ? `; ${invalidCount} invalid` : ""}`;
+        group.append(nextStep);
         return group;
       }
 
@@ -4824,7 +4811,7 @@
           const heading = document.createElement("div");
           heading.className = "summary-procedure-heading";
           const title = document.createElement("h3");
-          title.textContent = `${procedureNames[key]} (${records.length})`;
+          title.textContent = procedureNames[key];
           const progressGroup = createProcedureProgressGroup(
             records,
             target,
@@ -5220,6 +5207,10 @@
         const text = input?.value.trim();
         const selectedInstructor = getResolvedChatInstructor(select?.value || getStoredChatInstructorId());
         if (!text || !selectedInstructor) return;
+        if (/\b(?:asshole|bastard|bitch|bullshit|dick|fuck(?:ing)?|gag[oi]|pakyu|putang\s*ina|puta|shit|tanga|bobo|ulol)\b/i.test(text)) {
+          showOptionPane({ title: "Message Warning", message: "Please revise your message. Inappropriate language is not allowed." });
+          return;
+        }
         setStoredChatInstructorId(selectedInstructor.id);
         const editingMessage = studentEditingChatMessage;
         const result = editingMessage
@@ -5745,9 +5736,9 @@
         </div>`;
       }
 
-      function buildPrcExportForms(records, logoSource) {
-        const studentName = currentStudent.student_name || currentStudent.name || "";
-        const school = currentStudent.school_name || currentStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
+      function buildPrcExportForms(records, logoSource, exportStudent = currentStudent) {
+        const studentName = exportStudent.student_name || exportStudent.name || "";
+        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         const recordsByProcedure = PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
           groupedRecords[procedureKey] = records
             .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
@@ -5798,7 +5789,7 @@
           .prc-export-school-label { margin-left: 72pt; }
           .prc-export-school { min-width: 205pt; }
           .prc-export-table { width: 92%; border: 1px solid #000; border-collapse: collapse; border-spacing: 0; table-layout: fixed; color: #000; background: #fff; }
-          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; word-wrap: break-word; }
+          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
           .prc-export-table th { font-size: 8pt; font-weight: 700; line-height: 1.1; }
           .prc-export-table td { height: 22pt; font-size: 8pt; font-weight: 400; line-height: 1.1; text-align: left; }
         </style></head><body><div class="Section1">${forms}</div></body></html>`;
@@ -6189,7 +6180,8 @@
         });
       }
 
-      async function buildPrcTemplateDocx(records) {
+      async function buildPrcTemplateDocx(records, options = {}) {
+        const exportStudent = options.student || currentStudent;
         const response = await fetch(PRC_TEMPLATE_URL, { cache: "no-store" });
         if (!response.ok) throw new Error("The PRC Word template could not be loaded.");
         const entries = await readPrcTemplateZip(await response.arrayBuffer());
@@ -6202,8 +6194,8 @@
         synchronizePrcTemplateWithPreview(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
         // Preserve the supplied DOCX page geometry and table grid exactly.
-        const studentName = currentStudent.student_name || currentStudent.name || "";
-        const school = currentStudent.school_name || currentStudent.school || "";
+        const studentName = exportStudent.student_name || exportStudent.name || "";
+        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "p")).forEach((paragraph) => {
           if (!prcWordText(paragraph).includes("Name of Applicant:")) return;
           const textNodes = Array.from(paragraph.getElementsByTagNameNS(PRC_WORD_NS, "t"));
@@ -6229,6 +6221,7 @@
           setPrcTemplateDiagnosisHeader(table, procedureKey);
           fillPrcTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount));
         });
+        if (options.draft) RecordQuality.markDraftDocument(xml, PRC_WORD_NS);
         documentEntry.data = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${new XMLSerializer().serializeToString(xml.documentElement)}`);
         return new Blob([createPrcDocxZip(entries)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
       }
@@ -6251,7 +6244,7 @@
 
       document.getElementById("studentProgressExportBtn")?.addEventListener("click", async () => {
         if (!currentStudent?.student_id) {
-          window.alert("Your student profile is still loading. Please wait a moment and try exporting again.");
+          RecordQuality.notify("Your student profile is still loading. Please wait a moment and try exporting again.", 'Profile Loading');
           return;
         }
         const button = document.getElementById("studentProgressExportBtn");
@@ -6266,6 +6259,8 @@
           const pages = document.getElementById("prcPreviewPages");
           if (!pages) throw new Error("The PRC preview dialog is unavailable.");
           pages.innerHTML = forms;
+          RecordQuality.showPreflight(records, currentStudent);
+          RecordQuality.markDraftPreview(pages, true);
           pages.scrollTop = 0;
           pages.scrollLeft = 0;
           const overlay = document.getElementById("prcPreviewOverlay");
@@ -6277,7 +6272,7 @@
           });
         } catch (error) {
           console.error("Unable to prepare the PRC form preview.", error);
-          window.alert(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`);
+          RecordQuality.notify(`Unable to prepare the PRC form preview. ${error?.message || "Please try again."}`, 'Export Failed');
         } finally {
           button?.removeAttribute("disabled");
         }
@@ -6292,27 +6287,39 @@
       document.getElementById("prcPreviewOverlay")?.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) closePrcPreview();
       });
-      document.getElementById("prcPreviewDownloadBtn")?.addEventListener("click", async () => {
-        if (!currentStudent?.student_id || !document.getElementById("prcPreviewPages")?.children.length) {
-          window.alert("Open the PRC form preview first, then click Download DOCX Form.");
-          return;
-        }
-        const button = document.getElementById("prcPreviewDownloadBtn");
-        button?.setAttribute("disabled", "disabled");
-        try {
-          const blob = await buildPrcTemplateDocx(prcPreviewRecords);
-          const link = document.createElement("a");
-          const fileUrl = URL.createObjectURL(blob);
-          link.href = fileUrl;
-          link.download = `PRC-clinical-forms-${new Date().toISOString().slice(0, 10)}.docx`;
-          document.body.appendChild(link); link.click(); link.remove();
-          setTimeout(() => URL.revokeObjectURL(fileUrl), 1000);
-        } catch (error) {
-          console.error("Unable to create the PRC DOCX file.", error);
-          window.alert(`Unable to create the PRC DOCX file. ${error?.message || "Please try again."}`);
-        } finally {
-          button?.removeAttribute("disabled");
-        }
+      document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const studentId = currentStudent?.student_id;
+          if (!studentId || !document.getElementById('prcPreviewPages')?.children.length) {
+            RecordQuality.notify('Open a student PRC preview before downloading.', 'Select a Preview');
+            return;
+          }
+          const draft = button.id === 'prcPreviewDraftBtn';
+          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn');
+          buttons.forEach((item) => { item.disabled = true; });
+          try {
+            const snapshot = await RecordQuality.prepareExport(studentId, draft);
+            const blob = await buildPrcTemplateDocx(snapshot.records, snapshot);
+            if (String(currentStudent?.student_id) === String(studentId)) {
+              const pages = document.getElementById('prcPreviewPages');
+              pages.innerHTML = buildPrcExportForms(snapshot.records, await getPrcLogoDataUrl(), snapshot.student);
+              RecordQuality.showPreflight(snapshot.records, snapshot.student);
+              RecordQuality.markDraftPreview(pages, draft);
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${new Date().toISOString().slice(0, 10)}.docx`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          } catch (error) {
+            RecordQuality.notify(error?.message || 'Unable to refresh and download the PRC form. Please try again.', 'Download Failed');
+          } finally {
+            buttons.forEach((item) => { item.disabled = false; });
+          }
+        });
       });
       document.querySelectorAll("[data-progress-procedure]").forEach((button) => {
         button.addEventListener("click", () => {
@@ -6421,7 +6428,7 @@
         }
       });
     </script>
-    <script src="assets/js/modern-shell.js?v=20260903-portal-toast-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260906-internal-header-1"></script>
     <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>

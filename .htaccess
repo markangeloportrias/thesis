@@ -1,6 +1,15 @@
 RewriteEngine On
 Options -MultiViews
 
+# Always serve the latest portal screens after an interface update.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+
 # Keep clean, extension-free entry URLs. These are internal rewrites, so the
 # existing HTML files, relative assets, session checks, and page scripts remain
 # unchanged at runtime.

@@ -1,0 +1,77 @@
+/* Student Progress: keep the spanning headers and body on one continuous grid. */
+html body.role-instructor #instructorProgressCopy #ipRecords table.ip-clinical-table.clinical-form-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #000 !important;
+  border-left: 1px solid #000 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+html body.role-instructor #instructorProgressCopy #ipRecords table.ip-clinical-table.clinical-form-table :is(thead, tbody, tr) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body.role-instructor #instructorProgressCopy #ipRecords table.ip-clinical-table.clinical-form-table :is(thead th, tbody td):nth-child(n) {
+  border: 0 !important;
+  border-right: 1px solid #000 !important;
+  border-bottom: 1px solid #000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body.role-instructor #instructorProgressCopy #ipRecords table.ip-clinical-table.clinical-form-table thead th::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Isolate clinical grids from dashboard rounded-row and border resets.
+   Separate borders draw each shared edge once, including row/column spans. */
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #000 !important;
+  border-left: 1px solid #000 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table :is(thead, tbody, tr) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table :is(thead th, tbody td):nth-child(n) {
+  border: 0 !important;
+  border-right: 1px solid #000 !important;
+  border-bottom: 1px solid #000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border: 0 !important;
+  border-top: 1px solid #000 !important;
+  border-left: 1px solid #000 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table :is(thead, tbody, tr) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table :is(thead th, tbody td):nth-child(n) {
+  border: 0 !important;
+  border-right: 1px solid #000 !important;
+  border-bottom: 1px solid #000 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}

@@ -1,12 +1,38 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/record-validation.php';
 
 function validateContactNumberInput($value, string $label = 'Contact number'): void
 {
     $contactNumber = trim((string)($value ?? ''));
     if ($contactNumber !== '' && !preg_match('/^\d{11}$/', $contactNumber)) {
         respond(['ok' => false, 'message' => $label . ' must contain exactly 11 digits.'], 422);
+    }
+}
+
+function messageContainsInappropriateLanguage(string $message): bool
+{
+    $normalized = strtolower(trim($message));
+    $terms = [
+        'asshole', 'bastard', 'bitch', 'bullshit', 'dick', 'fuck', 'fucking',
+        'gago', 'gagi', 'gaga', 'pakyu', 'putangina', 'putang ina', 'puta',
+        'shit', 'tanga', 'bobo', 'ulol',
+    ];
+    foreach ($terms as $term) {
+        if (preg_match('/(?<![a-z])' . preg_quote($term, '/') . '(?![a-z])/i', $normalized)) return true;
+    }
+    return false;
+}
+
+function rejectInappropriateMessage(string $message): void
+{
+    if (messageContainsInappropriateLanguage($message)) {
+        respond([
+            'ok' => false,
+            'code' => 'inappropriate_message',
+            'message' => 'Please revise your message. Inappropriate language is not allowed.',
+        ], 422);
     }
 }
 
@@ -429,7 +455,7 @@ try {
         if ($method === 'POST' && $id === '') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['student_id', 'student_name', 'password', 'parent_name', 'contact_number']); // Password is the student's initial login credential.
-            if (!credentialIsStrong((string)$data['password'])) respond(['ok'=>false,'message'=>'Initial password must contain at least 8 characters.'],422);
+            if (!credentialIsStrong((string)$data['password'], 6)) respond(['ok'=>false,'message'=>'Initial password must contain at least 6 characters.'],422);
             validateContactNumberInput($data['contact_number'] ?? null);
             validateContactNumberInput($data['parent_contact'] ?? null, 'Parent/Guardian contact');
             $stmt = $pdo->prepare('INSERT INTO students (student_id, student_name, password, parent_name, contact_number, parent_contact) VALUES (?, ?, ?, ?, ?, ?)');
@@ -523,7 +549,7 @@ try {
             $passwordChanged = false;
             if(!empty($data['password'])){
                 $newPassword = (string)$data['password'];
-                if (!credentialIsStrong($newPassword)) respond(['ok'=>false,'message'=>'New password must contain at least 8 characters.'],422);
+                if (!credentialIsStrong($newPassword, 6)) respond(['ok'=>false,'message'=>'New password must contain at least 6 characters.'],422);
                 if ($user['role'] === 'student') {
                     requireFields($data, ['current_password']);
                     $credentialStmt = $pdo->prepare('SELECT password FROM students WHERE student_id=? AND archived_at IS NULL');
@@ -845,7 +871,8 @@ try {
             foreach ($editableFields as $field) {
                 if (array_key_exists($field, $data)) {
                     $fields[] = "$field=?";
-                    $params[] = $data[$field];
+                    $params[] = in_array($field, ['date_time_performed', 'supervisor_license_expiry_date'], true)
+                        && trim((string)($data[$field] ?? '')) === '' ? null : $data[$field];
                 }
             }
             if (!$fields) respond(['ok' => false, 'message' => 'No clinical changes were supplied.'], 422);
@@ -866,6 +893,8 @@ try {
                     $params[] = 'submitted';
                     $fields[] = 'teacher_remarks=?';
                     $params[] = null;
+                    $fields[] = 'checked_by=NULL';
+                    $fields[] = 'checked_at=NULL';
                     $params[] = $id;
                     $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . ' WHERE id=? AND archived_at IS NULL');
                     $update->execute($params);
@@ -887,12 +916,33 @@ try {
             $requested = (string)($data['status'] ?? '');
             $status = $statusMap[$requested] ?? $requested;
             if (!in_array($status, ['submitted', 'reviewed', 'verified', 'needs_revision', 'invalid', 'archived'], true)) respond(['ok' => false, 'message' => 'Invalid record status.'], 422);
+            if (in_array($status, ['needs_revision', 'invalid'], true) && trim((string)($data['remarks'] ?? '')) === '') {
+                respond(['ok' => false, 'message' => 'Explain what needs to be corrected before requesting changes or marking a record invalid.'], 422);
+            }
             $instructorId = $data['instructor_id'] ?? $data['instructorId'] ?? null;
             $instructorName = $data['instructor_name'] ?? $data['instructorName'] ?? null;
+            $pdo->beginTransaction();
+            $recordStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=? AND archived_at IS NULL FOR UPDATE');
+            $recordStmt->execute([$id]);
+            $reviewRecord = $recordStmt->fetch();
+            if (!$reviewRecord) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
+            }
+            if ($status === 'verified') {
+                $missing = missingClinicalFields($reviewRecord);
+                if ($missing) {
+                    $pdo->rollBack();
+                    respond(['ok' => false, 'message' => 'Complete these fields before verification: ' . implode(', ', $missing) . '.', 'missing_fields' => $missing], 422);
+                }
+                validateContactNumberInput($reviewRecord['facility_contact_number'], 'Facility contact number');
+                validateContactNumberInput($reviewRecord['supervisor_contact_number'], 'Supervisor contact number');
+            }
             $stmt = $pdo->prepare('UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=IF(?="verified",?,NULL),checked_at=IF(?="verified",NOW(),NULL),instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL');
             $stmt->execute([$status, $data['remarks'] ?? null, $status, $instructorName, $status, $instructorId, $instructorName, $id]);
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
-            respond(['ok' => $stmt->rowCount() >= 0]);
+            $pdo->commit();
+            respond(['ok' => true]);
         }
         if ($method === 'POST') {
             requireFields($data, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
@@ -1062,13 +1112,15 @@ try {
                         : 'UPDATE edit_requests SET archived_at=NOW() WHERE id=? AND archived_at IS NULL'));
             $params = $action === 'reject' ? [$data['remarks'] ?? '',$id] : [$id]; $stmt=$pdo->prepare($sql);$stmt->execute($params);
             if (in_array($action,['approve','reject'],true)) {
-                $requestStmt=$pdo->prepare('SELECT student_id,procedure_key,procedure_name FROM edit_requests WHERE id=?');$requestStmt->execute([$id]);$request=$requestStmt->fetch();
+                $requestStmt=$pdo->prepare('SELECT student_id,procedure_key,procedure_name,case_numbers FROM edit_requests WHERE id=?');$requestStmt->execute([$id]);$request=$requestStmt->fetch();
                 if ($request) {
                     $approved=$action==='approve'?1:0;
                     $perm=$pdo->prepare('INSERT INTO edit_permissions (student_id,procedure_key,approved,approved_at) VALUES (?,?,?,IF(?=1,NOW(),NULL)) ON DUPLICATE KEY UPDATE approved=VALUES(approved),approved_at=VALUES(approved_at),updated_at=NOW()');
                     $perm->execute([$request['student_id'],$request['procedure_key'],$approved,$approved]);
-                    $notice=$pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,request_id,message,remarks) VALUES (?,?,?,?,?,?,?)');
-                    $notice->execute(['edit_request_'.$action,$request['student_id'],$request['procedure_key'],$request['procedure_name'],$id,'Your edit request was '.$action.'.',$data['remarks']??null]);
+                    $caseNumbers = json_decode((string)($request['case_numbers'] ?? ''), true);
+                    $caseNumber = is_array($caseNumbers) ? implode(', ', array_filter(array_map('strval', $caseNumbers), static fn($value) => trim($value) !== '')) : '';
+                    $notice=$pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message,remarks) VALUES (?,?,?,?,?,?,?,?)');
+                    $notice->execute(['edit_request_'.$action,$request['student_id'],$request['procedure_key'],$request['procedure_name'],$caseNumber ?: null,$id,'Your edit request was '.$action.'.',$data['remarks']??null]);
                 }
             }
             audit($pdo,$user,$action,'edit_request',$id);respond(['ok'=>$stmt->rowCount()>0]);
@@ -1109,14 +1161,17 @@ try {
             requireFields($data,['student_id','message']);
             if ($user['role']==='student' && $user['user_uid']!==(string)$data['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $senderRole=$user['role']==='student'?'student':'instructor';
+            $message = trim((string)$data['message']);
+            rejectInappropriateMessage($message);
             $stmt=$pdo->prepare('INSERT INTO chat_messages (student_id,student_name,instructor_id,instructor_name,sender_role,sender_name,message,read_by_student,read_by_instructor) SELECT s.student_id,s.student_name,?,?,?,?,?,?,? FROM students s WHERE s.student_id=? AND s.archived_at IS NULL');
-            $stmt->execute([$data['instructor_id']??null,$data['instructor_name']??null,$senderRole,$data['sender_name']??($senderRole==='student'?'Student':'Instructor'),trim((string)$data['message']),$senderRole==='instructor'?1:0,$senderRole==='student'?1:0,$data['student_id']]);
+            $stmt->execute([$data['instructor_id']??null,$data['instructor_name']??null,$senderRole,$data['sender_name']??($senderRole==='student'?'Student':'Instructor'),$message,$senderRole==='instructor'?1:0,$senderRole==='student'?1:0,$data['student_id']]);
             respond(['ok'=>$stmt->rowCount()>0,'id'=>$pdo->lastInsertId()],201);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'edit') {
             requireFields($data, ['message']);
             $message = trim((string)$data['message']);
             if ($message === '') respond(['ok'=>false,'message'=>'A message is required.'],422);
+            rejectInappropriateMessage($message);
             $ownerWhere = $user['role'] === 'student'
                 ? "sender_role='student' AND student_id=?"
                 : ($user['role'] === 'instructor' ? "sender_role='instructor' AND instructor_id=?" : '1=1');
@@ -1150,8 +1205,8 @@ try {
         $user = currentUser($pdo, ['admin','instructor','student']);
         if ($method === 'GET') {
             $archived = ($_GET['archived'] ?? '0') === '1';
-            $where = $user['role']==='student' ? ' AND (student_id=? OR student_id IS NULL)' : '';
-            $stmt=$pdo->prepare('SELECT * FROM notification_history WHERE '.($archived ? 'archived_at IS NOT NULL' : 'archived_at IS NULL').$where.' ORDER BY created_at DESC');
+            $where = $user['role']==='student' ? ' AND (notification_history.student_id=? OR notification_history.student_id IS NULL)' : '';
+            $stmt=$pdo->prepare('SELECT notification_history.*, edit_requests.case_numbers AS request_case_numbers FROM notification_history LEFT JOIN edit_requests ON edit_requests.id=notification_history.request_id WHERE '.($archived ? 'notification_history.archived_at IS NOT NULL' : 'notification_history.archived_at IS NULL').$where.' ORDER BY notification_history.created_at DESC');
             $stmt->execute($where?[$user['user_uid']]:[]);respond(['ok'=>true,'notifications'=>$stmt->fetchAll()]);
         }
         if ($method === 'POST') {
@@ -1216,7 +1271,11 @@ try {
             $stmt->execute([$recordId]);
             $rows = $stmt->fetchAll();
         } else {
-            $rows = $pdo->query('SELECT * FROM audit_trail ORDER BY created_at DESC LIMIT 500')->fetchAll();
+            $rows = $pdo->query("SELECT a.*, COALESCE(NULLIF(i.display_name, ''), NULLIF(s.student_name, ''), CASE WHEN a.actor_role = 'admin' THEN 'Administrator' ELSE NULL END) AS actor_name
+                FROM audit_trail a
+                LEFT JOIN instructor_accounts i ON a.actor_role = 'instructor' AND i.account_uid = a.actor_uid
+                LEFT JOIN students s ON a.actor_role = 'student' AND s.student_id = a.actor_uid
+                ORDER BY a.created_at DESC LIMIT 500")->fetchAll();
         }
         respond(['ok' => true, 'entries' => $rows]);
     }

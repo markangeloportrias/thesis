@@ -1,0 +1,58 @@
+.mobile-access-block {
+  display: none;
+}
+
+@media (max-width: 767px), (max-height: 500px) and (pointer: coarse) {
+  html,
+  body {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  body > :not(.mobile-access-block) {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .mobile-access-block {
+    position: fixed;
+    z-index: 2147483647;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    padding: 28px;
+    background: #f4f7fb;
+    color: #102a43;
+    text-align: center;
+    font-family: Inter, Arial, sans-serif;
+  }
+
+  .mobile-access-block__content {
+    max-width: 360px;
+  }
+
+  .mobile-access-block__icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 18px;
+    place-items: center;
+    border-radius: 50%;
+    background: #003f88;
+    color: #fff;
+    font-size: 24px;
+  }
+
+  .mobile-access-block h1 {
+    margin: 0 0 10px;
+    font-size: 22px;
+  }
+
+  .mobile-access-block p {
+    margin: 0;
+    color: #486581;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+}

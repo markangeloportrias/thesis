@@ -13,6 +13,7 @@
     />
     <link rel="stylesheet" href="assets/css/pages/login.css" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-1" />
+    <link rel="stylesheet" href="assets/css/components/mobile-access-block.css?v=20260908-1" />
     <style>
       /* Intro logo only: modern heartbeat reveal before the login screen. */
       body:has(.portal-container) .portal-splash-logo-wrap {
@@ -109,6 +110,7 @@
     </style>
   </head>
   <body>
+    <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
     <!-- Logo-first secure portal splash -->
     <div class="preloader portal-splash" id="preloader" role="status" aria-live="polite">
       <div class="portal-splash-glow portal-splash-glow-one"></div>
@@ -326,10 +328,28 @@
               <i class="fas fa-lock" aria-hidden="true"></i>
               <span>Your credentials are protected and used only to verify portal access.</span>
             </div>
+
+            <div class="legal-links" aria-label="Legal information">
+              <button type="button" class="legal-link" id="termsLink">Terms &amp; Conditions</button>
+              <span aria-hidden="true">•</span>
+              <button type="button" class="legal-link" id="cookiePolicyLink">Cookie Policy</button>
+            </div>
           </form>
         </div>
       </div>
     </div>
+
+    <aside class="cookie-banner" id="cookieBanner" aria-label="Cookie notice" hidden>
+      <div>
+        <strong>Cookie notice</strong>
+        <p>We use essential browser storage to keep the portal secure and remember your selected preferences.</p>
+      </div>
+      <div class="cookie-banner-actions">
+        <button type="button" class="legal-link" id="cookieBannerPolicyLink">Cookie Policy</button>
+        <button type="button" class="btn btn-primary cookie-consent-btn" id="cookieAcceptBtn">Accept</button>
+        <button type="button" class="btn cookie-essential-btn" id="cookieEssentialBtn">Essential only</button>
+      </div>
+    </aside>
 
     <!-- MODAL POPUPS (Frosted Glass Layouts) -->
 
@@ -484,8 +504,8 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="assets/js/api-client.js?v=20260903-validation-1"></script>
-    <script src="assets/js/site-protection.js?v=20260903-validation-1"></script>
+    <script src="assets/js/api-client.js?v=20260906-instructor-login-1"></script>
+    <script src="assets/js/site-protection.js?v=20260906-instructor-login-1"></script>
     <script>
       // DOM Elements Configuration
       const studentIdInput = document.getElementById("studentid");
@@ -543,6 +563,12 @@
       const infoModalMessage = document.getElementById("infoModalMessage");
       const closeInfoModal = document.getElementById("closeInfoModal");
       const infoModalOkBtn = document.getElementById("infoModalOkBtn");
+      const cookieBanner = document.getElementById("cookieBanner");
+      const cookieAcceptBtn = document.getElementById("cookieAcceptBtn");
+      const cookieEssentialBtn = document.getElementById("cookieEssentialBtn");
+      const termsLink = document.getElementById("termsLink");
+      const cookiePolicyLink = document.getElementById("cookiePolicyLink");
+      const cookieBannerPolicyLink = document.getElementById("cookieBannerPolicyLink");
 
       /* ==========================================================================
            MICRO-INTERACTIONS, TOASTS & PRELOADER JS
@@ -752,6 +778,34 @@
         }
       }
 
+      const termsNotice = "By accessing the MIDWIFE Clinical Portal, you agree to use it only for authorized academic and clinical record activities. Keep your account credentials confidential, enter accurate records, and comply with Bohol Island State University policies. Unauthorized access, sharing of patient information, or misuse of the portal is prohibited.";
+      const cookieNotice = "The portal uses essential browser storage to maintain your secure session and remember choices such as your Student ID when you select Remember Me. This storage is not used for advertising or tracking. You may select Essential only at any time; portal security features will continue to operate.";
+
+      function showTerms() {
+        showInfoModal("Terms & Conditions", termsNotice);
+      }
+
+      function showCookiePolicy() {
+        showInfoModal("Cookie Policy", cookieNotice);
+      }
+
+      function saveCookieChoice(choice) {
+        try {
+          localStorage.setItem("midwife_cookie_consent", choice);
+        } catch (error) {
+          console.warn("Cookie preference could not be saved.", error);
+        }
+        if (cookieBanner) cookieBanner.hidden = true;
+      }
+
+      try {
+        if (cookieBanner && !localStorage.getItem("midwife_cookie_consent")) {
+          cookieBanner.hidden = false;
+        }
+      } catch (error) {
+        if (cookieBanner) cookieBanner.hidden = false;
+      }
+
       function handleLogin() {
         if (studentLoginInFlight) return;
         const id = studentIdInput.value.trim();
@@ -888,7 +942,18 @@
         if (instructorAuthMessage) {
           instructorAuthMessage.textContent = "";
           instructorAuthMessage.className = "message";
+          instructorAuthMessage.style.display = "none";
         }
+      }
+
+      function showInstructorAuthMessage(message, type = "error") {
+        const text = String(message || "Unable to sign in. Please try again.").trim();
+        if (instructorAuthMessage) {
+          instructorAuthMessage.textContent = text;
+          instructorAuthMessage.className = `message ${type}`;
+          instructorAuthMessage.style.display = "block";
+        }
+        showToast(text, type === "warning" ? "warning" : "error");
       }
 
       function closeInstructor() {
@@ -930,14 +995,20 @@
         instructorSubmitBtn.disabled = true;
 
         try {
+          // A login page must not reuse an expired session from another role.
+          sessionStorage.removeItem("thesis_api_token");
           const result = await ApiClient.authenticateInstructor(
             username,
             password,
           );
           if (result && result.ok) {
+            const instructor = result.instructor || result.user || { username };
+            sessionStorage.removeItem("currentStudent");
+            sessionStorage.removeItem("currentAdmin");
+            sessionStorage.removeItem("thesis_admin_authenticated");
             sessionStorage.setItem(
               "currentInstructor",
-              JSON.stringify(result.instructor || { username }),
+              JSON.stringify(instructor),
             );
             showToast("Access authorized. Welcome, Instructor.", "success");
             setTimeout(() => {
@@ -947,14 +1018,19 @@
             instructorLoginInFlight = false;
             instructorSubmitBtn.classList.remove("is-loading");
             instructorSubmitBtn.disabled = false;
-            showToast("Invalid credentials. Please verify and retry.", "error");
+            showInstructorAuthMessage(
+              result?.message || "Invalid credentials. Please verify and retry.",
+              /too many|locked|try again in/i.test(String(result?.message || ""))
+                ? "warning"
+                : "error",
+            );
           }
         } catch (error) {
           instructorLoginInFlight = false;
           instructorSubmitBtn.classList.remove("is-loading");
           instructorSubmitBtn.disabled = false;
-          showToast(
-            "Server communications disrupted. Try again later.",
+          showInstructorAuthMessage(
+            error?.message || "Server communications disrupted. Try again later.",
             "error",
           );
         }
@@ -1107,6 +1183,12 @@
           }
         });
       }
+
+      termsLink?.addEventListener("click", showTerms);
+      cookiePolicyLink?.addEventListener("click", showCookiePolicy);
+      cookieBannerPolicyLink?.addEventListener("click", showCookiePolicy);
+      cookieAcceptBtn?.addEventListener("click", () => saveCookieChoice("accepted"));
+      cookieEssentialBtn?.addEventListener("click", () => saveCookieChoice("essential"));
     </script>
   </body>
 </html>

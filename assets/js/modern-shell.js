@@ -256,13 +256,13 @@
   async function openExportPreview(button, context = exportContext) {
     if (exportRequestPending || !context) {
       if (!context) {
-        window.alert('Select a student before exporting the PRC form.');
+        window.RecordQuality?.notify('Select a student before exporting the PRC form.', 'Select a Student');
       }
       return;
     }
     if (typeof window.openInstructorPrcExport !== 'function') {
       console.error('The PRC export handler is not available.');
-      window.alert('The PRC export is still loading. Please refresh the page and try again.');
+      window.RecordQuality?.notify('The PRC export is still loading. Please refresh the page and try again.', 'Export Loading');
       return;
     }
 
@@ -275,7 +275,7 @@
       await window.openInstructorPrcExport(context.student, button, context.records);
     } catch (error) {
       console.error('Unable to open the PRC export preview.', error);
-      window.alert(`Unable to open the PRC export preview. ${error?.message || 'Please try again.'}`);
+      window.RecordQuality?.notify(`Unable to open the PRC export preview. ${error?.message || 'Please try again.'}`, 'Export Failed');
     } finally {
       exportRequestPending = false;
       button.disabled = false;
@@ -362,7 +362,7 @@
       'delivery-assisted': 'Complete Diagnosis(Gravida, Para)',
       suturing: 'Complete Diagnosis',
       'iv-insertion': 'Complete Diagnosis',
-      'internal-exam': 'Internal Examination (Cervical Dilation,Effacement,BOW,Presentation and Station)',
+      'internal-exam': 'Internal Examination (Cervical Dilation, Effacement, BOW, Presentation and Station)',
     };
     const formatPreviewDateTime = (value) => {
       if (!value) return '-';
@@ -436,10 +436,12 @@
       section.innerHTML = `<div class="ip-table-wrap ip-clinical-table-wrap clinical-form-table-container prc-procedure-table-container prc-source-table-wrap"><table class="ip-clinical-table clinical-form-table procedure-records-table prc-procedure-table prc-source-table" aria-label="${escape(procedure)} clinical records"><colgroup><col style="width:20.83%"><col style="width:5.48%"><col style="width:14.01%"><col style="width:7.92%"><col style="width:18.27%"><col style="width:14.01%"><col style="width:9.74%"><col style="width:9.74%"></colgroup><thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case No.</th><th rowspan="2">${diagnosisHeaders[filterKey] || 'Complete Diagnosis'}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th><th colspan="3">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>License No /<br>Expiry Date</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
       if (progressHeading) {
         progressHeading.classList.add('ip-procedure-heading');
-        progressHeading.querySelector('h3')?.classList.add('ip-procedure');
+        const procedureTitle = progressHeading.querySelector('h3');
+        procedureTitle?.classList.add('ip-procedure');
+        if (procedureTitle) procedureTitle.textContent = procedure;
         section.prepend(progressHeading);
       } else {
-        section.insertAdjacentHTML('afterbegin', `<h3 class="ip-procedure">${escape(procedure)} (${group.length})</h3>`);
+        section.insertAdjacentHTML('afterbegin', `<h3 class="ip-procedure">${escape(procedure)}</h3>`);
       }
       output.append(section);
     });
