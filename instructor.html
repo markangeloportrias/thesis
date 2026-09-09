@@ -6917,10 +6917,11 @@
           let caseId = currentReviewRecord.id;
           if (!caseId || Number(caseId) <= 0) {
             const records = await ApiClient.getAllCasesForInstructor("", "");
+            const selectedProcedure = normalizeProcedureKey(currentReviewRecord.procedure_key || currentReviewRecord.procedure_name);
             const matchingRecord = (Array.isArray(records) ? records : []).find((record) =>
               String(record.student_id || "") === String(currentReviewRecord.student_id || "") &&
-              String(record.case_no || "") === String(currentReviewRecord.case_no || "") &&
-              String(record.procedure_key || record.procedure_name || "") === String(currentReviewRecord.procedure_key || currentReviewRecord.procedure_name || ""),
+              normalizeCaseNo(record.case_no) === normalizeCaseNo(currentReviewRecord.case_no) &&
+              normalizeProcedureKey(record.procedure_key || record.procedure_name) === selectedProcedure,
             );
             caseId = matchingRecord?.id || "";
           }
