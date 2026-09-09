@@ -2696,12 +2696,17 @@
           const result = await ApiClient.getCaseComments(rec.id, archived);
           if (result?.ok) comments = result.comments || [];
         }
-        const seenFeedback = new Set();
-        comments = comments.filter((comment) => {
+        const feedbackGroups = new Map();
+        comments.forEach((comment) => {
           const key = [comment.author_name, comment.comment_text, comment.created_at].join("|");
-          if (seenFeedback.has(key)) return false;
-          seenFeedback.add(key);
-          return true;
+          const group = feedbackGroups.get(key) || [];
+          group.push(comment);
+          feedbackGroups.set(key, group);
+        });
+        comments = Array.from(feedbackGroups.values()).map((group) => {
+          const comment = group[0];
+          comment.duplicateIds = group.map((item) => item.id).filter(Boolean);
+          return comment;
         });
         if (!archived && !comments.length) comments = getInstructorComments(rec);
         if (!archived) {
@@ -2812,10 +2817,10 @@
               if (String(comment.id || "").startsWith("legacy-")) return;
               action.disabled = true;
               action.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i>';
-              const result = archived
-                ? await ApiClient.restoreCaseComment(comment.id)
-                : await ApiClient.archiveCaseComment(comment.id);
-              if (!result?.ok) {
+              const results = await Promise.all((comment.duplicateIds || [comment.id]).map((commentId) => archived
+                ? ApiClient.restoreCaseComment(commentId)
+                : ApiClient.archiveCaseComment(commentId)));
+              if (results.some((result) => !result?.ok)) {
                 showOptionPane({ title: "Unable to Update Comment", message: result?.message || "The comment could not be updated." });
                 return;
               }
@@ -2846,8 +2851,8 @@
                         if (String(comment.id || "").startsWith("legacy-")) return;
                         deleteAction.dataset.busy = "1";
                         deleteAction.disabled = true;
-                        const result = await ApiClient.permanentlyDeleteCaseComment(comment.id);
-                        if (!result?.ok) {
+                        const results = await Promise.all((comment.duplicateIds || [comment.id]).map((commentId) => ApiClient.permanentlyDeleteCaseComment(commentId)));
+                        if (results.some((result) => !result?.ok)) {
                           delete deleteAction.dataset.busy;
                           deleteAction.disabled = false;
                           showOptionPane({ title: "Unable to Delete Comment", message: result?.message || "The archived comment could not be deleted." });
