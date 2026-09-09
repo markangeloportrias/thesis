@@ -175,6 +175,10 @@
    and totals are removed as soon as the API health check fails. */
 (function monitorXamppDatabase() {
   if (!document.querySelector('.app-shell, .dashboard')) return;
+  var isLocalHost = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1)$/i.test(location.hostname);
+  // The timeout-and-clear behavior is only for an offline local XAMPP setup.
+  // On Hostinger, a slow health check must never erase already loaded records.
+  if (!isLocalHost) return;
 
   var apiBase = location.protocol === 'file:'
     ? 'http://localhost/THESIS6/api/health'
