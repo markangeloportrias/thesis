@@ -7149,9 +7149,9 @@
           } else if (activeCard === "instructorsCard") {
             await renderInstructorAccounts();
           } else if (activeCard === "studentsCard") {
-            if (studentsNav.level === "years") await renderSchoolYears();
-            else if (studentsNav.level === "blocks") await renderStudentBlocks();
-            else await renderBlockStudents();
+            // Student lists can be large; do not replace the active table
+            // while the live-sync timer is running.
+            return;
           } else if (activeCard === "casesCard") {
             if (activeCasesStudentId) await openCasesStudentRecords(activeCasesStudentId, activeCasesStudentName);
             else if (activeCasesBlockId) await openCasesBlockStudents(activeCasesBlockId, activeCasesBlockLabel);
