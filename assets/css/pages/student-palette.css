@@ -118,7 +118,8 @@ html body.role-student :is(.stat-card-h:hover, .recent-record:hover) { border-co
 html body.role-student :is(.stat-icon-wrap, .stat-icon, .recent-record-icon, .recent-records-title i) { background: rgba(0,80,157,.1) !important; color: #00509d !important; }
 html body.role-student :is(.workspace-title, .recent-records-title, .stat-num, .stat-value, .recent-record-name) { color: #00296b !important; }
 html body.role-student :is(.workspace-subtitle, .stat-name, .stat-sub, .recent-record-meta, .recent-record-details, .recent-record-date) { color: #003f88 !important; }
-html body.role-student .recent-record-status { background: rgba(255,213,0,.2) !important; color: #00296b !important; }
+html body.role-student .recent-record-status { border: 1px solid #93c5fd !important; background: #eff6ff !important; color: #1d4ed8 !important; }
+html body.role-student .recent-record-status.verified { border-color: #86efac !important; background: #ecfdf5 !important; color: #047857 !important; }
 html body.role-student .recent-records-panel { background: linear-gradient(135deg, rgba(0,80,157,.08), rgba(255,255,255,.55) 45%, rgba(255,213,0,.09)) !important; }
 html body.role-student:has(.dashboard) .main-content .recent-records-header {
   border-bottom-color: rgba(0,80,157,.18) !important;

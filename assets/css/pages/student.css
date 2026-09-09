@@ -1203,8 +1203,8 @@
       .recent-record-info { display: grid; min-width: 0; flex: 1; gap: 5px; text-align: left; }
       .recent-record-heading { display: flex; min-width: 0; align-items: center; gap: 8px; }
       .recent-record-name { overflow: hidden; color: var(--text-primary); font-size: 12px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-      .recent-record-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 999px; background: #fff4d8; color: #996b00; font-size: 8px; font-weight: 800; text-transform: uppercase; }
-      .recent-record-status.verified { background: #e7f8f0; color: #087451; }
+      .recent-record-status { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; padding: 3px 6px; border: 1px solid #93c5fd; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-size: 8px; font-weight: 900; line-height: 1.1; text-transform: uppercase; white-space: nowrap; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+      .recent-record-status.verified { border-color: #86efac; background: #ecfdf5; color: #047857; }
       .recent-record-meta { overflow: hidden; color: #53627a; font-size: 10px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
       .recent-record-details { display: flex; min-width: 0; align-items: center; gap: 12px; color: #8491a8; font-size: 9px; }
       .recent-record-details span { display: inline-flex; min-width: 0; align-items: center; gap: 4px; }
