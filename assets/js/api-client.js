@@ -2539,23 +2539,63 @@
   };
   ApiClient.getStudentBlocks = async function (schoolYear) {
     var selectedYear = normalize(schoolYear);
-    var result;
-    try {
-      // The unfiltered endpoint is already proven to return the correct rows
-      // for Annual Records. Filter that result locally because this host drops
-      // the selected-year query value on the dedicated block request.
-      result = await mysqlRequest('blocks');
-    } catch (error) {
-      try { result = await mysqlRequest('block-directory'); }
-      catch (fallbackError) { return { ok: false, message: fallbackError.message || 'Unable to load blocks.' }; }
-    }
-    var blocks = result && Array.isArray(result.blocks) ? result.blocks : [];
-    if (selectedYear) {
-      blocks = blocks.filter(function (block) {
-        return normalize(block && block.school_year) === selectedYear;
+    var normalizedSelectedYear = normalizeSchoolYearRange(selectedYear) || selectedYear;
+    var query = selectedYear ? 'school_year=' + encodeURIComponent(selectedYear) : '';
+    var primary = null;
+    var directory = null;
+
+    function blocksForSelectedYear(payload, requestWasFiltered) {
+      var rows = payload && Array.isArray(payload.blocks) ? payload.blocks : [];
+      if (!normalizedSelectedYear) return rows;
+
+      var rowsWithYear = rows.filter(function (block) {
+        return normalize(block && (block.school_year || block.academic_year || block.year)) !== '';
+      });
+      // A filtered legacy endpoint may omit the year field. In that case its
+      // returned rows are already scoped to the requested academic year.
+      if (!rowsWithYear.length && requestWasFiltered) return rows;
+      return rows.filter(function (block) {
+        var blockYear = normalize(block && (block.school_year || block.academic_year || block.year));
+        return (normalizeSchoolYearRange(blockYear) || blockYear) === normalizedSelectedYear;
       });
     }
-    return { ok: !!(result && result.ok), blocks: blocks };
+
+    try { primary = await mysqlRequest('blocks' + (query ? '?' + query : '')); } catch (error) {}
+    var primaryBlocks = blocksForSelectedYear(primary, !!selectedYear);
+    if (primary && primary.ok && primaryBlocks.length) {
+      return { ok: true, blocks: primaryBlocks };
+    }
+
+    try { directory = await mysqlRequest('block-directory' + (query ? '?' + query : '')); } catch (error) {}
+    var directoryBlocks = blocksForSelectedYear(directory, !!selectedYear);
+    if (directory && directory.ok && directoryBlocks.length) {
+      return { ok: true, blocks: directoryBlocks };
+    }
+
+    // Some Hostinger deployments expose the reliable block rows through the
+    // academic-year response even when a dedicated block route is empty.
+    if (normalizedSelectedYear) {
+      try {
+        var yearsResult = await mysqlRequest('school-years');
+        var years = yearsResult && (yearsResult.years || yearsResult.school_years) || [];
+        var year = Array.isArray(years) ? years.find(function (item) {
+          var label = normalize(item && item.label);
+          return (normalizeSchoolYearRange(label) || label) === normalizedSelectedYear;
+        }) : null;
+        if (year && Array.isArray(year.blocks)) {
+          return {
+            ok: true,
+            blocks: year.blocks.map(function (block) {
+              return Object.assign({}, block, { school_year: block.school_year || year.label });
+            })
+          };
+        }
+      } catch (error) {}
+    }
+
+    if (primary && primary.ok) return { ok: true, blocks: primaryBlocks };
+    if (directory && directory.ok) return { ok: true, blocks: directoryBlocks };
+    return { ok: false, message: 'Unable to load blocks.' };
   };
   ApiClient.createStudentBlock = async function (label, createdBy, schoolYear) {
     try { return await mysqlRequest('blocks', { method: 'POST', body: JSON.stringify({ label: normalize(label), school_year: normalize(schoolYear) }) }); }
