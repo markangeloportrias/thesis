@@ -13,6 +13,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Build database configuration from GitHub secret
+        env:
+          THESIS_DB_PASSWORD: ${{ secrets.THESIS_DB_PASSWORD }}
+        run: |
+          php <<'PHP'
+          <?php
+          $password = getenv('THESIS_DB_PASSWORD');
+          if ($password === false || $password === '') {
+              fwrite(STDERR, "The THESIS_DB_PASSWORD repository secret is required.\n");
+              exit(1);
+          }
+          $config = require 'api/config.php';
+          $config['database']['password'] = $password;
+          $contents = "<?php\ndeclare(strict_types=1);\n\nreturn " . var_export($config, true) . ";\n";
+          if (file_put_contents('api/config.php', $contents) === false) {
+              fwrite(STDERR, "Could not write deployment database configuration.\n");
+              exit(1);
+          }
+          PHP
+          php -l api/config.php
+
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
@@ -21,3 +42,8 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
           server-dir: ./
+          # Upload the generated config; exclude repository metadata.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
