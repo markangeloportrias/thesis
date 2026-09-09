@@ -361,8 +361,8 @@ try {
         currentUser($pdo, ['admin', 'instructor']);
         $year=trim((string)($_GET['school_year']??''));
         $blockId=trim((string)($_GET['block_id']??''));
-        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?='' OR b.id=?) AND (?='' OR y.label=?) ORDER BY s.student_name");
-        $stmt->execute([$blockId,$blockId,$year,$year]);
+        $stmt=$pdo->prepare("SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?='' OR b.id=?) AND (?<>'' OR ?='' OR y.label=?) ORDER BY s.student_name");
+        $stmt->execute([$blockId,$blockId,$blockId,$year,$year]);
         respond(['ok'=>true,'students'=>$stmt->fetchAll()]);
     }
 
@@ -693,8 +693,8 @@ try {
                 $stmt->execute([$year]);
                 respond(['ok' => true, 'students' => $stmt->fetchAll()]);
             }
-            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?=\'\' OR b.id=?) AND (?=\'\' OR y.label=?) ORDER BY s.student_name');
-            $stmt->execute([$blockId,$blockId,$year,$year]);
+            $stmt = $pdo->prepare('SELECT s.student_id,s.student_name,s.parent_name,s.contact_number,s.parent_contact,y.label AS registered_school_year,b.id AS block_id,b.label AS block_label FROM student_block_assignments a JOIN students s ON s.student_id=a.student_id JOIN student_blocks b ON b.id=a.block_id JOIN school_years y ON y.id=b.school_year_id WHERE a.archived_at IS NULL AND s.archived_at IS NULL AND (?=\'\' OR b.id=?) AND (?<>\'\' OR ?=\'\' OR y.label=?) ORDER BY s.student_name');
+            $stmt->execute([$blockId,$blockId,$blockId,$year,$year]);
             respond(['ok' => true, 'students' => $stmt->fetchAll()]);
         }
         if ($method === 'POST') {
