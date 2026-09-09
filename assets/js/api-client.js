@@ -2539,22 +2539,34 @@
   };
   ApiClient.getStudentBlocks = async function (schoolYear) {
     var query='school_year='+encodeURIComponent(normalize(schoolYear));
-    try {
-      var primary = await mysqlRequest('blocks?' + query);
-      if (primary && primary.ok && Array.isArray(primary.blocks) && primary.blocks.length) {
-        return primary;
-      }
+    var primary = null;
+    var directory = null;
+    try { primary = await mysqlRequest('blocks?' + query); } catch (error) {}
+    if (primary && primary.ok && Array.isArray(primary.blocks) && primary.blocks.length) {
+      return primary;
+    }
       // Some existing deployments expose the block list through the legacy
       // directory route even though the summary endpoint already has counts.
       // Retry it when the primary route returns no rows for a selected year.
-      var directory = await mysqlRequest('block-directory?' + query);
-      if (directory && directory.ok && Array.isArray(directory.blocks) && directory.blocks.length) {
-        return directory;
-      }
-      return primary && primary.ok ? primary : directory;
-    } catch (error) {
-      return mysqlRequest('block-directory?' + query);
+    try { directory = await mysqlRequest('block-directory?' + query); } catch (error) {}
+    if (directory && directory.ok && Array.isArray(directory.blocks) && directory.blocks.length) {
+      return directory;
     }
+      // The academic-year response is the authoritative source used for the
+      // block count shown in the Annual Records screen. Use its matching rows
+      // when a host routes the two dedicated block endpoints inconsistently.
+    try {
+      var yearsResult = await mysqlRequest('school-years');
+      var years = yearsResult && (yearsResult.years || yearsResult.school_years) || [];
+      var selectedYear = normalize(schoolYear);
+      var year = Array.isArray(years) ? years.find(function (item) {
+        return normalize(item && item.label) === selectedYear;
+      }) : null;
+      if (year && Array.isArray(year.blocks)) {
+        return { ok: true, blocks: year.blocks };
+      }
+    } catch (error) {}
+    return primary || directory || { ok: false, message: 'Unable to load blocks.' };
   };
   ApiClient.createStudentBlock = async function (label, createdBy, schoolYear) {
     try { return await mysqlRequest('blocks', { method: 'POST', body: JSON.stringify({ label: normalize(label), school_year: normalize(schoolYear) }) }); }

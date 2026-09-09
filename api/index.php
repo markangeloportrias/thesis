@@ -214,6 +214,18 @@ function databaseTableColumns(PDO $pdo, string $table): array
     return array_map(static fn(array $row): string => (string)$row['Field'], $rows);
 }
 
+function schoolYearsWithBlocks(PDO $pdo): array
+{
+    $years = $pdo->query("SELECT y.id,y.label,y.status,y.created_at,COUNT(DISTINCT b.id) AS block_count,COUNT(DISTINCT s.student_id) AS student_count FROM school_years y LEFT JOIN student_blocks b ON b.school_year_id=y.id AND b.archived_at IS NULL LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE y.archived_at IS NULL GROUP BY y.id,y.label,y.status,y.created_at,y.start_year ORDER BY y.start_year DESC")->fetchAll();
+    $blocks = $pdo->prepare("SELECT b.id,b.label,y.label AS school_year,b.status,b.created_at,COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.school_year_id=? AND b.archived_at IS NULL GROUP BY b.id,b.label,y.label,b.status,b.created_at ORDER BY b.label");
+    foreach ($years as &$year) {
+        $blocks->execute([$year['id']]);
+        $year['blocks'] = $blocks->fetchAll();
+    }
+    unset($year);
+    return $years;
+}
+
 function createPortalBackup(PDO $pdo, array $user): array
 {
     $tables = [];
@@ -333,7 +345,7 @@ try {
 
     if ($resource === 'school-year-directory' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor']);
-        $rows=$pdo->query("SELECT y.id,y.label,y.status,y.created_at,COUNT(DISTINCT b.id) AS block_count,COUNT(DISTINCT s.student_id) AS student_count FROM school_years y LEFT JOIN student_blocks b ON b.school_year_id=y.id AND b.archived_at IS NULL LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE y.archived_at IS NULL GROUP BY y.id,y.label,y.status,y.created_at,y.start_year ORDER BY y.start_year DESC")->fetchAll();
+        $rows = schoolYearsWithBlocks($pdo);
         respond(['ok'=>true,'years'=>$rows]);
     }
 
@@ -606,7 +618,7 @@ try {
     if ($resource === 'school-years') {
         $user = currentUser($pdo, ['admin', 'instructor']);
         if ($method === 'GET') {
-            $rows = $pdo->query('SELECT y.id, y.label, y.status, y.created_at, COUNT(DISTINCT b.id) AS block_count, COUNT(DISTINCT s.student_id) AS student_count FROM school_years y LEFT JOIN student_blocks b ON b.school_year_id=y.id AND b.archived_at IS NULL LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE y.archived_at IS NULL GROUP BY y.id,y.label,y.status,y.created_at,y.start_year ORDER BY y.start_year DESC')->fetchAll();
+            $rows = schoolYearsWithBlocks($pdo);
             respond(['ok' => true, 'years' => $rows]);
         }
         if ($method === 'POST') {
