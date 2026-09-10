@@ -6,21 +6,52 @@
   var search = document.getElementById('instructorActivitySearch');
   var status = document.getElementById('instructorActivityStatus');
   var refresh = document.getElementById('instructorActivityRefresh');
-  function details(value) {
-    try { value = typeof value === 'string' ? JSON.parse(value) : value; } catch (_) {}
-    if (!value) return '';
-    if (typeof value !== 'object') return String(value);
-    return Object.entries(value).map(function (entry) {
-      return entry[0].replace(/_/g, ' ') + ': ' + (typeof entry[1] === 'object' ? JSON.stringify(entry[1]) : entry[1]);
-    }).join('; ');
-  }
+      function activityEntityLabel(value) {
+        return String(value || "system activity")
+          .replace(/[_-]+/g, " ")
+          .replace(/\b\w/g, (letter) => letter.toUpperCase());
+      }
+
+      function activityActionLabel(entry) {
+        const action = String(entry?.action_name || entry?.action || "Administrative action")
+          .replace(/[_-]+/g, " ")
+          .trim();
+        const entity = entry?.entity_type ? activityEntityLabel(entry.entity_type) : "";
+        const isGenericEntity = ["System", "Admin Tool"].includes(entity);
+        return entity && !isGenericEntity && !action.toLowerCase().includes(entity.toLowerCase())
+          ? `${action.replace(/^\w/, (letter) => letter.toUpperCase())} ${entity}`
+          : action.replace(/^\w/, (letter) => letter.toUpperCase());
+      }
+
+      function activityDetails(entry) {
+        let details = entry?.details;
+        if (typeof details === "string") {
+          try { details = JSON.parse(details); } catch (error) { /* Keep plain-text details. */ }
+        }
+        let message = "";
+        if (details && typeof details === "object") {
+          message = Object.entries(details)
+            .filter(([, value]) => value !== null && value !== undefined && value !== "")
+            .map(([key, value]) => `${activityEntityLabel(key)}: ${typeof value === "object" ? JSON.stringify(value) : value}`)
+            .join(" • ");
+        } else {
+          message = String(details || "");
+        }
+        const actor = entry?.actor_role
+          ? `By ${entry.actor_name || activityEntityLabel(entry.actor_role)}${entry.actor_name ? ` (${activityEntityLabel(entry.actor_role)})` : ''}`
+          : "";
+        return [message, actor].filter(Boolean).join(" • ") || "No additional details";
+      }
+
   function render() {
     var term = search.value.trim().toLowerCase();
     body.replaceChildren();
     var count = 0;
     rows.forEach(function (entry) {
-      var values = [entry.created_at || '', String(entry.action_name || '').replace(/_/g, ' '),
-        String(entry.entity_type || '').replace(/_/g, ' '), entry.entity_uid ?? '', details(entry.details)];
+      var rawDate = entry.created_at || entry.timestamp;
+      var date = rawDate ? new Date(String(rawDate).replace(' ', 'T')) : null;
+      var values = [date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : rawDate || 'Not available',
+        activityActionLabel(entry), activityDetails(entry)];
       if (term && !values.join(' ').toLowerCase().includes(term)) return;
       var row = document.createElement('tr');
       values.forEach(function (value, index) {
