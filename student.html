@@ -3616,16 +3616,7 @@
                   label: "Archive Record",
                   variant: "primary",
                   onClick: async () => {
-                    if (rec.id && typeof ApiClient.deleteCaseRecord === "function") {
-                      const result = await ApiClient.deleteCaseRecord(getCurrentStudentId(), rec.id);
-                      if (!result?.ok) {
-                        showOptionPane({ title: "Unable to Archive", message: result?.message || "The record could not be archived." });
-                        return;
-                      }
-                    }
-                    deliveryRecords.splice(index, 1);
-                    renderDeliveryRecordsTable();
-                    showOptionPane({ title: "Record Archived", message: "The clinical record was moved to Archived Records." });
+                    await archiveStudentClinicalRecord(rec);
                   },
                 },
               ],
@@ -3648,6 +3639,33 @@
 
       }
 
+      async function archiveStudentClinicalRecord(rec) {
+        try {
+          const validId = (value) => /^\d+$/.test(String(value ?? "")) && Number.isSafeInteger(Number(value));
+          let caseId = rec.id;
+          if (!validId(caseId)) {
+            const result = await ApiClient.request('cases?student_id=' + encodeURIComponent(getCurrentStudentId()));
+            const same = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+            const matches = (result.cases || []).filter((row) =>
+              same(row.student_id, getCurrentStudentId()) &&
+              normalizeProcedureKey(row.procedure_key || row.procedure_name) === rec.procedureKey &&
+              same(row.case_no, rec.caseNo) && same(row.patient_name, rec.patientName) &&
+              same(row.academic_year, rec.academicYear),
+            );
+            if (matches.length !== 1 || !validId(matches[0].id)) {
+              throw new Error('The selected record could not be uniquely identified. Refresh the records before archiving.');
+            }
+            caseId = matches[0].id;
+          }
+          const result = await ApiClient.deleteCaseRecord(getCurrentStudentId(), caseId);
+          if (!result?.ok) throw new Error(result?.message || 'The record could not be archived.');
+          await loadActiveWorkspaceRecords();
+          showOptionPane({ title: 'Record Archived', message: 'The clinical record was moved to Archived Records.' });
+        } catch (error) {
+          showOptionPane({ title: 'Unable to Archive', message: error.message || 'The record could not be archived.' });
+        }
+      }
+
       async function loadActiveWorkspaceRecords() {
         if (!currentStudent || !currentStudent.student_id) {
           deliveryRecords = [];
@@ -3663,6 +3681,7 @@
 
           deliveryRecords = list.map((rec) => ({
             id: rec.id,
+            academicYear: rec.academic_year || rec.school_year || '',
             procedureKey: normalizeProcedureKey(rec.procedure_name),
             procedureName: rec.procedure_name || "Clinical Record",
             patientName: rec.patient_name || "",
