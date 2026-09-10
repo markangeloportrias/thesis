@@ -3467,7 +3467,7 @@
         notifications.forEach((notif, index) => {
           const event = notificationEventMeta(notif.event_type);
           notif.case_no = notificationCaseNumber(notif);
-          const notificationId = escapeHtml(notif.id || "");
+          const notificationId = escapeHtml(notif.id ?? "");
           const rowActions = viewingArchivedNotifications
             ? `<button class="mini-btn" type="button" data-action="restore-notification" data-id="${notificationId}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-action="delete-archived-notification" data-id="${notificationId}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button>`
             : `<button class="mini-btn danger" type="button" data-action="delete-notification" data-id="${notificationId}"><i class="fas fa-box-archive" aria-hidden="true"></i> Archive</button>`;
@@ -3493,18 +3493,27 @@
         });
       }
 
+      let notificationsLoadVersion = 0;
       async function loadAdminNotifications() {
+        const version = ++notificationsLoadVersion;
+        const archived = viewingArchivedNotifications;
         try {
-          const list = await ApiClient.getNotificationHistory({ archived: viewingArchivedNotifications });
-          adminNotifications = Array.isArray(list) ? list : [];
+          const list = await ApiClient.getNotificationHistory({ archived });
+          if (version !== notificationsLoadVersion || archived !== viewingArchivedNotifications) return;
+          if (!Array.isArray(list)) throw new Error('The server returned an invalid notification list.');
+          adminNotifications = list;
           renderNotifications();
           if (sidebarCountNotifications) {
             sidebarCountNotifications.textContent = String(adminNotifications.length);
             sidebarCountNotifications.style.display = adminNotifications.length ? "inline-flex" : "none";
           }
         } catch (error) {
+          if (version !== notificationsLoadVersion || archived !== viewingArchivedNotifications) return;
           adminNotifications = [];
           renderNotifications();
+          notificationsEmpty.style.display = 'block';
+          notificationsEmpty.textContent = error.message || 'Unable to load notifications. Use Refresh to try again.';
+          if (notificationsResultsSummary) notificationsResultsSummary.textContent = 'Notifications could not be loaded.';
           await showMessageDialog(error.message || "Unable to load notifications.", "Notifications Error");
         }
       }

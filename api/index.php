@@ -1171,8 +1171,15 @@ try {
         }
         if ($method === 'POST' && $user['role'] === 'student') {
             requireFields($data, ['procedure_key', 'procedure_name']);
+            $pdo->beginTransaction();
             $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers) VALUES (?, ?, ?, ?)');
-            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($data['case_numbers'] ?? [])]); respond(['ok'=>true,'id'=>$pdo->lastInsertId()],201);
+            $caseNumbers = is_array($data['case_numbers'] ?? null) ? $data['case_numbers'] : [];
+            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers)]);
+            $requestId = (string)$pdo->lastInsertId();
+            $notice = $pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message) VALUES (?,?,?,?,?,?,?)');
+            $notice->execute(['edit_request_submitted', $user['user_uid'], $data['procedure_key'], $data['procedure_name'], implode(', ', array_map('strval', $caseNumbers)), $requestId, 'A student submitted a clinical record edit request.']);
+            $pdo->commit();
+            respond(['ok'=>true,'id'=>$requestId],201);
         }
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['approve','reject','archive','restore'], true)) {
             if ($action !== 'archive' && !in_array($user['role'], ['admin','instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);

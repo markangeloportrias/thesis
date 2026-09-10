@@ -57,10 +57,12 @@ async function request(path, method = 'GET', body, token, expected = 200) {
   assert.equal((await request('cases', 'GET', undefined, studentToken)).cases.length, 0);
   await request('cases/' + saved.id + '/restore', 'PATCH', {}, teacher);
   const edit = await request('edit-requests', 'POST', { procedure_key: 'delivery-handled', procedure_name: 'Delivery Handled', case_numbers: ['001'] }, studentToken, 201);
+  const adminNotices = (await request('notifications', 'GET', undefined, admin)).notifications;
+  assert.equal(adminNotices.filter(n => String(n.request_id) === String(edit.id) && n.event_type === 'edit_request_submitted').length, 1);
   await request('edit-requests/' + edit.id + '/approve', 'PATCH', {}, teacher);
   await request('edit-requests/' + edit.id + '/approve', 'PATCH', {}, teacher);
   const notices = (await request('notifications', 'GET', undefined, studentToken)).notifications;
-  assert.equal(notices.filter(n => String(n.request_id) === String(edit.id)).length, 1);
+  assert.equal(notices.filter(n => String(n.request_id) === String(edit.id) && n.event_type === 'edit_request_approve').length, 1);
   await request('students/' + student.student_id + '/archive', 'PATCH', {}, teacher);
   await request('auth/session', 'GET', undefined, studentToken, 401);
   assert.equal((await request('assignments?block_id=' + block.id, 'GET', undefined, teacher)).students.length, 0);
