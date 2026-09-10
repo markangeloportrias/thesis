@@ -15,8 +15,19 @@ html body.role-instructor #instructorActivityView {
 #instructorActivityView .activity-search { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 480px; padding: 0 14px; border: 1px solid #dce3ec; border-radius: 10px; color: #8493a8; }
 #instructorActivityView .activity-search:focus-within { outline: 2px solid #9bbfe5; outline-offset: 2px; }
 html body #instructorActivityView #instructorActivitySearch { width: 100%; min-width: 0; border: 0 !important; box-shadow: none !important; outline: none; background: transparent; padding: 9px 0; font: 400 13px Inter,sans-serif; }
-html body #instructorActivityView #instructorActivityRefresh { margin-left: auto; height: 38px !important; padding: 0 16px !important; border: 1px solid #dce3ec !important; border-radius: 10px; background: white !important; color: #334155 !important; font: 600 13px Inter,sans-serif !important; box-shadow: none; }
-#instructorActivityView #instructorActivityRefresh:hover { background: #f1f5f9 !important; }
+html body #instructorActivityView #instructorActivityRefresh {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  margin-left: auto; width: auto; min-width: 94px;
+  height: 34px !important; min-height: 34px !important; padding: 0 12px !important;
+  border: 1px solid #00296b !important; border-radius: 7px;
+  background: #00296b !important; color: #fff !important;
+  font: 600 12px/1 Inter,sans-serif !important; box-shadow: none;
+  cursor: pointer; transition: background-color .15s, border-color .15s;
+}
+html body #instructorActivityView #instructorActivityRefresh:hover:not(:disabled) { background: #003f88 !important; border-color: #003f88 !important; }
+html body #instructorActivityView #instructorActivityRefresh:focus-visible { outline: 2px solid #78a9e0; outline-offset: 3px; }
+html body #instructorActivityView #instructorActivityRefresh:disabled { opacity: .65; cursor: wait; }
+#instructorActivityView #instructorActivityRefresh i { font-size: 12px; }
 #instructorActivityView #instructorActivityStatus { color: #64748b; font-size: 12px; margin: 0 0 12px; }
 #instructorActivityView .activity-table-wrap { overflow-x: auto; border: 1px solid #e5eaf0; border-radius: 12px; }
 html body.role-instructor #instructorActivityView table { width: 100% !important; min-width: 620px; table-layout: auto !important; border-collapse: separate !important; border-spacing: 0 !important; border: 0 !important; }
