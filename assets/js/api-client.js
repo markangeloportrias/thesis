@@ -2697,6 +2697,7 @@
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId), {
         method: 'PATCH',
         body: JSON.stringify({
+          record_identity: caseData.record_identity,
           case_no: normalize(caseData.case_no),
           complete_diagnosis: normalize(caseData.complete_diagnosis),
           date_time_performed: normalize(caseData.date_time_performed),

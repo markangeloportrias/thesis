@@ -1536,7 +1536,7 @@
 
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260910-restore-identity-1"></script>
+    <script src="assets/js/api-client.js?v=20260910-edit-identity-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -3263,7 +3263,6 @@
       function findDuplicateStudentCase(inputs, replaceCaseId) {
         const candidate = getStudentCaseInputFingerprint(inputs, activeProcedureKey);
         return deliveryRecords.find((record) => {
-          if (replaceCaseId && String(record.id) === String(replaceCaseId)) return false;
           return getStudentCaseInputFingerprint(record, record.procedureKey) === candidate;
         }) || null;
       }
@@ -3753,8 +3752,8 @@
             supervisor_license_expiry_date: inputs.licenseExpiry,
             teacher_remarks: inputs.teacherRemarks || "",
           };
-        const result = replaceCaseId
-          ? await ApiClient.updateCaseRecord(replaceCaseId, caseData)
+        const result = replaceCaseId !== null && replaceCaseId !== undefined
+          ? await ApiClient.updateCaseRecord(replaceCaseId, { ...caseData, record_identity: deliveryEditingRecord?.recordIdentity })
           : await ApiClient.saveCaseRecord(
               studentId,
               activeProcedureConfig?.procedureName || "Delivery Assisted",
@@ -5545,8 +5544,8 @@
           }
 
           const replaceCaseId =
-            deliveryEditingRecord && deliveryEditingRecord.id
-              ? deliveryEditingRecord.id
+            deliveryEditingRecord
+              ? (deliveryEditingRecord.id === '' ? 'resolve' : (deliveryEditingRecord.id ?? 'resolve'))
               : null;
           const duplicate = findDuplicateStudentCase(inputs, replaceCaseId);
           if (duplicate) {

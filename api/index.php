@@ -876,12 +876,13 @@ try {
             $stmt->execute($params); respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === '') {
-            $ownership = $user['role'] === 'student' ? ' AND student_id=?' : '';
-            $recordStmt = $pdo->prepare('SELECT id,student_id,procedure_key,academic_year,case_no,patient_name FROM case_records WHERE id=? AND archived_at IS NULL' . $ownership);
-            $recordParams = [$id];
-            if ($ownership !== '') $recordParams[] = $user['user_uid'];
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            [$editWhere, $recordParams] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
+            $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $editWhere LIMIT 2");
             $recordStmt->execute($recordParams);
-            $record = $recordStmt->fetch();
+            $matches = $recordStmt->fetchAll();
+            if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection. No records were edited.'], 409);
+            $record = $matches[0] ?? false;
             if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or access is denied.'], 404);
 
             if ($user['role'] === 'student') {
@@ -919,6 +920,12 @@ try {
             $roleConflict = null;
             if ($lockNames && !acquireCaseRoleLocks($pdo, $lockNames)) respond(['ok' => false, 'message' => 'The patient role is being updated. Please try again.'], 503);
             try {
+                $pdo->beginTransaction();
+                $selected = $pdo->prepare("SELECT * FROM case_records WHERE $editWhere LIMIT 2 FOR UPDATE");
+                $selected->execute($recordParams);
+                if (count($selected->fetchAll()) !== 1) {
+                    throw new RuntimeException('The selected record changed. Refresh before editing.');
+                }
                 if ($roleContext !== null) {
                     $roleConflict = findCaseRoleConflict(getActiveCaseRoleRecords($pdo, $roleContext), $roleContext['role'], (string)$record['student_id']);
                 }
@@ -929,15 +936,15 @@ try {
                     $params[] = null;
                     $fields[] = 'checked_by=NULL';
                     $fields[] = 'checked_at=NULL';
-                    $params[] = $id;
-                    $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . ' WHERE id=? AND archived_at IS NULL');
-                    $update->execute($params);
+                    $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . " WHERE $editWhere LIMIT 1");
+                    $update->execute(array_merge($params, $recordParams));
                     if ($user['role'] === 'student') {
                         $consume = $pdo->prepare('UPDATE edit_permissions SET approved=0, updated_at=NOW() WHERE student_id=? AND procedure_key=?');
                         $consume->execute([$user['user_uid'], $record['procedure_key']]);
                     }
-                    audit($pdo, $user, 'update', 'case', $id, ['fields' => array_values(array_intersect($editableFields, array_keys($data)))]);
+                    audit($pdo, $user, 'update', 'case', (string)$record['id'], ['fields' => array_values(array_intersect($editableFields, array_keys($data))), 'record_identity' => $identity]);
                 }
+                $pdo->commit();
             } finally {
                 releaseCaseRoleLocks($pdo, $lockNames);
             }

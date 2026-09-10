@@ -61,3 +61,11 @@ checkSelection($db->query("SELECT record_status FROM case_records WHERE rowid=1"
 $restoreSelect->execute($restoreParams);
 checkSelection($restoreSelect->fetchAll() === [], 'Already restored record must not match another archived record');
 echo "PASS: restore isolation with duplicate IDs, matching inputs and retry safety\n";
+[$editWhere, $editParams] = caseMutationSelection('0', $fullIdentity, 'S1');
+$beforeCount = $db->query('SELECT COUNT(*) FROM case_records')->fetchColumn();
+$edit = $db->prepare("UPDATE case_records SET case_no='004', complete_diagnosis='Edited diagnosis' WHERE $editWhere");
+$edit->execute($editParams);
+checkSelection($edit->rowCount() === 1, 'Editing original inputs must target exactly one row');
+checkSelection($db->query('SELECT COUNT(*) FROM case_records')->fetchColumn() === $beforeCount, 'Editing must not create a record');
+checkSelection($db->query('SELECT complete_diagnosis FROM case_records WHERE rowid=1')->fetchColumn() === 'Other diagnosis', 'Editing must preserve other rows with shared IDs');
+echo "PASS: editing replaces original inputs without adding or changing other records\n";
