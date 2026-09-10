@@ -2302,11 +2302,21 @@
   }
 
   function fromApiCaseRow(record) {
+    var identity = {};
+    ['student_id', 'procedure_key', 'case_no', 'patient_name', 'academic_year',
+      'patient_address', 'complete_diagnosis', 'date_time_performed',
+      'facility_name', 'facility_address', 'facility_contact_number',
+      'supervisor_printed_name', 'supervisor_contact_number',
+      'supervisor_position_designation', 'supervisor_license_no',
+      'supervisor_license_expiry_date', 'created_at'].forEach(function (field) {
+        if (Object.prototype.hasOwnProperty.call(record, field)) identity[field] = record[field];
+      });
     var status = record.status || mapRecordStatus(record.record_status);
     if (!status && record.checked_by) status = 'Verified';
     if (!status) status = 'Submitted';
     return {
       id: record.id ?? record.case_id ?? record.caseId ?? record.case_record_id ?? '',
+      record_identity: identity,
       student_id: record.student_id,
       student_name: record.student_name,
       instructor_id: record.instructor_uid || record.instructor_id || '',

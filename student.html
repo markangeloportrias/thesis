@@ -1534,7 +1534,7 @@
     </div>
 
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
-    <script src="assets/js/api-client.js?v=20260903-active-instructor-2"></script>
+    <script src="assets/js/api-client.js?v=20260910-record-details-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -3643,7 +3643,7 @@
         try {
           const validId = (value) => /^\d+$/.test(String(value ?? "")) && Number.isSafeInteger(Number(value));
           let caseId = rec.id;
-          if (!validId(caseId)) {
+          if (!validId(caseId) && !rec.recordIdentity) {
             const result = await ApiClient.request('cases?student_id=' + encodeURIComponent(getCurrentStudentId()));
             const same = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
             const matches = (result.cases || []).filter((row) =>
@@ -3657,7 +3657,7 @@
             }
             caseId = matches[0].id;
           }
-          const result = await ApiClient.deleteCaseRecord(getCurrentStudentId(), caseId, {
+          const result = await ApiClient.deleteCaseRecord(getCurrentStudentId(), validId(caseId) ? caseId : 'resolve', rec.recordIdentity || {
             student_id: getCurrentStudentId(), procedure_key: rec.databaseProcedureKey || rec.procedureKey,
             case_no: rec.caseNo, patient_name: rec.patientName, academic_year: rec.academicYear || '',
           });
@@ -3684,6 +3684,7 @@
 
           deliveryRecords = list.map((rec) => ({
             id: rec.id,
+            recordIdentity: rec.record_identity,
             academicYear: rec.academic_year || rec.school_year || '',
             databaseProcedureKey: rec.procedure_key,
             procedureKey: normalizeProcedureKey(rec.procedure_name),

@@ -1431,7 +1431,7 @@
     <!-- Chat overlay removed — messaging is now in the sidebar -->
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
-    <script src="assets/js/api-client.js?v=20260909-review-id-1"></script>
+    <script src="assets/js/api-client.js?v=20260910-record-details-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -6921,7 +6921,7 @@
           // their full identity on the server, never by case number alone.
           const result = await ApiClient.updateRecordStatus(caseId ?? "resolve", status, {
             remarks,
-            record_identity: {
+            record_identity: reviewRecord.record_identity || {
               student_id: reviewRecord.student_id,
               procedure_key: reviewRecord.procedure_key || normalizeProcedureKey(reviewRecord.procedure_name),
               case_no: reviewRecord.case_no,
