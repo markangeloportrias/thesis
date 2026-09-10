@@ -3,6 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/record-validation.php';
 require __DIR__ . '/case-selection.php';
+require __DIR__ . '/edit-permissions.php';
 
 function validateContactNumberInput($value, string $label = 'Contact number'): void
 {
@@ -886,9 +887,7 @@ try {
             if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or access is denied.'], 404);
 
             if ($user['role'] === 'student') {
-                $permission = $pdo->prepare('SELECT approved FROM edit_permissions WHERE student_id=? AND procedure_key=?');
-                $permission->execute([$user['user_uid'], $record['procedure_key']]);
-                if ((int)$permission->fetchColumn() !== 1) {
+                if (!hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'])) {
                     respond(['ok' => false, 'message' => 'Instructor correction approval is required before editing this record.'], 403);
                 }
             }
@@ -926,6 +925,10 @@ try {
                 if (count($selected->fetchAll()) !== 1) {
                     throw new RuntimeException('The selected record changed. Refresh before editing.');
                 }
+                if ($user['role'] === 'student' && !hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'], true)) {
+                    $pdo->rollBack();
+                    throw new RuntimeException('The correction approval was already used or withdrawn.');
+                }
                 if ($roleContext !== null) {
                     $roleConflict = findCaseRoleConflict(getActiveCaseRoleRecords($pdo, $roleContext), $roleContext['role'], (string)$record['student_id']);
                 }
@@ -939,7 +942,7 @@ try {
                     $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . " WHERE $editWhere LIMIT 1");
                     $update->execute(array_merge($params, $recordParams));
                     if ($user['role'] === 'student') {
-                        $consume = $pdo->prepare('UPDATE edit_permissions SET approved=0, updated_at=NOW() WHERE student_id=? AND procedure_key=?');
+                        $consume = $pdo->prepare('UPDATE edit_permissions SET approved=0, updated_at=NOW() WHERE ' . EDIT_PERMISSION_MATCH);
                         $consume->execute([$user['user_uid'], $record['procedure_key']]);
                     }
                     audit($pdo, $user, 'update', 'case', (string)$record['id'], ['fields' => array_values(array_intersect($editableFields, array_keys($data))), 'record_identity' => $identity]);
@@ -1243,8 +1246,7 @@ try {
                 $request=$currentRequest;
                 if ($request) {
                     $approved=$action==='approve'?1:0;
-                    $perm=$pdo->prepare('INSERT INTO edit_permissions (student_id,procedure_key,approved,approved_at) VALUES (?,?,?,IF(?=1,NOW(),NULL)) ON DUPLICATE KEY UPDATE approved=VALUES(approved),approved_at=VALUES(approved_at),updated_at=NOW()');
-                    $perm->execute([$request['student_id'],$request['procedure_key'],$approved,$approved]);
+                    setClinicalEditPermission($pdo, $request['student_id'], $request['procedure_key'], (bool)$approved);
                     $caseNumbers = json_decode((string)($request['case_numbers'] ?? ''), true);
                     $caseNumber = is_array($caseNumbers) ? implode(', ', array_filter(array_map('strval', $caseNumbers), static fn($value) => trim($value) !== '')) : '';
                     $notice=$pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message,remarks) VALUES (?,?,?,?,?,?,?,?)');
