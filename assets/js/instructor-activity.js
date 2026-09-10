@@ -23,11 +23,14 @@
         String(entry.entity_type || '').replace(/_/g, ' '), entry.entity_uid ?? '', details(entry.details)];
       if (term && !values.join(' ').toLowerCase().includes(term)) return;
       var row = document.createElement('tr');
-      values.forEach(function (value) {
+      values.forEach(function (value, index) {
         var cell = document.createElement('td');
-        cell.textContent = value || '—';
-        cell.style.padding = '12px 8px';
-        cell.style.borderBottom = '1px solid #e2eaf3';
+        if (index === 1) {
+          var badge = document.createElement('span');
+          badge.className = 'activity-action';
+          badge.textContent = value || '—';
+          cell.appendChild(badge);
+        } else cell.textContent = value === '' ? '—' : String(value);
         row.appendChild(cell);
       });
       body.appendChild(row);

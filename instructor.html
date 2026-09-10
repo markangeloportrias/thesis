@@ -682,16 +682,16 @@
           </div>
         </div>
 
-        <section id="instructorActivityView" style="display:none; padding:24px; background:white; border:1px solid #cbddef; border-radius:16px;">
-          <h2>Activity Logs</h2>
-          <p>Your latest 500 recorded actions, including record reviews and student updates.</p>
-          <div style="display:flex; gap:12px; flex-wrap:wrap; margin:20px 0;">
-            <input id="instructorActivitySearch" type="search" placeholder="Search action, record, or details" aria-label="Search activity logs" style="flex:1; min-width:200px; padding:12px;" />
-            <button type="button" class="mini-btn" id="instructorActivityRefresh">Refresh</button>
+        <section id="instructorActivityView" style="display:none;">
+          <header class="activity-heading"><span class="activity-heading-icon"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h2>Activity Logs</h2>
+          <p>Your latest 500 recorded actions and updates.</p></div></header>
+          <div class="activity-toolbar">
+            <label class="activity-search"><i class="fas fa-search" aria-hidden="true"></i><input id="instructorActivitySearch" type="search" placeholder="Search activity…" aria-label="Search activity logs" /></label>
+            <button type="button" class="mini-btn" id="instructorActivityRefresh"><i class="fas fa-rotate-right" aria-hidden="true"></i> Refresh</button>
           </div>
           <p id="instructorActivityStatus" role="status" aria-live="polite"></p>
-          <div style="overflow-x:auto;"><table style="width:100%; text-align:left; border-collapse:collapse;">
-            <thead><tr><th>Date and time</th><th>Action</th><th>Record type</th><th>Reference</th><th>Details</th></tr></thead>
+          <div class="activity-table-wrap"><table aria-label="Instructor activity logs">
+            <thead><tr><th scope="col">Date and time</th><th scope="col">Action</th><th scope="col">Record type</th><th scope="col">Reference</th><th scope="col">Details</th></tr></thead>
             <tbody id="instructorActivityRows"></tbody>
           </table></div>
         </section>
@@ -1450,7 +1450,8 @@
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/api-client.js?v=20260910-student-loading-1"></script>
-    <script src="assets/js/instructor-activity.js?v=1"></script>
+    <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=1" />
+    <script src="assets/js/instructor-activity.js?v=2"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
