@@ -190,19 +190,24 @@
 
   let lastState = null;
   let onlineTimer = 0;
-  function updateConnectionMessage(isOnline, notify) {
-    if (lastState === isOnline && !notify) return;
+  function updateConnectionMessage(isOnline) {
+    if (lastState === isOnline) return;
+    const wasDisconnected = lastState === false;
     lastState = isOnline;
     window.clearTimeout(onlineTimer);
+    if (isOnline && !wasDisconnected) {
+      message.className = "";
+      return;
+    }
     message.className = isOnline ? "is-online" : "is-offline";
     message.innerHTML = isOnline
       ? '<i class="fas fa-wifi" aria-hidden="true"></i> Internet connection restored.'
       : '<i class="fas fa-wifi-slash" aria-hidden="true"></i> No internet connection. Some data may not load.';
     if (isOnline) onlineTimer = window.setTimeout(() => { message.className = ""; }, 4000);
   }
-  window.addEventListener("online", () => updateConnectionMessage(true, true));
-  window.addEventListener("offline", () => updateConnectionMessage(false, true));
-  updateConnectionMessage(navigator.onLine !== false, false);
+  window.addEventListener("online", () => updateConnectionMessage(true));
+  window.addEventListener("offline", () => updateConnectionMessage(false));
+  updateConnectionMessage(navigator.onLine !== false);
 })();
 
 /* Keep database-backed screens honest when XAMPP is stopped. The HTML shell
