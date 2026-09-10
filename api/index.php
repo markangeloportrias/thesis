@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/record-validation.php';
+require __DIR__ . '/case-selection.php';
 
 function validateContactNumberInput($value, string $label = 'Contact number'): void
 {
@@ -956,10 +957,11 @@ try {
             $reviewIdentity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
             if ($id === 'resolve') requireFields($reviewIdentity, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
             $pdo->beginTransaction();
-            if ($id === 'resolve') {
+            {
                 $reviewStep = 'lookup';
-                $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE student_id=? AND REPLACE(LOWER(TRIM(procedure_key)), ' ', '-')=? AND LOWER(TRIM(case_no))=LOWER(TRIM(?)) AND LOWER(TRIM(patient_name))=LOWER(TRIM(?)) AND COALESCE(academic_year,'')=? AND archived_at IS NULL LIMIT 2 FOR UPDATE");
-                $recordStmt->execute([$reviewIdentity['student_id'], $reviewIdentity['procedure_key'], $reviewIdentity['case_no'], $reviewIdentity['patient_name'], trim((string)($reviewIdentity['academic_year'] ?? ''))]);
+                [$reviewWhere, $reviewParams] = caseMutationSelection($id, $reviewIdentity);
+                $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $reviewWhere LIMIT 2 FOR UPDATE");
+                $recordStmt->execute($reviewParams);
                 $matches = $recordStmt->fetchAll();
                 if (count($matches) > 1) {
                     $pdo->rollBack();
@@ -967,11 +969,6 @@ try {
                 }
                 $reviewRecord = $matches[0] ?? false;
                 if ($reviewRecord) $id = (string)$reviewRecord['id'];
-            } else {
-                $reviewStep = 'record';
-                $recordStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=? AND archived_at IS NULL FOR UPDATE');
-                $recordStmt->execute([$id]);
-                $reviewRecord = $recordStmt->fetch();
             }
             if (!$reviewRecord) {
                 $pdo->rollBack();
@@ -991,8 +988,8 @@ try {
             $checkedAtSql = $status === 'verified' ? 'NOW()' : 'NULL';
             $checkedBy = $status === 'verified' ? $instructorName : null;
             $reviewStep = 'update';
-            $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=?,checked_at=$checkedAtSql,instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL");
-            $stmt->execute([$status, $data['remarks'] ?? null, $checkedBy, $instructorId, $instructorName, $id]);
+            $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=?,checked_at=$checkedAtSql,instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE $reviewWhere LIMIT 1");
+            $stmt->execute(array_merge([$status, $data['remarks'] ?? null, $checkedBy, $instructorId, $instructorName], $reviewParams));
             $reviewStep = 'audit';
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
             $reviewStep = 'commit';
@@ -1088,9 +1085,21 @@ try {
             respond(['ok'=>true,'id'=>$commentId]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'archive') {
-            $where = $user['role'] === 'student' ? ' AND student_id=?' : ''; $params = [$id]; if ($where) $params[] = $user['user_uid'];
-            $stmt = $pdo->prepare('UPDATE case_records SET archived_at=NOW(), record_status=\'archived\' WHERE id=? AND archived_at IS NULL' . $where);
-            $stmt->execute($params); audit($pdo, $user, 'archive', 'case', $id); respond(['ok' => $stmt->rowCount() > 0]);
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            [$where, $params] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
+            $pdo->beginTransaction();
+            $selected = $pdo->prepare("SELECT id FROM case_records WHERE $where LIMIT 2 FOR UPDATE");
+            $selected->execute($params);
+            $matches = $selected->fetchAll();
+            if (count($matches) !== 1) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => count($matches) ? 'Multiple records share this identity. No records were archived.' : 'Active record not found.'], count($matches) ? 409 : 404);
+            }
+            $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NOW(), record_status='archived' WHERE $where LIMIT 1");
+            $stmt->execute($params);
+            audit($pdo, $user, 'archive', 'case', (string)$matches[0]['id'], ['record_identity' => $identity]);
+            $pdo->commit();
+            respond(['ok' => $stmt->rowCount() === 1]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'restore') {
             $where = $user['role'] === 'student' ? ' AND student_id=?' : '';

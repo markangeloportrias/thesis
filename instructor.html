@@ -6923,7 +6923,7 @@
             remarks,
             record_identity: {
               student_id: reviewRecord.student_id,
-              procedure_key: normalizeProcedureKey(reviewRecord.procedure_key || reviewRecord.procedure_name),
+              procedure_key: reviewRecord.procedure_key || normalizeProcedureKey(reviewRecord.procedure_name),
               case_no: reviewRecord.case_no,
               patient_name: reviewRecord.patient_name,
               academic_year: reviewRecord.academic_year || reviewRecord.school_year || "",

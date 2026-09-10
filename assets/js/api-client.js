@@ -2723,11 +2723,11 @@
     var result = await mysqlRequest(query);
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
-  ApiClient.deleteCaseRecord = async function (studentId, caseId) {
+  ApiClient.deleteCaseRecord = async function (studentId, caseId, identity) {
     try {
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/archive', {
         method: 'PATCH',
-        body: '{}'
+        body: JSON.stringify({ record_identity: identity || {} })
       });
       return { ok: !!result.ok, message: result.message };
     } catch (error) {
