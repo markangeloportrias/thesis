@@ -196,17 +196,6 @@
               <span class="sidebar-label">Edit Requests</span>
               <span class="sidebar-count" id="sidebarCountRequests">0</span>
             </button>
-              <button
-                class="sidebar-item"
-                data-target="notificationsCard"
-                title="Notifications"
-              >
-                <span class="sidebar-icon"><i class="fas fa-bell"></i></span>
-                <span class="sidebar-label">Notifications</span>
-              <span class="sidebar-count" id="sidebarCountNotifications"
-                >0</span
-              >
-            </button>
             <div class="sidebar-group-label">Administration</div>
             <button class="sidebar-item" data-target="systemToolsCard" title="System Settings">
               <span class="sidebar-icon"><i class="fas fa-cog"></i></span>
@@ -1898,8 +1887,10 @@
           : 0;
         sidebarCountRequests.textContent = activeRequestCount;
         sidebarCountRequests.style.display = activeRequestCount ? "inline-flex" : "none";
-        sidebarCountNotifications.textContent = activeNotificationCount;
-        sidebarCountNotifications.style.display = activeNotificationCount ? "inline-flex" : "none";
+        if (sidebarCountNotifications) {
+          sidebarCountNotifications.textContent = activeNotificationCount;
+          sidebarCountNotifications.style.display = activeNotificationCount ? "inline-flex" : "none";
+        }
 
         const dashboardInstructorsValue = document.getElementById(
           "dashboardInstructorsValue",
