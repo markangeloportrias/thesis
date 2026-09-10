@@ -2,6 +2,34 @@
 
 This is a dependency-free PHP 8 REST API for XAMPP/MariaDB.
 
+Hostinger deployments require PHP 8.1 or later and `pdo_mysql`. Upload
+`api/bootstrap.php`, `api/index.php`, and `assets/js/api-client.js` together when
+applying the migration fixes. Student creation now includes the block assignment
+in one transaction, so a failed enrollment cannot leave a partially saved account.
+
+Open `/api/health` on the deployed site, then check student creation, verification,
+and archive/restore while signed in. If initialization fails, the PHP error log
+now records the underlying database error. Initial schema upgrades still need
+CREATE/ALTER permissions; an upgraded schema no longer runs table creation,
+enrollment ALTERs, or absent procedure removal on every request. Forward the
+Authorization header to PHP; both normal and redirected FastCGI headers are accepted.
+
+Do not reimport `database/schema.sql` over a live database to apply these fixes:
+it is a full XAMPP dump with table replacement, a `thesis_portal` database name,
+and local view definers. Existing records are preserved by the code fixes;
+duplicate case submissions are rejected and repeated edit approvals do not
+generate additional notifications. Existing duplicate records require review
+before archiving; this update does not delete clinical history.
+
+Regression checks: `node tests/api-client-migration.test.cjs`,
+`node tests/workflow.test.cjs`, `node tests/portal-improvements.test.cjs`, and
+`php tests/record-validation.test.php`. The additional
+`tests/hostinger-workflows.test.cjs` creates records and must run against a
+disposable localhost API/database with the schema, a `delivery-handled` procedure,
+and an initial administrator. Set `PORTAL_TEST_URL` (ending in `/api/`) and
+`PORTAL_TEST_ADMIN_PIN`. For hosting-permission coverage, initialize the schema
+first, then run the API with a database user granted only SELECT/INSERT/UPDATE/DELETE.
+
 1. Place the project in `C:\xampp\htdocs\THESIS6`.
 2. Import `database/schema.sql` in phpMyAdmin.
 3. Start Apache and MySQL in XAMPP.

@@ -2436,10 +2436,13 @@
     var apiBase = location.protocol === 'file:' ? 'http://localhost/THESIS6/api/' : 'api/';
     try {
       var response = await fetch(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
-      var result = await response.json().catch(function () { return {}; });
+      var result = await response.json().catch(function () { return null; });
       if (response.status === 401 && token) {
         sessionStorage.removeItem('thesis_api_token');
         window.dispatchEvent(new CustomEvent('portal-session-expired'));
+      }
+      if (!result || typeof result !== 'object' || typeof result.ok !== 'boolean') {
+        throw new Error('The server returned an invalid API response (HTTP ' + response.status + '). Check the API deployment and PHP error log.');
       }
       if (!response.ok) throw new Error(result.message || 'Database request failed.');
       if (mutationKey) {
@@ -2772,8 +2775,7 @@
   };
   ApiClient.registerStudentInBlock = async function (blockId, schoolYear, payload) {
     try {
-      await mysqlRequest('students', { method: 'POST', body: JSON.stringify(payload || {}) });
-      return await ApiClient.assignStudentToBlock(payload.student_id, blockId, schoolYear);
+      return await mysqlRequest('students', { method: 'POST', body: JSON.stringify(Object.assign({}, payload || {}, { block_id: blockId })) });
     } catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.archiveStudent = async function (studentId) {

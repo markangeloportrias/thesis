@@ -470,9 +470,27 @@ try {
             if (!credentialIsStrong((string)$data['password'], 6)) respond(['ok'=>false,'message'=>'Initial password must contain at least 6 characters.'],422);
             validateContactNumberInput($data['contact_number'] ?? null);
             validateContactNumberInput($data['parent_contact'] ?? null, 'Parent/Guardian contact');
+            // Account creation and enrollment must succeed together. Previously
+            // a failed second HTTP request left an account outside the roster.
+            $pdo->beginTransaction();
+            $block = null;
+            if (isset($data['block_id'])) {
+                $blockStmt = $pdo->prepare('SELECT b.id,b.school_year_id FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id WHERE b.id=? AND b.archived_at IS NULL AND y.archived_at IS NULL FOR UPDATE');
+                $blockStmt->execute([$data['block_id']]);
+                $block = $blockStmt->fetch();
+                if (!$block) {
+                    $pdo->rollBack();
+                    respond(['ok'=>false,'message'=>'The selected block is unavailable. Refresh the roster and try again.'],422);
+                }
+            }
             $stmt = $pdo->prepare('INSERT INTO students (student_id, student_name, password, parent_name, contact_number, parent_contact) VALUES (?, ?, ?, ?, ?, ?)');
             $stmt->execute([$data['student_id'], $data['student_name'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['parent_name'] ?? null, $data['contact_number'] ?? null, $data['parent_contact'] ?? null]);
+            if ($block) {
+                $assignment = $pdo->prepare('INSERT INTO student_block_assignments (student_id,block_id,school_year_id,assigned_by) VALUES (?,?,?,?)');
+                $assignment->execute([$data['student_id'], $block['id'], $block['school_year_id'], $user['user_uid']]);
+            }
             audit($pdo, $user, 'create', 'student', (string)$data['student_id']);
+            $pdo->commit();
             respond(['ok' => true, 'student_id' => $data['student_id']], 201);
         }
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['archive', 'restore'], true)) {
@@ -993,12 +1011,20 @@ try {
             $roleConflict = null;
             $inserted = false;
             $caseId = '';
+            $duplicateCase = false;
             if ($roleContext !== null) {
                 $lockNames = caseRoleLockNames($roleContext);
-                if (!acquireCaseRoleLocks($pdo, $lockNames)) respond(['ok' => false, 'message' => 'The patient role is being updated. Please try again.'], 503);
             }
+            // Also serialize submissions without a block assignment. Browser
+            // click guards cannot protect retries or requests from another tab.
+            $lockNames[] = 'midwife-submit-' . substr(hash('sha256', (string)$data['student_id']), 0, 40);
+            sort($lockNames, SORT_STRING);
+            if (!acquireCaseRoleLocks($pdo, $lockNames)) respond(['ok' => false, 'message' => 'The patient role is being updated. Please try again.'], 503);
 
             try {
+                $existing = $pdo->prepare("SELECT id FROM case_records WHERE student_id=? AND procedure_key=? AND academic_year <=> ? AND LOWER(TRIM(case_no))=LOWER(TRIM(?)) AND LOWER(TRIM(patient_name))=LOWER(TRIM(?)) AND archived_at IS NULL LIMIT 1");
+                $existing->execute([$data['student_id'], $data['procedure_key'], $academicYear, $caseNo, $patientName]);
+                $duplicateCase = (bool)$existing->fetchColumn();
                 if ($roleContext !== null) {
                     $roleConflict = findCaseRoleConflict(
                         getActiveCaseRoleRecords($pdo, $roleContext),
@@ -1006,7 +1032,7 @@ try {
                         (string)$data['student_id'],
                     );
                 }
-                if ($roleConflict === null) {
+                if ($roleConflict === null && !$duplicateCase) {
                     $stmt = $pdo->prepare('INSERT INTO case_records (student_id, student_name, instructor_uid, instructor_name, academic_year, procedure_key, procedure_name, case_no, complete_diagnosis, date_time_performed, patient_name, patient_address, facility_name, facility_address, facility_contact_number, supervisor_printed_name, supervisor_contact_number, supervisor_position_designation, supervisor_license_no, supervisor_license_expiry_date) SELECT s.student_id,s.student_name,?,?,?,p.procedure_key,p.procedure_name,?,?,?,?,?,?,?,?,?,?,?,?,? FROM students s JOIN procedures p ON p.procedure_key=? WHERE s.student_id=? AND s.archived_at IS NULL');
                     $stmt->execute([$data['instructor_uid'] ?? null,$data['instructor_name'] ?? null,$academicYear,$caseNo,$data['complete_diagnosis'] ?? null,$data['date_time_performed'] ?? null,$data['patient_name'] ?? null,$data['patient_address'] ?? null,$data['facility_name'] ?? null,$data['facility_address'] ?? null,$data['facility_contact_number'] ?? null,$data['supervisor_printed_name'] ?? null,$data['supervisor_contact_number'] ?? null,$data['supervisor_position_designation'] ?? null,$data['supervisor_license_no'] ?? null,$data['supervisor_license_expiry_date'] ?? null,$data['procedure_key'],$data['student_id']]);
                     $inserted = $stmt->rowCount() > 0;
@@ -1017,6 +1043,7 @@ try {
             }
 
             if ($roleConflict !== null) respond(caseRoleConflictPayload($roleContext), 409);
+            if ($duplicateCase) respond(['ok' => false, 'code' => 'duplicate_submission', 'message' => 'This case is already recorded for this student, procedure, and academic year.'], 409);
             if ($inserted) audit($pdo, $user, 'create', 'case', $caseId, ['student_id' => $data['student_id'], 'procedure_key' => $data['procedure_key']]);
             respond(['ok' => $inserted, 'id' => $caseId], 201);
         }
@@ -1116,6 +1143,19 @@ try {
         }
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['approve','reject','archive','restore'], true)) {
             if ($action !== 'archive' && !in_array($user['role'], ['admin','instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $pdo->beginTransaction();
+            $lockedRequest = $pdo->prepare('SELECT student_id,status,archived_at FROM edit_requests WHERE id=? FOR UPDATE');
+            $lockedRequest->execute([$id]);
+            $currentRequest = $lockedRequest->fetch();
+            if (!$currentRequest || ($user['role'] === 'student' && $currentRequest['student_id'] !== $user['user_uid'])) {
+                $pdo->rollBack();
+                respond(['ok'=>false,'message'=>'Edit request not found.'],404);
+            }
+            $nextStatus = $action === 'approve' ? 'approved' : 'rejected';
+            if (in_array($action, ['approve','reject'], true) && ($currentRequest['archived_at'] !== null || $currentRequest['status'] === $nextStatus)) {
+                $pdo->commit();
+                respond(['ok' => $currentRequest['archived_at'] === null]);
+            }
             $sql = $action === 'approve'
                 ? "UPDATE edit_requests SET status='approved', approved_at=NOW() WHERE id=? AND archived_at IS NULL"
                 : ($action === 'reject'
@@ -1136,7 +1176,10 @@ try {
                     $notice->execute(['edit_request_'.$action,$request['student_id'],$request['procedure_key'],$request['procedure_name'],$caseNumber ?: null,$id,'Your edit request was '.$action.'.',$data['remarks']??null]);
                 }
             }
-            audit($pdo,$user,$action,'edit_request',$id);respond(['ok'=>$stmt->rowCount()>0]);
+            $changed = $stmt->rowCount() > 0;
+            if ($changed) audit($pdo,$user,$action,'edit_request',$id);
+            $pdo->commit();
+            respond(['ok'=>$changed]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
@@ -1295,11 +1338,12 @@ try {
 
     respond(['ok' => false, 'message' => 'Endpoint not found.'], 404);
 } catch (PDOException $error) {
-    if (in_array($resource, ['blocks', 'block-directory', 'assignments', 'assignment-directory'], true)) {
-        error_log('Portal roster SQL error ['.$resource.']: '.$error->getMessage());
-    }
-    $duplicate = $error->getCode() === '23000';
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log('Portal SQL error ['.$resource.']: '.$error->getMessage());
+    $duplicate = (int)($error->errorInfo[1] ?? 0) === 1062;
     respond(['ok' => false, 'message' => $duplicate ? 'That record already exists.' : 'Database operation failed.'], $duplicate ? 409 : 500);
 } catch (Throwable $error) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log('Portal server error ['.$resource.']: '.$error->getMessage());
     respond(['ok' => false, 'message' => 'Server operation failed.'], 500);
 }

@@ -3,6 +3,13 @@ declare(strict_types=1);
 
 $config = require __DIR__ . '/config.php';
 
+// Bootstrap errors happen before the router's try/catch. Keep them JSON too.
+set_exception_handler(static function (Throwable $error): void {
+    error_log('Portal bootstrap error: ' . $error->getMessage());
+    http_response_code(503);
+    echo json_encode(['ok' => false, 'message' => 'Database initialization failed. Check the server PHP error log and database migration.']);
+});
+
 header('Content-Type: application/json; charset=utf-8');
 // The portal is normally served from this same XAMPP origin. A separate
 // frontend must be explicitly allow-listed through THESIS_ALLOWED_ORIGIN.
@@ -39,6 +46,7 @@ try {
         ]
     );
 } catch (Throwable $error) {
+    error_log('Portal database connection error: ' . $error->getMessage());
     http_response_code(503);
     echo json_encode(['ok' => false, 'message' => 'Database connection failed.']);
     exit;
@@ -46,6 +54,7 @@ try {
 
 function ensureCaseCommentsTable(PDO $pdo): void
 {
+    if (portalTableExists($pdo, 'case_comments')) return;
     $pdo->exec("CREATE TABLE IF NOT EXISTS case_comments (
         id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         case_id INT UNSIGNED NOT NULL,
@@ -68,6 +77,7 @@ ensureCaseCommentsTable($pdo);
 
 function ensureAuditTrailTable(PDO $pdo): void
 {
+    if (portalTableExists($pdo, 'audit_trail')) return;
     $pdo->exec("CREATE TABLE IF NOT EXISTS audit_trail (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         actor_role ENUM('admin', 'instructor', 'student', 'system') NOT NULL,
@@ -84,6 +94,13 @@ function ensureAuditTrailTable(PDO $pdo): void
 }
 
 ensureAuditTrailTable($pdo);
+
+function portalTableExists(PDO $pdo, string $table): bool
+{
+    $stmt = $pdo->prepare('SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?');
+    $stmt->execute([$table]);
+    return (bool)$stmt->fetchColumn();
+}
 
 function columnExists(PDO $pdo, string $table, string $column): bool
 {
@@ -106,6 +123,7 @@ function ensureSecurityTables(PDO $pdo): void
         $pdo->exec('ALTER TABLE admins ADD COLUMN must_change_pin TINYINT(1) NOT NULL DEFAULT 0 AFTER pin_number');
     }
 
+    if (portalTableExists($pdo, 'auth_login_attempts')) return;
     $pdo->exec("CREATE TABLE IF NOT EXISTS auth_login_attempts (
         id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
         role_name VARCHAR(24) NOT NULL,
@@ -139,10 +157,13 @@ function ensureEnrollmentHistorySchema(PDO $pdo): void
     if (!columnExists($pdo, 'student_block_assignments', 'school_year_id')) {
         $pdo->exec('ALTER TABLE student_block_assignments ADD COLUMN school_year_id INT UNSIGNED NULL AFTER block_id');
     }
-    $pdo->exec('UPDATE student_block_assignments a JOIN student_blocks b ON b.id=a.block_id SET a.school_year_id=b.school_year_id WHERE a.school_year_id IS NULL');
-    $missingSchoolYears = (int)$pdo->query('SELECT COUNT(*) FROM student_block_assignments WHERE school_year_id IS NULL')->fetchColumn();
-    if ($missingSchoolYears === 0) {
-        $pdo->exec('ALTER TABLE student_block_assignments MODIFY COLUMN school_year_id INT UNSIGNED NOT NULL');
+    $nullable = $pdo->query("SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='student_block_assignments' AND COLUMN_NAME='school_year_id'")->fetchColumn();
+    if ($nullable === 'YES') {
+        $pdo->exec('UPDATE student_block_assignments a JOIN student_blocks b ON b.id=a.block_id SET a.school_year_id=b.school_year_id WHERE a.school_year_id IS NULL');
+        $missingSchoolYears = (int)$pdo->query('SELECT COUNT(*) FROM student_block_assignments WHERE school_year_id IS NULL')->fetchColumn();
+        if ($missingSchoolYears === 0) {
+            $pdo->exec('ALTER TABLE student_block_assignments MODIFY COLUMN school_year_id INT UNSIGNED NOT NULL');
+        }
     }
     // The original unique student_id index also satisfies the student foreign
     // key on existing installs, so provide a normal replacement before it is
@@ -164,7 +185,7 @@ function ensureEnrollmentHistorySchema(PDO $pdo): void
 function migrateLegacyCredentials(PDO $pdo): void
 {
     $adminRows = $pdo->query('SELECT id, pin_number FROM admins')->fetchAll();
-    $adminUpdate = $pdo->prepare('UPDATE admins SET pin_number=?, must_change_pin=1 WHERE id=?');
+    $adminUpdate = $pdo->prepare('UPDATE admins SET pin_number=?, must_change_pin=1 WHERE id=? AND pin_number=?');
     foreach ($adminRows as $row) {
         $pin = (string)($row['pin_number'] ?? '');
         // Do not hash a previously truncated bcrypt value. It is not the
@@ -174,7 +195,7 @@ function migrateLegacyCredentials(PDO $pdo): void
             continue;
         }
         if ($pin !== '' && !isPasswordHash($pin)) {
-            $adminUpdate->execute([password_hash($pin, PASSWORD_DEFAULT), $row['id']]);
+            $adminUpdate->execute([password_hash($pin, PASSWORD_DEFAULT), $row['id'], $pin]);
         }
     }
 
@@ -183,11 +204,11 @@ function migrateLegacyCredentials(PDO $pdo): void
         ['instructor_accounts', 'account_uid'],
     ] as [$table, $idColumn]) {
         $rows = $pdo->query("SELECT $idColumn AS record_id, password FROM $table")->fetchAll();
-        $update = $pdo->prepare("UPDATE $table SET password=? WHERE $idColumn=?");
+        $update = $pdo->prepare("UPDATE $table SET password=? WHERE $idColumn=? AND password=?");
         foreach ($rows as $row) {
             $password = (string)($row['password'] ?? '');
             if ($password !== '' && !isPasswordHash($password)) {
-                $update->execute([password_hash($password, PASSWORD_DEFAULT), $row['record_id']]);
+                $update->execute([password_hash($password, PASSWORD_DEFAULT), $row['record_id'], $password]);
             }
         }
     }
@@ -254,12 +275,15 @@ function retireLegacyCredentialProcedures(PDO $pdo): void
 {
     // These legacy procedures compare or store credentials in plaintext. All
     // account creation and authentication must go through the API instead.
+    $exists = $pdo->prepare("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_SCHEMA=DATABASE() AND ROUTINE_NAME=? AND ROUTINE_TYPE='PROCEDURE'");
     foreach ([
         'sp_register_student',
         'sp_authenticate_student',
         'sp_authenticate_instructor',
         'sp_create_instructor_account',
     ] as $procedure) {
+        $exists->execute([$procedure]);
+        if (!$exists->fetchColumn()) continue;
         $pdo->exec("DROP PROCEDURE IF EXISTS `$procedure`");
     }
 }
@@ -343,10 +367,9 @@ function authAttemptIdentity(string $role, string $identity): array
 function loginIsLocked(PDO $pdo, string $role, string $identity): bool
 {
     [$identityHash, $ipHash] = authAttemptIdentity($role, $identity);
-    $stmt = $pdo->prepare('SELECT locked_until FROM auth_login_attempts WHERE role_name=? AND identity_hash=? AND ip_hash=?');
+    $stmt = $pdo->prepare('SELECT locked_until > NOW() FROM auth_login_attempts WHERE role_name=? AND identity_hash=? AND ip_hash=?');
     $stmt->execute([$role, $identityHash, $ipHash]);
-    $lockedUntil = $stmt->fetchColumn();
-    return $lockedUntil !== false && $lockedUntil !== null && strtotime((string)$lockedUntil) > time();
+    return (bool)$stmt->fetchColumn();
 }
 
 function recordLoginFailure(PDO $pdo, string $role, string $identity): void
@@ -374,7 +397,15 @@ function clearLoginFailures(PDO $pdo, string $role, string $identity): void
 
 function bearerToken(): string
 {
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+    if ($header === '' && function_exists('getallheaders')) {
+        foreach (getallheaders() as $name => $value) {
+            if (strcasecmp($name, 'Authorization') === 0) {
+                $header = $value;
+                break;
+            }
+        }
+    }
     return preg_match('/^Bearer\s+(.+)$/i', $header, $match) ? trim($match[1]) : '';
 }
 
