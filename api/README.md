@@ -2,6 +2,15 @@
 
 This is a dependency-free PHP 8 REST API for XAMPP/MariaDB.
 
+Startup migrations are versioned in `api/startup-migrations.php`. The first
+request for a new version runs the existing migrations under a database lock
+and records completion in the existing `system_meta` table. Subsequent requests
+check that marker and skip the schema checks and credential scans. Increment
+`PORTAL_STARTUP_VERSION` whenever introducing another startup migration.
+Deploy `startup-migrations.php` together with `bootstrap.php` and `index.php`.
+Backup imports ignore the startup marker and migrate imported legacy credentials
+before committing; administrator setup/recovery remains available separately.
+
 Hostinger deployments require PHP 8.1 or later and `pdo_mysql`. Upload
 `api/bootstrap.php`, `api/index.php`, and `assets/js/api-client.js` together when
 applying the migration fixes. Student creation now includes the block assignment

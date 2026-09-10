@@ -856,9 +856,7 @@
 
               showToast("Credentials verified. Opening portal...", "success");
 
-              setTimeout(() => {
-                window.location.href = "student";
-              }, 250);
+              window.location.href = "student";
             } else {
               const errorMessage = data.message || "Invalid student ID or password.";
             console.log("Authentication failed:", errorMessage);
@@ -1011,9 +1009,7 @@
               JSON.stringify(instructor),
             );
             showToast("Access authorized. Welcome, Instructor.", "success");
-            setTimeout(() => {
-              window.location.href = "instructor";
-            }, 800);
+            window.location.href = "instructor";
           } else {
             instructorLoginInFlight = false;
             instructorSubmitBtn.classList.remove("is-loading");

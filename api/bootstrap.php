@@ -73,7 +73,6 @@ function ensureCaseCommentsTable(PDO $pdo): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
-ensureCaseCommentsTable($pdo);
 
 function ensureAuditTrailTable(PDO $pdo): void
 {
@@ -93,7 +92,6 @@ function ensureAuditTrailTable(PDO $pdo): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 }
 
-ensureAuditTrailTable($pdo);
 
 function portalTableExists(PDO $pdo, string $table): bool
 {
@@ -214,9 +212,6 @@ function migrateLegacyCredentials(PDO $pdo): void
     }
 }
 
-ensureSecurityTables($pdo);
-ensureStudentProfileFields($pdo);
-ensureEnrollmentHistorySchema($pdo);
 function isTruncatedBcryptHash(string $value): bool
 {
     return str_starts_with($value, '$2') && strlen($value) < 60;
@@ -288,10 +283,6 @@ function retireLegacyCredentialProcedures(PDO $pdo): void
     }
 }
 
-ensureInitialAdministrator($pdo, (string)($config['initial_admin_pin'] ?? ''));
-recoverTruncatedAdministratorCredentials($pdo, (string)($config['admin_recovery_pin'] ?? ''));
-migrateLegacyCredentials($pdo);
-retireLegacyCredentialProcedures($pdo);
 
 function ensureInvalidCaseRecordStatus(PDO $pdo): void
 {
@@ -314,7 +305,24 @@ function ensureInvalidCaseRecordStatus(PDO $pdo): void
           )='Invalid'");
 }
 
-ensureInvalidCaseRecordStatus($pdo);
+require __DIR__ . '/startup-migrations.php';
+runPortalStartup($pdo, static function () use ($pdo): void {
+    ensureCaseCommentsTable($pdo);
+    ensureAuditTrailTable($pdo);
+    ensureSecurityTables($pdo);
+    ensureStudentProfileFields($pdo);
+    ensureEnrollmentHistorySchema($pdo);
+    migrateLegacyCredentials($pdo);
+    retireLegacyCredentialProcedures($pdo);
+    ensureInvalidCaseRecordStatus($pdo);
+});
+// Explicit administrator setup/recovery remains available after migration.
+if ((string)($config['initial_admin_pin'] ?? '') !== '') {
+    ensureInitialAdministrator($pdo, (string)$config['initial_admin_pin']);
+}
+if ((string)($config['admin_recovery_pin'] ?? '') !== '') {
+    recoverTruncatedAdministratorCredentials($pdo, (string)$config['admin_recovery_pin']);
+}
 
 function input(): array
 {

@@ -259,6 +259,7 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
             $allowedColumns = array_flip(databaseTableColumns($pdo, $table));
             foreach ((array)$backupTables[$table] as $row) {
                 if (!is_array($row)) continue;
+                if ($table === 'system_meta' && ($row['meta_key'] ?? '') === PORTAL_STARTUP_KEY) continue;
                 $row = array_intersect_key($row, $allowedColumns);
                 if (!$row) continue;
                 $columns = array_keys($row);
@@ -270,6 +271,7 @@ function restorePortalBackup(PDO $pdo, array $snapshot, array $user): void
                 $stmt->execute(array_values($row));
             }
         }
+        migrateLegacyCredentials($pdo);
         $pdo->commit();
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) $pdo->rollBack();
