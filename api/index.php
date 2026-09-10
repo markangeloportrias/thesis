@@ -942,6 +942,7 @@ try {
             respond(['ok' => true]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'review') {
+            $reviewStep = 'validation';
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok' => false, 'message' => 'Access denied.'], 403);
             $statusMap = ['Draft' => 'submitted', 'Submitted' => 'submitted', 'Under Review' => 'reviewed', 'Changes Requested' => 'needs_revision', 'Resubmitted' => 'submitted', 'Verified' => 'verified', 'Invalid' => 'invalid', 'Archived' => 'archived'];
             $requested = (string)($data['status'] ?? '');
@@ -956,6 +957,7 @@ try {
             if ($id === 'resolve') requireFields($reviewIdentity, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
             $pdo->beginTransaction();
             if ($id === 'resolve') {
+                $reviewStep = 'lookup';
                 $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE student_id=? AND REPLACE(LOWER(TRIM(procedure_key)), ' ', '-')=? AND LOWER(TRIM(case_no))=LOWER(TRIM(?)) AND LOWER(TRIM(patient_name))=LOWER(TRIM(?)) AND COALESCE(academic_year,'')=? AND archived_at IS NULL LIMIT 2 FOR UPDATE");
                 $recordStmt->execute([$reviewIdentity['student_id'], $reviewIdentity['procedure_key'], $reviewIdentity['case_no'], $reviewIdentity['patient_name'], trim((string)($reviewIdentity['academic_year'] ?? ''))]);
                 $matches = $recordStmt->fetchAll();
@@ -966,6 +968,7 @@ try {
                 $reviewRecord = $matches[0] ?? false;
                 if ($reviewRecord) $id = (string)$reviewRecord['id'];
             } else {
+                $reviewStep = 'record';
                 $recordStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=? AND archived_at IS NULL FOR UPDATE');
                 $recordStmt->execute([$id]);
                 $reviewRecord = $recordStmt->fetch();
@@ -983,9 +986,16 @@ try {
                 validateContactNumberInput($reviewRecord['facility_contact_number'], 'Facility contact number');
                 validateContactNumberInput($reviewRecord['supervisor_contact_number'], 'Supervisor contact number');
             }
-            $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=IF(?='verified',?,NULL),checked_at=IF(?='verified',NOW(),NULL),instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL");
-            $stmt->execute([$status, $data['remarks'] ?? null, $status, $instructorName, $status, $instructorId, $instructorName, $id]);
+            // Decide verification in PHP rather than comparing untyped bound
+            // strings inside SQL IF expressions on the hosting connection.
+            $checkedAtSql = $status === 'verified' ? 'NOW()' : 'NULL';
+            $checkedBy = $status === 'verified' ? $instructorName : null;
+            $reviewStep = 'update';
+            $stmt = $pdo->prepare("UPDATE case_records SET record_status=?,teacher_remarks=?,checked_by=?,checked_at=$checkedAtSql,instructor_uid=COALESCE(?,instructor_uid),instructor_name=COALESCE(?,instructor_name) WHERE id=? AND archived_at IS NULL");
+            $stmt->execute([$status, $data['remarks'] ?? null, $checkedBy, $instructorId, $instructorName, $id]);
+            $reviewStep = 'audit';
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
+            $reviewStep = 'commit';
             $pdo->commit();
             respond(['ok' => true]);
         }
@@ -1354,6 +1364,12 @@ try {
 } catch (PDOException $error) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     error_log('Portal SQL error ['.$resource.']: '.$error->getMessage());
+    if ($resource === 'cases' && $action === 'review') {
+        // Share only a stage and numeric driver code, never raw SQL, database
+        // names, credentials, or patient values from the exception message.
+        $reference = 'review-' . ($reviewStep ?? 'start') . '-' . (int)($error->errorInfo[1] ?? 0);
+        respond(['ok' => false, 'message' => 'Record verification could not be saved. Reference: ' . $reference . '. Please share this reference for troubleshooting.'], 500);
+    }
     $duplicate = (int)($error->errorInfo[1] ?? 0) === 1062;
     respond(['ok' => false, 'message' => $duplicate ? 'That record already exists.' : 'Database operation failed.'], $duplicate ? 409 : 500);
 } catch (Throwable $error) {
