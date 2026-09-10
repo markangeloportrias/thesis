@@ -1362,6 +1362,10 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $rows = $stmt->fetchAll();
+        } elseif ($user['role'] === 'instructor' && ($_GET['mine'] ?? '') === '1') {
+            $stmt = $pdo->prepare("SELECT * FROM audit_trail WHERE actor_role='instructor' AND actor_uid=? ORDER BY created_at DESC, id DESC LIMIT 500");
+            $stmt->execute([$user['user_uid']]);
+            $rows = $stmt->fetchAll();
         } elseif ($recordId !== '') {
             $stmt = $pdo->prepare("SELECT * FROM audit_trail WHERE entity_type = 'case' AND entity_uid = ? ORDER BY created_at DESC");
             $stmt->execute([$recordId]);

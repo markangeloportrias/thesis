@@ -528,6 +528,9 @@
               <button type="button" class="sidebar-nav-item" data-type="settings" id="btn-nav-settings">
                 <i class="fas fa-gear"></i><span>Account Settings</span>
               </button>
+              <button type="button" class="sidebar-nav-item" data-type="activity" id="btn-nav-activity">
+                <i class="fas fa-clock-rotate-left"></i><span>Activity Logs</span>
+              </button>
             </div>
           </div>
         </div>
@@ -679,6 +682,19 @@
           </div>
         </div>
 
+        <section id="instructorActivityView" style="display:none; padding:24px; background:white; border:1px solid #cbddef; border-radius:16px;">
+          <h2>Activity Logs</h2>
+          <p>Your latest 500 recorded actions, including record reviews and student updates.</p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap; margin:20px 0;">
+            <input id="instructorActivitySearch" type="search" placeholder="Search action, record, or details" aria-label="Search activity logs" style="flex:1; min-width:200px; padding:12px;" />
+            <button type="button" class="mini-btn" id="instructorActivityRefresh">Refresh</button>
+          </div>
+          <p id="instructorActivityStatus" role="status" aria-live="polite"></p>
+          <div style="overflow-x:auto;"><table style="width:100%; text-align:left; border-collapse:collapse;">
+            <thead><tr><th>Date and time</th><th>Action</th><th>Record type</th><th>Reference</th><th>Details</th></tr></thead>
+            <tbody id="instructorActivityRows"></tbody>
+          </table></div>
+        </section>
         <section class="settings-view settings-minimal" id="settingsView">
           <div class="settings-card settings-minimal-shell">
             <header class="settings-minimal-header">
@@ -1434,6 +1450,7 @@
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/api-client.js?v=20260910-student-loading-1"></script>
+    <script src="assets/js/instructor-activity.js?v=1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -6150,6 +6167,9 @@
       });
 
       async function loadRecords() {
+        const activityView = document.getElementById('instructorActivityView');
+        if (activityView) activityView.style.display = activeType === 'activity' ? 'block' : 'none';
+        if (activeType === 'activity') void window.InstructorActivity.load();
         hideInstructorProcedureProgress(instructorActiveRecordProgress);
         if (instructorStudentProcedureTables) {
           instructorStudentProcedureTables.replaceChildren();
@@ -6217,7 +6237,7 @@
         const isStudents = activeType === "students";
         const isMessages = activeType === "messages";
         const isEditRequests = activeType === "edit-requests";
-        const isSettings = activeType === "settings";
+        const isSettings = activeType === "settings" || activeType === "activity";
         const isCurrentStudentDetail =
           !!selectedCurrentRecordsStudent && (isMyRecords || isProcedure);
         const isSelectedStudentRecords = isMyRecords && Boolean(selectedCurrentRecordsStudent);
@@ -6250,7 +6270,7 @@
         const settingsView = document.getElementById("settingsView");
         const contentSection = document.querySelector(".content-section");
         if (settingsView) {
-          settingsView.style.display = isSettings ? "block" : "none";
+          settingsView.style.display = activeType === "settings" ? "block" : "none";
         }
         if (contentSection) {
           contentSection.style.display =
