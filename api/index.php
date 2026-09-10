@@ -878,6 +878,7 @@ try {
         }
         if ($method === 'PATCH' && $id !== '' && $action === '') {
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            $editStep = 'record-lookup';
             [$editWhere, $recordParams] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
             $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $editWhere LIMIT 2");
             $recordStmt->execute($recordParams);
@@ -887,6 +888,7 @@ try {
             if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or access is denied.'], 404);
 
             if ($user['role'] === 'student') {
+                $editStep = 'permission-check';
                 if (!hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'])) {
                     respond(['ok' => false, 'message' => 'Instructor correction approval is required before editing this record.'], 403);
                 }
@@ -914,21 +916,26 @@ try {
             $nextCaseNo = trim((string)($data['case_no'] ?? $record['case_no']));
             $nextPatientName = trim((string)($data['patient_name'] ?? $record['patient_name']));
             if ($nextCaseNo === '' || $nextPatientName === '') respond(['ok' => false, 'message' => 'Case number and patient name are required.'], 422);
+            $editStep = 'role-lookup';
             $roleContext = resolveCaseRoleContext($pdo, (string)$record['student_id'], (string)$record['academic_year'], $nextCaseNo, $nextPatientName, (string)$record['procedure_key']);
             $lockNames = $roleContext === null ? [] : caseRoleLockNames($roleContext);
             $roleConflict = null;
+            $editStep = 'role-lock';
             if ($lockNames && !acquireCaseRoleLocks($pdo, $lockNames)) respond(['ok' => false, 'message' => 'The patient role is being updated. Please try again.'], 503);
             try {
+                $editStep = 'record-lock';
                 $pdo->beginTransaction();
                 $selected = $pdo->prepare("SELECT * FROM case_records WHERE $editWhere LIMIT 2 FOR UPDATE");
                 $selected->execute($recordParams);
                 if (count($selected->fetchAll()) !== 1) {
                     throw new RuntimeException('The selected record changed. Refresh before editing.');
                 }
+                $editStep = 'permission-lock';
                 if ($user['role'] === 'student' && !hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'], true)) {
                     $pdo->rollBack();
                     throw new RuntimeException('The correction approval was already used or withdrawn.');
                 }
+                $editStep = 'role-check';
                 if ($roleContext !== null) {
                     $roleConflict = findCaseRoleConflict(getActiveCaseRoleRecords($pdo, $roleContext), $roleContext['role'], (string)$record['student_id']);
                 }
@@ -939,14 +946,18 @@ try {
                     $params[] = null;
                     $fields[] = 'checked_by=NULL';
                     $fields[] = 'checked_at=NULL';
+                    $editStep = 'record-update';
                     $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . " WHERE $editWhere LIMIT 1");
                     $update->execute(array_merge($params, $recordParams));
                     if ($user['role'] === 'student') {
+                        $editStep = 'permission-consume';
                         $consume = $pdo->prepare('UPDATE edit_permissions SET approved=0, updated_at=NOW() WHERE ' . EDIT_PERMISSION_MATCH);
-                        $consume->execute([$user['user_uid'], $record['procedure_key']]);
+                        $consume->execute([$user['user_uid'], editPermissionProcedure($record['procedure_key'])]);
                     }
+                    $editStep = 'audit';
                     audit($pdo, $user, 'update', 'case', (string)$record['id'], ['fields' => array_values(array_intersect($editableFields, array_keys($data))), 'record_identity' => $identity]);
                 }
+                $editStep = 'commit';
                 $pdo->commit();
             } finally {
                 releaseCaseRoleLocks($pdo, $lockNames);
@@ -1421,6 +1432,10 @@ try {
 } catch (PDOException $error) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     error_log('Portal SQL error ['.$resource.']: '.$error->getMessage());
+    if ($resource === 'cases' && $method === 'PATCH' && $action === '') {
+        $reference = 'edit-' . ($editStep ?? 'start') . '-' . (int)($error->errorInfo[1] ?? 0);
+        respond(['ok' => false, 'message' => 'The correction could not be saved. Reference: ' . $reference . '. Please share this reference for troubleshooting.'], 500);
+    }
     if ($resource === 'cases' && $action === 'review') {
         // Share only a stage and numeric driver code, never raw SQL, database
         // names, credentials, or patient values from the exception message.
