@@ -1104,12 +1104,13 @@ try {
             respond(['ok' => $stmt->rowCount() === 1]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'restore') {
-            $where = $user['role'] === 'student' ? ' AND student_id=?' : '';
-            $params = [$id];
-            if ($where) $params[] = $user['user_uid'];
-            $recordStmt = $pdo->prepare('SELECT id,student_id,academic_year,procedure_key,case_no,patient_name FROM case_records WHERE id=? AND archived_at IS NOT NULL' . $where);
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            [$where, $params] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null, true);
+            $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $where LIMIT 2");
             $recordStmt->execute($params);
-            $record = $recordStmt->fetch();
+            $matches = $recordStmt->fetchAll();
+            if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple archived records match these details. No records were restored.'], 409);
+            $record = $matches[0] ?? false;
             if (!$record) respond(['ok' => false, 'message' => 'Archived case not found.'], 404);
 
             $recordAcademicYear = trim((string)($record['academic_year'] ?? ''));
@@ -1125,6 +1126,14 @@ try {
             }
 
             try {
+                $pdo->beginTransaction();
+                $selected = $pdo->prepare("SELECT * FROM case_records WHERE $where LIMIT 2 FOR UPDATE");
+                $selected->execute($params);
+                $matches = $selected->fetchAll();
+                if (count($matches) !== 1) {
+                    $pdo->rollBack();
+                    throw new RuntimeException('The archived selection changed. Refresh before restoring.');
+                }
                 if ($roleContext !== null) {
                     $roleConflict = findCaseRoleConflict(
                         getActiveCaseRoleRecords($pdo, $roleContext),
@@ -1133,16 +1142,17 @@ try {
                     );
                 }
                 if ($roleConflict === null) {
-                    $stmt = $pdo->prepare('UPDATE case_records SET archived_at=NULL, record_status=\'submitted\' WHERE id=? AND archived_at IS NOT NULL' . $where);
+                    $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NULL, record_status='submitted' WHERE $where LIMIT 1");
                     $stmt->execute($params);
-                    $restored = $stmt->rowCount() > 0;
+                    $restored = $stmt->rowCount() === 1;
                 }
+                if ($restored) audit($pdo, $user, 'restore', 'case', (string)$record['id'], ['record_identity' => $identity]);
+                $pdo->commit();
             } finally {
                 releaseCaseRoleLocks($pdo, $lockNames);
             }
 
             if ($roleConflict !== null) respond(caseRoleConflictPayload($roleContext), 409);
-            if ($restored) audit($pdo, $user, 'restore', 'case', $id);
             respond(['ok' => $restored]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {

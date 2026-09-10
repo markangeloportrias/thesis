@@ -2747,11 +2747,11 @@
       return { ok: false, message: error.message };
     }
   };
-  ApiClient.restoreCaseRecord = async function (studentId, caseId) {
+  ApiClient.restoreCaseRecord = async function (studentId, caseId, identity) {
     try {
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/restore', {
         method: 'PATCH',
-        body: '{}'
+        body: JSON.stringify({ record_identity: identity || {} })
       });
       return { ok: !!result.ok, message: result.message };
     } catch (error) {

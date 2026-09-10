@@ -1536,7 +1536,7 @@
 
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260910-student-loading-1"></script>
+    <script src="assets/js/api-client.js?v=20260910-restore-identity-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -4217,7 +4217,7 @@
             showCaseDetail(item);
           });
           row.querySelector('[data-archive-action="restore"]')?.addEventListener("click", async () => {
-            const result = await ApiClient.restoreCaseRecord(getCurrentStudentId(), item.id);
+            const result = await ApiClient.restoreCaseRecord(getCurrentStudentId(), item.id ?? 'resolve', item.record_identity || item);
             if (!result?.ok) return showOptionPane({ title: "Unable to Restore", message: result?.message || "The archived record could not be restored." });
             await renderArchivedRecords();
             showOptionPane({ title: "Record Restored", message: `Case ${item.case_no || "record"} was restored to your active records.` });

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 // Reuse the exact predicate for the locked read and the write. An imported
 // database may lack the unique key that normally makes id sufficient.
-function caseMutationSelection(string $id, array $identity, ?string $owner = null): array
+function caseMutationSelection(string $id, array $identity, ?string $owner = null, bool $archived = false): array
 {
-    $where = ['archived_at IS NULL'];
+    $where = [$archived ? 'archived_at IS NOT NULL' : 'archived_at IS NULL'];
     $params = [];
     if ($id !== 'resolve') {
         $where[] = 'id=?';
