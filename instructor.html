@@ -6884,12 +6884,13 @@
       });
 
       async function runRecordReviewAction(status) {
-        if (!currentReviewRecord) {
+        const reviewRecord = currentReviewRecord;
+        if (!reviewRecord) {
           showOptionMessage("No Record Selected", "Open a clinical record before using a review action.");
           return;
         }
         if (status === "Verified") {
-          const missing = RecordQuality.missing(currentReviewRecord);
+          const missing = RecordQuality.missing(reviewRecord);
           if (missing.length) {
             showOptionMessage('Record Incomplete', `Complete these fields before verification: ${missing.join(', ')}.`);
             return;
@@ -6898,11 +6899,11 @@
         let remarks = "";
         try {
           if (status === "Changes Requested" || status === "Invalid") {
-            const missingFields = RecordQuality.missing(currentReviewRecord);
+            const missingFields = RecordQuality.missing(reviewRecord);
             rejectRemarksInput.value = missingFields.length ? `Please complete: ${missingFields.join(', ')}.` : "";
             remarks = await promptRejectRemarks(
-              { studentId: currentReviewRecord.student_id, type: currentReviewRecord.procedure_name },
-              currentReviewRecord.case_no,
+              { studentId: reviewRecord.student_id, type: reviewRecord.procedure_name },
+              reviewRecord.case_no,
             );
             if (remarks === null) return;
           } else {
@@ -6914,27 +6915,19 @@
             );
             if (!confirmed) return;
           }
-          let caseId = currentReviewRecord.id;
-          if (!caseId || Number(caseId) <= 0) {
-            const records = await ApiClient.getAllCasesForInstructor("", "");
-            const selectedProcedure = normalizeProcedureKey(currentReviewRecord.procedure_key || currentReviewRecord.procedure_name);
-            const candidateRecords = (Array.isArray(records) ? records : []).filter((record) =>
-              !currentReviewRecord.student_id || String(record.student_id || "") === String(currentReviewRecord.student_id || ""),
-            );
-            const matchingRecord = candidateRecords.find((record) =>
-              normalizeCaseNo(record.case_no) === normalizeCaseNo(currentReviewRecord.case_no) &&
-              normalizeProcedureKey(record.procedure_key || record.procedure_name) === selectedProcedure,
-            ) || candidateRecords.find((record) =>
-              normalizeCaseNo(record.case_no) === normalizeCaseNo(currentReviewRecord.case_no),
-            );
-            caseId = matchingRecord?.id || "";
-          }
-          if (!caseId || Number(caseId) <= 0) {
-            showOptionMessage("Action Failed", "The clinical record ID could not be resolved. Please refresh the records and try again.");
-            return;
-          }
-          const result = await ApiClient.updateRecordStatus(caseId, status, {
+          const caseId = [reviewRecord.id, reviewRecord.case_id, reviewRecord.caseId, reviewRecord.case_record_id]
+            .find((value) => /^\d+$/.test(String(value ?? "")) && Number.isSafeInteger(Number(value)));
+          // Older imported/listed records may omit the database ID. Resolve
+          // their full identity on the server, never by case number alone.
+          const result = await ApiClient.updateRecordStatus(caseId ?? "resolve", status, {
             remarks,
+            record_identity: {
+              student_id: reviewRecord.student_id,
+              procedure_key: normalizeProcedureKey(reviewRecord.procedure_key || reviewRecord.procedure_name),
+              case_no: reviewRecord.case_no,
+              patient_name: reviewRecord.patient_name,
+              academic_year: reviewRecord.academic_year || reviewRecord.school_year || "",
+            },
             instructor_id: currentInstructor?.id || "",
             instructor_name: currentInstructorName,
             action: status === "Verified" ? "Record Verified" : status,

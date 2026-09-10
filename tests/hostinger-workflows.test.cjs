@@ -45,6 +45,12 @@ async function request(path, method = 'GET', body, token, expected = 200) {
   const saved = await request('cases', 'POST', record, studentToken, 201);
   await request('cases', 'POST', record, studentToken, 409);
   assert.equal((await request('cases', 'GET', undefined, studentToken)).cases.length, 1);
+  const identity = { student_id: record.student_id, procedure_key: record.procedure_key, case_no: record.case_no, patient_name: record.patient_name, academic_year: record.academic_year };
+  const reviewBody = { status: 'Verified', record_identity: identity, instructor_id: instructorLogin.user.id, instructor_name: 'Test Instructor' };
+  await request('cases/resolve/review', 'PATCH', reviewBody, studentToken, 403);
+  await request('cases/resolve/review', 'PATCH', { ...reviewBody, record_identity: { ...identity, academic_year: '2000-2001' } }, teacher, 404);
+  await request('cases/resolve/review', 'PATCH', reviewBody, teacher);
+  assert.equal((await request('cases', 'GET', undefined, studentToken)).cases[0].record_status, 'verified');
   await request('cases/' + saved.id + '/review', 'PATCH', { status: 'Verified', instructor_id: instructorLogin.user.id, instructor_name: 'Test Instructor' }, teacher);
   assert.equal((await request('cases', 'GET', undefined, studentToken)).cases[0].record_status, 'verified');
   await request('cases/' + saved.id + '/archive', 'PATCH', {}, teacher);

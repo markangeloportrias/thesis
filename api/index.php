@@ -952,10 +952,24 @@ try {
             }
             $instructorId = $data['instructor_id'] ?? $data['instructorId'] ?? null;
             $instructorName = $data['instructor_name'] ?? $data['instructorName'] ?? null;
+            $reviewIdentity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            if ($id === 'resolve') requireFields($reviewIdentity, ['student_id', 'procedure_key', 'case_no', 'patient_name']);
             $pdo->beginTransaction();
-            $recordStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=? AND archived_at IS NULL FOR UPDATE');
-            $recordStmt->execute([$id]);
-            $reviewRecord = $recordStmt->fetch();
+            if ($id === 'resolve') {
+                $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE student_id=? AND REPLACE(LOWER(TRIM(procedure_key)), ' ', '-')=? AND LOWER(TRIM(case_no))=LOWER(TRIM(?)) AND LOWER(TRIM(patient_name))=LOWER(TRIM(?)) AND COALESCE(academic_year,'')=? AND archived_at IS NULL LIMIT 2 FOR UPDATE");
+                $recordStmt->execute([$reviewIdentity['student_id'], $reviewIdentity['procedure_key'], $reviewIdentity['case_no'], $reviewIdentity['patient_name'], trim((string)($reviewIdentity['academic_year'] ?? ''))]);
+                $matches = $recordStmt->fetchAll();
+                if (count($matches) > 1) {
+                    $pdo->rollBack();
+                    respond(['ok' => false, 'message' => 'More than one clinical record matches this selection. Open the specific record with its database ID before verifying.'], 409);
+                }
+                $reviewRecord = $matches[0] ?? false;
+                if ($reviewRecord) $id = (string)$reviewRecord['id'];
+            } else {
+                $recordStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=? AND archived_at IS NULL FOR UPDATE');
+                $recordStmt->execute([$id]);
+                $reviewRecord = $recordStmt->fetch();
+            }
             if (!$reviewRecord) {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
