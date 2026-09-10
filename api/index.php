@@ -1203,9 +1203,23 @@ try {
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['approve','reject','archive','restore'], true)) {
             if ($action !== 'archive' && !in_array($user['role'], ['admin','instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             $pdo->beginTransaction();
-            $lockedRequest = $pdo->prepare('SELECT student_id,status,archived_at FROM edit_requests WHERE id=? FOR UPDATE');
-            $lockedRequest->execute([$id]);
-            $currentRequest = $lockedRequest->fetch();
+            $requestWhere = 'id=?';
+            $requestParams = [$id];
+            if (in_array($action, ['approve', 'reject'], true)) $requestWhere .= ' AND archived_at IS NULL';
+            $requestIdentity = is_array($data['request_identity'] ?? null) ? $data['request_identity'] : [];
+            foreach (['student_id', 'procedure_key', 'case_numbers', 'requested_at'] as $field) {
+                if (!array_key_exists($field, $requestIdentity)) continue;
+                $requestWhere .= " AND `$field`=?";
+                $requestParams[] = is_array($requestIdentity[$field]) ? json_encode($requestIdentity[$field]) : $requestIdentity[$field];
+            }
+            $lockedRequest = $pdo->prepare("SELECT * FROM edit_requests WHERE $requestWhere LIMIT 2 FOR UPDATE");
+            $lockedRequest->execute($requestParams);
+            $requestMatches = $lockedRequest->fetchAll();
+            if (count($requestMatches) > 1) {
+                $pdo->rollBack();
+                respond(['ok'=>false,'message'=>'Multiple correction requests match this selection. No requests were changed.'],409);
+            }
+            $currentRequest = $requestMatches[0] ?? false;
             if (!$currentRequest || ($user['role'] === 'student' && $currentRequest['student_id'] !== $user['user_uid'])) {
                 $pdo->rollBack();
                 respond(['ok'=>false,'message'=>'Edit request not found.'],404);
@@ -1222,9 +1236,11 @@ try {
                     : ($action === 'restore'
                         ? 'UPDATE edit_requests SET archived_at=NULL WHERE id=? AND archived_at IS NOT NULL'
                         : 'UPDATE edit_requests SET archived_at=NOW() WHERE id=? AND archived_at IS NULL'));
-            $params = $action === 'reject' ? [$data['remarks'] ?? '',$id] : [$id]; $stmt=$pdo->prepare($sql);$stmt->execute($params);
+            $sql = str_replace('WHERE id=?', "WHERE $requestWhere", $sql) . ' LIMIT 1';
+            $params = $action === 'reject' ? array_merge([$data['remarks'] ?? ''], $requestParams) : $requestParams;
+            $stmt=$pdo->prepare($sql);$stmt->execute($params);
             if (in_array($action,['approve','reject'],true)) {
-                $requestStmt=$pdo->prepare('SELECT student_id,procedure_key,procedure_name,case_numbers FROM edit_requests WHERE id=?');$requestStmt->execute([$id]);$request=$requestStmt->fetch();
+                $request=$currentRequest;
                 if ($request) {
                     $approved=$action==='approve'?1:0;
                     $perm=$pdo->prepare('INSERT INTO edit_permissions (student_id,procedure_key,approved,approved_at) VALUES (?,?,?,IF(?=1,NOW(),NULL)) ON DUPLICATE KEY UPDATE approved=VALUES(approved),approved_at=VALUES(approved_at),updated_at=NOW()');
@@ -1238,7 +1254,7 @@ try {
             $changed = $stmt->rowCount() > 0;
             if ($changed) audit($pdo,$user,$action,'edit_request',$id);
             $pdo->commit();
-            respond(['ok'=>$changed]);
+            respond(['ok'=>$changed, 'message'=>$changed ? '' : 'The correction request was not changed. Refresh the list and try again.']);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
             if (!in_array($user['role'], ['admin', 'instructor', 'student'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);

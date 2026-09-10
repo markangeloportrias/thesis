@@ -2889,8 +2889,23 @@
   ApiClient.cancelEditRequest = async function (requestId) {
     return ApiClient.archiveEditRequest(requestId);
   };
-  ApiClient.approveEditRequest = async function (requestId) {
-    try { return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/approve',{method:'PATCH',body:'{}'}); }
+  ApiClient.approveEditRequest = async function (requestId, caseNo) {
+    try {
+      var response = await mysqlRequest('edit-requests');
+      var matches = (response.requests || []).filter(function (request) {
+        if (String(request.id) !== String(requestId)) return false;
+        if (caseNo === undefined) return true;
+        var numbers = request.case_numbers;
+        if (typeof numbers === 'string') { try { numbers = JSON.parse(numbers); } catch (_) { return false; } }
+        return Array.isArray(numbers) && numbers.some(function (number) { return String(number).trim() === String(caseNo).trim(); });
+      });
+      if (matches.length !== 1) return { ok: false, message: 'The request could not be uniquely identified. Refresh the correction requests before approving.' };
+      var selected = matches[0];
+      return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/approve',{method:'PATCH',body:JSON.stringify({request_identity: {
+        student_id: selected.student_id, procedure_key: selected.procedure_key,
+        case_numbers: selected.case_numbers, requested_at: selected.requested_at
+      }})});
+    }
     catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.rejectEditRequest = async function (requestId, remarks) {
