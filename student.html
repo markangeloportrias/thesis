@@ -1536,7 +1536,7 @@
 
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260910-edit-identity-1"></script>
+    <script src="assets/js/api-client.js?v=20260911-request-status-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -4312,15 +4312,22 @@
         });
       }
 
+      function correctionRequestStatus(request) {
+        const status = String(request.status || "pending").trim().toLowerCase();
+        if (["approved", "allowed", "accepted"].includes(status)) return "accepted";
+        if (["rejected", "denied"].includes(status)) return "rejected";
+        if (["edited", "completed"].includes(status)) return "edited";
+        if (["pending", "requested"].includes(status)) return "requested";
+        return "unknown";
+      }
+
       async function renderEditRequests() {
         const container = document.getElementById("editRequestsContent");
         if (!container) return;
         const requests = await ApiClient.getEditRequests();
-        const states = {};
-        const sharedRequests = requests;
         const currentStudentId = String(getCurrentStudentId() || "");
         const requestBadge = document.getElementById("badge-requests");
-        const activeRequestCount = sharedRequests.filter((item) => String(item.studentId || "") === currentStudentId && !item.archived && ["pending", "Requested"].includes(item.status || "pending")).length;
+        const activeRequestCount = requests.filter((item) => String(item.studentId || "") === currentStudentId && !item.archived && !item.archived_at && correctionRequestStatus(item) === "requested").length;
         if (requestBadge) {
           requestBadge.textContent = String(activeRequestCount);
           requestBadge.style.display = activeRequestCount ? "inline-flex" : "none";
@@ -4336,18 +4343,8 @@
         container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div>';
         const requestTableBody = container.querySelector("tbody");
         requests.forEach((request, requestIndex) => {
-          const sharedRequest = sharedRequests
-            .filter((item) =>
-              String(item.studentId || "") === currentStudentId &&
-              normalizeProcedureKey(item.type || item.procedure_name) === request.procedureKey &&
-              (item.caseNumbers || []).map(String).includes(String(request.caseNo || "")),
-            )
-            .sort((a, b) => new Date(b.requestedAt || 0) - new Date(a.requestedAt || 0))[0];
-          const sharedStatus = sharedRequest?.caseStatuses?.[String(request.caseNo || "")] || sharedRequest?.status;
-          const status = sharedStatus === "Allowed" || sharedStatus === "approved" ? "accepted"
-            : sharedStatus === "Denied" || sharedStatus === "rejected" ? "rejected"
-            : states[request.caseKey] || request.status || "requested";
-          const label = status === "accepted" ? "Approved — edit access granted" : status === "rejected" ? "Rejected by instructor" : status === "edited" ? "Edit completed" : "Pending instructor review";
+          const status = correctionRequestStatus(request);
+          const label = status === "accepted" ? "Approved by instructor" : status === "rejected" ? "Rejected by instructor" : status === "edited" ? "Edit completed" : status === "requested" ? "Pending instructor review" : "Status unavailable";
           const card = document.createElement("tr");
           card.className = `edit-request-row ${status === "accepted" ? "approved" : status === "rejected" ? "rejected" : "pending"}`;
           card.innerHTML = `<div class="notification-icon"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}"></i></div><div><div class="notification-title">${label}</div><div class="notification-meta">${request.procedure || "Clinical record"} · Case ${request.caseNo || "—"}</div><small class="notification-time">${request.requestedAt || ""} · Open case</small></div><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button>`;
@@ -4373,8 +4370,8 @@
                     variant: "primary",
                     onClick: async () => {
                       const result = isPendingRequest
-                        ? await ApiClient.cancelEditRequest(request.id)
-                        : await ApiClient.archiveEditRequest(request.id);
+                        ? await ApiClient.cancelEditRequest(request.id, request)
+                        : await ApiClient.archiveEditRequest(request.id, request);
                       if (!result?.ok) {
                         showOptionPane({ title: "Unable to Continue", message: result?.message || "The request could not be updated." });
                         return;
@@ -4390,9 +4387,13 @@
               });
               return;
             }
-            if (!request.procedureKey || !request.caseKey) return;
-            focusedCaseKey = request.caseKey;
-            switchTab("procedure", request.procedureKey);
+            const procedureKey = normalizeProcedureKey(request.procedureKey || request.type);
+            if (!procedureKey) return;
+            const matches = deliveryRecords.filter((record) =>
+              normalizeProcedureKey(record.procedureKey) === procedureKey &&
+              String(record.caseNo) === String(request.caseNo));
+            focusedCaseKey = matches.length === 1 ? getCaseKey(matches[0]) : null;
+            switchTab("procedure", procedureKey);
           });
           requestTableBody?.appendChild(card);
         });

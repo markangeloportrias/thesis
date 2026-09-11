@@ -2877,8 +2877,12 @@
     var result=await mysqlRequest('edit-requests' + query);
     return (result.requests||[]).map(function(r){var numbers=r.case_numbers;if(typeof numbers==='string'){try{numbers=JSON.parse(numbers||'[]');}catch(e){numbers=[];}}numbers=Array.isArray(numbers)?numbers:[];return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,procedureKey:r.procedure_key,procedure:r.procedure_name,caseNumbers:numbers,caseNo:numbers[0]||'',caseKey:String(r.id),requestedAt:r.requested_at});});
   };
-  ApiClient.archiveEditRequest = async function (requestId) {
-    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/archive',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
+  ApiClient.archiveEditRequest = async function (requestId, request) {
+    var payload = request ? {request_identity: {
+      student_id: request.student_id, procedure_key: request.procedure_key,
+      case_numbers: request.case_numbers, requested_at: request.requested_at
+    }} : {};
+    try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/archive',{method:'PATCH',body:JSON.stringify(payload)});}catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.restoreEditRequest = async function (requestId) {
     try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/restore',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
@@ -2886,8 +2890,8 @@
   ApiClient.permanentlyDeleteEditRequest = async function (requestId) {
     try{return await mysqlRequest('edit-requests/'+encodeURIComponent(requestId)+'/delete',{method:'PATCH',body:'{}'});}catch(error){return {ok:false,message:error.message};}
   };
-  ApiClient.cancelEditRequest = async function (requestId) {
-    return ApiClient.archiveEditRequest(requestId);
+  ApiClient.cancelEditRequest = async function (requestId, request) {
+    return ApiClient.archiveEditRequest(requestId, request);
   };
   ApiClient.approveEditRequest = async function (requestId, caseNo) {
     try {
