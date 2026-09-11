@@ -1318,8 +1318,13 @@ try {
             if ($identity && !array_diff($required, array_keys($identity))) {
                 foreach (['student_id', 'instructor_id', 'sender_role', 'sender_name', 'message', 'created_at'] as $field) {
                     if (!array_key_exists($field, $identity)) continue;
-                    $where .= " AND COALESCE($field, '')=?";
-                    $params[] = (string)($identity[$field] ?? '');
+                    $value = (string)($identity[$field] ?? '');
+                    if ($value === '' && $field === 'instructor_id') {
+                        $where .= " AND ($field IS NULL OR $field='')";
+                    } else {
+                        $where .= " AND $field=?";
+                        $params[] = $value;
+                    }
                 }
             }
             return [$where, $params];
