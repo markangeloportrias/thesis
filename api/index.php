@@ -1354,7 +1354,9 @@ try {
             $matches = $pdo->prepare("SELECT id FROM chat_messages WHERE $targetWhere LIMIT 2");
             $matches->execute($targetParams);
             if (count($matches->fetchAll()) !== 1) respond(['ok'=>false,'message'=>'This message could not be uniquely identified. Refresh the conversation and try again.'],409);
-            $stmt = $pdo->prepare("UPDATE chat_messages SET message=? WHERE $targetWhere LIMIT 1");
+            // The preceding lookup establishes one exact target. Avoid UPDATE ... LIMIT,
+            // which is rejected by some shared-host database configurations.
+            $stmt = $pdo->prepare("UPDATE chat_messages SET message=? WHERE $targetWhere");
             $stmt->execute([$message, ...$targetParams]);
             $updated = true;
             respond(['ok'=>$updated]);
@@ -1367,7 +1369,7 @@ try {
             $matches = $pdo->prepare("SELECT id FROM chat_messages WHERE $targetWhere LIMIT 2");
             $matches->execute($targetParams);
             if (count($matches->fetchAll()) !== 1) respond(['ok'=>false,'message'=>'This message could not be uniquely identified. Refresh the conversation and try again.'],409);
-            $stmt = $pdo->prepare("UPDATE chat_messages SET archived_at=NOW() WHERE $targetWhere LIMIT 1");
+            $stmt = $pdo->prepare("UPDATE chat_messages SET archived_at=NOW() WHERE $targetWhere");
             $stmt->execute($targetParams);
             respond(['ok'=>$stmt->rowCount()>0]);
         }
