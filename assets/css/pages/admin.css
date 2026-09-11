@@ -2090,11 +2090,12 @@
       .dashboard-activity-header h3 { margin: 0 0 3px; color: var(--admin-primary); font-size: 15px; }
       .dashboard-activity-header p { margin: 0; color: var(--admin-muted); font-size: 11px; }
       .dashboard-activity-list { display: grid; gap: 7px; }
-      .dashboard-activity-item { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 9px; background: #f8faff; }
+      .dashboard-activity-item { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-width: 0; padding: 9px 11px; border-radius: 9px; background: #f8faff; }
       .dashboard-activity-item > i { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: #e9edff; color: var(--admin-primary); font-size: 11px; }
+      .dashboard-activity-item > div { min-width: 0; overflow: hidden; }
       .dashboard-activity-item strong { display: block; color: var(--admin-text); font-size: 11px; }
-      .dashboard-activity-item small { color: var(--admin-muted); font-size: 10px; }
-      .dashboard-activity-item time { color: #8b98ad; font-size: 9px; }
+      .dashboard-activity-item small { display: block; overflow-wrap: anywhere; color: var(--admin-muted); font-size: 10px; }
+      .dashboard-activity-item time { max-width: 130px; overflow-wrap: anywhere; color: #8b98ad; font-size: 9px; text-align: right; }
       .dashboard-activity-empty { padding: 18px; color: #8b98ad; text-align: center; font-size: 11px; }
       #instructorsCard .workspace-header { margin-bottom: 14px; }
       #instructorsCard #instructorMessage:empty { display: none; }
