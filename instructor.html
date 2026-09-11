@@ -1116,7 +1116,20 @@
                     <p>Review, approve, reject, and keep track of student correction requests.</p>
                   </div>
                 </div>
+                <div id="instructor-request-filters" aria-label="Request status filters">
+                  <button type="button" data-request-filter="pending" aria-pressed="true">Pending 0</button>
+                  <button type="button" data-request-filter="approved" aria-pressed="false">Approved 0</button>
+                  <button type="button" data-request-filter="rejected" aria-pressed="false">Rejected 0</button>
+                  <button type="button" data-request-filter="all" aria-pressed="false">All</button>
+                </div>
+                <style>
+                  #instructor-request-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+                  #instructor-request-filters button { padding: 9px 12px; border: 1px solid #b7cfee; border-radius: 5px; background: #fff; color: #062d6a; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+                  #instructor-request-filters button[aria-pressed="true"] { background: #062d6a; color: #fff; }
+                  #instructor-request-filters button:focus-visible { outline: 2px solid #0866d9; outline-offset: 2px; }
+                </style>
                 <div id="edit-requests-list" class="edit-requests-list"></div>
+                <div id="instructor-request-empty" class="empty" hidden>No edit requests found.</div>
               </div>
                             <!-- Student Summary View (Embedded) -->
               <div id="student-summary-view" style="display: none"></div>
@@ -2945,9 +2958,35 @@
         }
       });
 
+      let instructorRequestFilter = "pending";
+      let instructorRequestRenderVersion = 0;
+      function applyInstructorRequestFilter() {
+        const rows = Array.from(document.querySelectorAll('#edit-requests-list .request-item'));
+        let visible = 0;
+        rows.forEach((row) => {
+          const show = instructorRequestFilter === "all" || row.dataset.requestStatus === instructorRequestFilter;
+          row.style.display = show ? "" : "none";
+          if (show) visible++;
+        });
+        document.querySelectorAll('#instructor-request-filters button').forEach((button) => {
+          const status = button.dataset.requestFilter;
+          button.setAttribute('aria-pressed', String(status === instructorRequestFilter));
+          button.textContent = status === 'all' ? 'All' : `${status[0].toUpperCase() + status.slice(1)} ${rows.filter(row => row.dataset.requestStatus === status).length}`;
+        });
+        document.getElementById('instructor-request-empty').hidden = visible > 0;
+      }
+      document.getElementById('instructor-request-filters')?.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-request-filter]');
+        if (!button) return;
+        instructorRequestFilter = button.dataset.requestFilter;
+        applyInstructorRequestFilter();
+      });
+
       async function renderEditRequestsList() {
+        const version = ++instructorRequestRenderVersion;
         console.log('[INSTRUCTOR_DEBUG] renderEditRequestsList() called');
         const requests = await ApiClient.getEditRequests();
+        if (version !== instructorRequestRenderVersion) return;
         const pendingCount = requests.filter((request) => {
           const caseNo = normalizeCaseNo(request.caseNumbers?.[0]);
           const status = request.caseStatuses?.[caseNo] || request.status || "pending";
@@ -2965,8 +3004,8 @@
 
         if (!requests.length) {
           console.log('[INSTRUCTOR_DEBUG] No edit requests, showing empty state');
-          editRequestsList.innerHTML =
-            '<div class="empty">No pending edit requests from students.</div>';
+          editRequestsList.innerHTML = "";
+          applyInstructorRequestFilter();
           return;
         }
 
@@ -3012,6 +3051,7 @@
                 : "request-status-rejected";
             const item = document.createElement("div");
             item.className = "request-item";
+            item.dataset.requestStatus = isApproved ? "approved" : isPending ? "pending" : "rejected";
             item.innerHTML = `
               <div class="request-item-content">
                 <div class="request-item-header">
@@ -3039,10 +3079,10 @@
                 ${!isPending ? `<div class="request-item-actions"><button class="request-delete-btn" data-delete-edit-request="${req.id}" data-case-no="${caseNum}"><i class="fas fa-trash"></i> Delete</button></div>` : ""}
               </div>
             `;
-            editRequestsList.appendChild(item);
+            if (version === instructorRequestRenderVersion) editRequestsList.appendChild(item);
           });
         }
-        console.log('[INSTRUCTOR_DEBUG] renderEditRequestsList() complete');
+        if (version === instructorRequestRenderVersion) applyInstructorRequestFilter();
       }
 
       function handleLogoutAction(event) {
