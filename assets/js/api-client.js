@@ -2956,12 +2956,26 @@
     if (f.instructor_id||f.instructorId) query.push('instructor_id='+encodeURIComponent(f.instructor_id||f.instructorId));
     var result=await mysqlRequest('chat'+(query.length?'?'+query.join('&'):''));return result.messages||[];
   };
-  ApiClient.editChatMessage = async function (messageId, message) {
-    try { return await mysqlRequest('chat/'+encodeURIComponent(messageId)+'/edit',{method:'PATCH',body:JSON.stringify({message:message||''})}); }
+  function chatMessageIdentity(message) {
+    var source = message && (message.identity || message);
+    if (!source || typeof source !== 'object') return null;
+    var fields = ['student_id', 'instructor_id', 'sender_role', 'sender_name', 'message', 'created_at'];
+    var identity = {};
+    fields.forEach(function (field) {
+      if (source[field] !== undefined && source[field] !== null) identity[field] = source[field];
+    });
+    return Object.keys(identity).length ? identity : null;
+  }
+  ApiClient.editChatMessage = async function (messageId, message, identity) {
+    var payload = {message:message||''};
+    var target = chatMessageIdentity(identity);
+    if (target) payload.message_identity = target;
+    try { return await mysqlRequest('chat/'+encodeURIComponent(messageId)+'/edit',{method:'PATCH',body:JSON.stringify(payload)}); }
     catch(error){return {ok:false,message:error.message};}
   };
-  ApiClient.unsendChatMessage = async function (messageId) {
-    try { return await mysqlRequest('chat/'+encodeURIComponent(messageId)+'/unsend',{method:'PATCH',body:'{}'}); }
+  ApiClient.unsendChatMessage = async function (messageId, identity) {
+    var target = chatMessageIdentity(identity);
+    try { return await mysqlRequest('chat/'+encodeURIComponent(messageId)+'/unsend',{method:'PATCH',body:JSON.stringify(target ? {message_identity:target} : {})}); }
     catch(error){return {ok:false,message:error.message};}
   };
   ApiClient.deleteChatMessage = async function (messageId) {

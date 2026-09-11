@@ -1310,6 +1310,20 @@ try {
 
     if ($resource === 'chat') {
         $user=currentUser($pdo,['admin','instructor','student']);
+        $chatTarget = static function ($id, array $data, string $ownerWhere, array $ownerParams): array {
+            $where = "id=? AND archived_at IS NULL AND $ownerWhere";
+            $params = [$id, ...$ownerParams];
+            $identity = is_array($data['message_identity'] ?? null) ? $data['message_identity'] : [];
+            $required = ['student_id', 'sender_role', 'message', 'created_at'];
+            if ($identity && !array_diff($required, array_keys($identity))) {
+                foreach (['student_id', 'instructor_id', 'sender_role', 'sender_name', 'message', 'created_at'] as $field) {
+                    if (!array_key_exists($field, $identity)) continue;
+                    $where .= " AND COALESCE($field, '')=?";
+                    $params[] = (string)($identity[$field] ?? '');
+                }
+            }
+            return [$where, $params];
+        };
         if ($method === 'GET') {
             $conditions=['archived_at IS NULL'];$params=[];
             if ($user['role']==='student') {$conditions[]='student_id=?';$params[]=$user['user_uid'];}
@@ -1336,28 +1350,25 @@ try {
             $ownerWhere = $user['role'] === 'student'
                 ? "sender_role='student' AND student_id=?"
                 : ($user['role'] === 'instructor' ? "sender_role='instructor' AND instructor_id=?" : '1=1');
-            $params = [$message, $id];
-            if ($ownerWhere !== '1=1') $params[] = $user['user_uid'];
-            $stmt = $pdo->prepare("UPDATE chat_messages SET message=? WHERE id=? AND archived_at IS NULL AND $ownerWhere");
-            $stmt->execute($params);
-            $updated = $stmt->rowCount() > 0;
-            if (!$updated) {
-                $existingParams = [$id];
-                if ($ownerWhere !== '1=1') $existingParams[] = $user['user_uid'];
-                $existing = $pdo->prepare("SELECT 1 FROM chat_messages WHERE id=? AND archived_at IS NULL AND $ownerWhere");
-                $existing->execute($existingParams);
-                $updated = (bool)$existing->fetchColumn();
-            }
+            [$targetWhere, $targetParams] = $chatTarget($id, $data, $ownerWhere, $ownerWhere === '1=1' ? [] : [$user['user_uid']]);
+            $matches = $pdo->prepare("SELECT id FROM chat_messages WHERE $targetWhere LIMIT 2");
+            $matches->execute($targetParams);
+            if (count($matches->fetchAll()) !== 1) respond(['ok'=>false,'message'=>'This message could not be uniquely identified. Refresh the conversation and try again.'],409);
+            $stmt = $pdo->prepare("UPDATE chat_messages SET message=? WHERE $targetWhere LIMIT 1");
+            $stmt->execute([$message, ...$targetParams]);
+            $updated = true;
             respond(['ok'=>$updated]);
         }
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['unsend', 'delete'], true)) {
             $ownerWhere = $user['role'] === 'student'
                 ? "sender_role='student' AND student_id=?"
                 : ($user['role'] === 'instructor' ? "sender_role='instructor' AND instructor_id=?" : '1=1');
-            $params = [$id];
-            if ($ownerWhere !== '1=1') $params[] = $user['user_uid'];
-            $stmt = $pdo->prepare("UPDATE chat_messages SET archived_at=NOW() WHERE id=? AND archived_at IS NULL AND $ownerWhere");
-            $stmt->execute($params);
+            [$targetWhere, $targetParams] = $chatTarget($id, $data, $ownerWhere, $ownerWhere === '1=1' ? [] : [$user['user_uid']]);
+            $matches = $pdo->prepare("SELECT id FROM chat_messages WHERE $targetWhere LIMIT 2");
+            $matches->execute($targetParams);
+            if (count($matches->fetchAll()) !== 1) respond(['ok'=>false,'message'=>'This message could not be uniquely identified. Refresh the conversation and try again.'],409);
+            $stmt = $pdo->prepare("UPDATE chat_messages SET archived_at=NOW() WHERE $targetWhere LIMIT 1");
+            $stmt->execute($targetParams);
             respond(['ok'=>$stmt->rowCount()>0]);
         }
     }

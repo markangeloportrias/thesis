@@ -1473,7 +1473,7 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260911-instructor-password-1"></script>
+    <script src="assets/js/api-client.js?v=20260911-chat-identity-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=3-admin-match"></script>
     <script>
@@ -1621,10 +1621,11 @@
               nextChats[key] = { id: studentId, name: studentName, messages: [] };
             }
             nextChats[key].messages.push({
-              id: message.id || message.message_id || "",
+              id: message.id ?? message.message_id ?? "",
               from: message.sender_role,
               text: message.message,
               ts: message.created_at,
+              identity: message,
             });
           });
           instructorChats = nextChats;
@@ -1769,7 +1770,7 @@
 
       async function runInstructorChatAction(action, message) {
         if (!message || message.from !== "instructor") return;
-        if (!message.id) { alert("This message cannot be identified. Refresh the conversation and try again."); return; }
+        if (message.id === undefined || message.id === null || message.id === "") { alert("This message cannot be identified. Refresh the conversation and try again."); return; }
         let result;
         if (action === "edit") {
           setInstructorMessageEdit(message);
@@ -1816,7 +1817,7 @@
           }
         } else {
           if (!(await confirmInstructorChatAction("unsend"))) return;
-          result = await ApiClient.unsendChatMessage(message.id);
+          result = await ApiClient.unsendChatMessage(message.id, message.identity);
         }
         if (!result || !result.ok) {
           alert((result && result.message) || "Unable to update this message.");
@@ -1897,7 +1898,7 @@
         const conv = instructorChats[activeChatKey];
         const editingMessage = instructorEditingChatMessage;
         const result = editingMessage
-          ? await ApiClient.editChatMessage(editingMessage.id, text.trim())
+          ? await ApiClient.editChatMessage(editingMessage.id, text.trim(), editingMessage.identity)
           : await ApiClient.sendChatMessage({
               student_id: conv.id,
               student_name: conv.name,

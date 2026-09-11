@@ -1536,7 +1536,7 @@
 
 <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260911-request-status-1"></script>
+    <script src="assets/js/api-client.js?v=20260911-chat-identity-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -4509,7 +4509,7 @@
 
       async function runStudentChatAction(action, message) {
         if (!message || message.sender !== "student") return;
-        if (!message.id) {
+        if (message.id === undefined || message.id === null || message.id === "") {
           showOptionPane({ title: "Message Unavailable", message: "This message cannot be identified. Refresh the conversation and try again." });
           return;
         }
@@ -4562,7 +4562,7 @@
           }
         } else {
           if (!(await confirmStudentChatAction("unsend"))) return;
-          result = await ApiClient.unsendChatMessage(message.id);
+          result = await ApiClient.unsendChatMessage(message.id, message.identity);
         }
         if (!result || !result.ok) {
           showOptionPane({ title: "Message Not Updated", message: (result && result.message) || "Unable to update this message." });
@@ -4594,12 +4594,13 @@
         const messages = [
           ...legacyMessages,
           ...(Array.isArray(sharedMessages) ? sharedMessages.map((message) => ({
-            id: message.id || "",
+            id: message.id ?? "",
             sender: message.sender_role,
             text: message.message,
             instructorName: message.instructor_name || message.sender_name,
             time: message.created_at ? new Date(message.created_at).toLocaleString() : "",
             createdAt: message.created_at || "",
+            identity: message,
           })) : []),
         ].sort((a, b) => new Date(a.createdAt || a.time || 0) - new Date(b.createdAt || b.time || 0));
         thread.innerHTML = "";
@@ -5252,7 +5253,7 @@
         setStoredChatInstructorId(selectedInstructor.id);
         const editingMessage = studentEditingChatMessage;
         const result = editingMessage
-          ? await ApiClient.editChatMessage(editingMessage.id, text)
+          ? await ApiClient.editChatMessage(editingMessage.id, text, editingMessage.identity)
           : await ApiClient.sendChatMessage({
               student_id: getCurrentStudentId(),
               student_name: currentStudent?.student_name || "Student",
