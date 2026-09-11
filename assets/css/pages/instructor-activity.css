@@ -1,24 +1,24 @@
 /* Scoped overrides keep clinical form tables unchanged. */
 html body.role-instructor #instructorActivityView {
-  padding: 20px;
+  padding: 14px;
   border: 1px solid #e2e8f0;
-  border-radius: 18px;
+  border-radius: 14px;
   background: #fff;
   color: #334155;
   font-family: Inter, sans-serif;
 }
-#instructorActivityView .activity-heading { display: flex; align-items: center; gap: 10px; }
-#instructorActivityView .activity-heading-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: #edf4fc; color: #14539a; }
-#instructorActivityView h2 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -.5px; color: #142e50; }
-#instructorActivityView .activity-heading p { margin: 6px 0 0; font-size: 13px; color: #64748b; }
-#instructorActivityView .activity-toolbar { display: flex; gap: 12px; align-items: center; margin: 18px 0 12px; }
-#instructorActivityView .activity-search { display: flex; align-items: center; gap: 10px; flex: 1; max-width: 480px; padding: 0 14px; border: 1px solid #dce3ec; border-radius: 10px; color: #8493a8; }
+#instructorActivityView .activity-heading { display: flex; align-items: center; gap: 8px; }
+#instructorActivityView .activity-heading-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #edf4fc; color: #14539a; }
+#instructorActivityView h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.4px; color: #142e50; }
+#instructorActivityView .activity-heading p { margin: 3px 0 0; font-size: 12px; color: #64748b; }
+#instructorActivityView .activity-toolbar { display: flex; gap: 9px; align-items: center; margin: 12px 0 8px; }
+#instructorActivityView .activity-search { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 420px; padding: 0 11px; border: 1px solid #dce3ec; border-radius: 8px; color: #8493a8; }
 #instructorActivityView .activity-search:focus-within { outline: 2px solid #9bbfe5; outline-offset: 2px; }
-html body #instructorActivityView #instructorActivitySearch { width: 100%; min-width: 0; border: 0 !important; box-shadow: none !important; outline: none; background: transparent; padding: 9px 0; font: 400 13px Inter,sans-serif; }
+html body #instructorActivityView #instructorActivitySearch { width: 100%; min-width: 0; border: 0 !important; box-shadow: none !important; outline: none; background: transparent; padding: 7px 0; font: 400 12px Inter,sans-serif; }
 html body #instructorActivityView #instructorActivityRefresh {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   margin-left: auto; width: auto; min-width: 94px;
-  height: 34px !important; min-height: 34px !important; padding: 0 12px !important;
+  height: 30px !important; min-height: 30px !important; padding: 0 10px !important;
   border: 1px solid #00296b !important; border-radius: 7px;
   background: #00296b !important; color: #fff !important;
   font: 600 12px/1 Inter,sans-serif !important; box-shadow: none;
@@ -28,12 +28,12 @@ html body #instructorActivityView #instructorActivityRefresh:hover:not(:disabled
 html body #instructorActivityView #instructorActivityRefresh:focus-visible { outline: 2px solid #78a9e0; outline-offset: 3px; }
 html body #instructorActivityView #instructorActivityRefresh:disabled { opacity: .65; cursor: wait; }
 #instructorActivityView #instructorActivityRefresh i { font-size: 12px; }
-#instructorActivityView #instructorActivityStatus { color: #64748b; font-size: 12px; margin: 0 0 12px; }
-#instructorActivityView .activity-table-wrap { overflow-x: auto; border: 1px solid #e5eaf0; border-radius: 12px; }
+#instructorActivityView #instructorActivityStatus { color: #64748b; font-size: 12px; margin: 0 0 8px; }
+#instructorActivityView .activity-table-wrap { overflow-x: auto; border: 1px solid #e5eaf0; border-radius: 9px; }
 html body.role-instructor #instructorActivityView table { width: 100% !important; min-width: 620px; table-layout: auto !important; border-collapse: separate !important; border-spacing: 0 !important; border: 0 !important; }
 html body.role-instructor #instructorActivityView table th,
-html body.role-instructor #instructorActivityView table td { font-family: Inter,sans-serif !important; text-align: left !important; border: 0 !important; border-bottom: 0 !important; padding: 10px 14px !important; min-height: 0 !important; height: auto !important; line-height: 1.4 !important; vertical-align: middle !important; }
-html body.role-instructor #instructorActivityView table th { background: #00296b !important; color: #fff !important; font-size: 12px !important; font-weight: 600 !important; letter-spacing: 0; padding-top: 15px !important; padding-bottom: 15px !important; text-transform: uppercase; white-space: nowrap; }
+html body.role-instructor #instructorActivityView table td { font-family: Inter,sans-serif !important; text-align: left !important; border: 0 !important; border-bottom: 0 !important; padding: 7px 12px !important; min-height: 0 !important; height: auto !important; line-height: 1.3 !important; vertical-align: middle !important; }
+html body.role-instructor #instructorActivityView table th { background: #00296b !important; color: #fff !important; font-size: 11px !important; font-weight: 600 !important; letter-spacing: 0; padding-top: 10px !important; padding-bottom: 10px !important; text-transform: uppercase; white-space: nowrap; }
 html body.role-instructor #instructorActivityView table td { background: #fff !important; color: #00296b !important; font-size: 12px !important; font-weight: 400 !important; }
 html body.role-instructor #instructorActivityView tbody tr:hover td { background: #edf6ff !important; }
 html body.role-instructor #instructorActivityView tbody tr:last-child td { border-bottom: 0 !important; }
