@@ -169,6 +169,14 @@
         color: #003f88 !important;
       }
 
+      html body.role-instructor #settingsView.settings-minimal .settings-account-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
       html body.role-instructor #settingsView.settings-minimal #settingsPhotoBtn {
         border-color: #d2e0ee !important;
         background: #ffffff !important;
@@ -756,7 +764,10 @@
                     <h3 id="settingsAccountHeading">Instructor information</h3>
                     <p>Name, username, and role are maintained by the administrator.</p>
                   </div>
-                  <span class="settings-minimal-managed"><i class="fas fa-lock" aria-hidden="true"></i> Managed by administrator</span>
+                  <div class="settings-account-actions">
+                    <button class="settings-minimal-action" id="openInstructorPasswordEditBtn" type="button"><i class="fas fa-key" aria-hidden="true"></i> Change password</button>
+                    <span class="settings-minimal-managed"><i class="fas fa-lock" aria-hidden="true"></i> Managed by administrator</span>
+                  </div>
                 </div>
                 <div class="settings-minimal-details">
                   <div class="settings-minimal-detail"><span>Instructor name</span><strong id="settingsInstructorName">Instructor</strong></div>
@@ -1462,7 +1473,7 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260910-request-approval-1"></script>
+    <script src="assets/js/api-client.js?v=20260911-instructor-password-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=3-admin-match"></script>
     <script>
@@ -3401,6 +3412,42 @@
       }
 
       document.getElementById("openInstructorContactEditBtn")?.addEventListener("click", openInstructorSettingsEditor);
+      function openInstructorPasswordEditor() {
+        showGlobalOptionPane({
+          title: "Change Password",
+          message: "",
+          buttons: [
+            { label: "Cancel", variant: "secondary" },
+            {
+              label: "Change Password",
+              variant: "primary",
+              onClick: async () => {
+                const form = document.getElementById("instructorPasswordEditForm");
+                const currentPassword = form?.querySelector("[name='currentPassword']")?.value || "";
+                const newPassword = form?.querySelector("[name='newPassword']")?.value || "";
+                const confirmPassword = form?.querySelector("[name='confirmPassword']")?.value || "";
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                  setInstructorSettingsFeedback("Complete all password fields.", true);
+                  return;
+                }
+                if (newPassword !== confirmPassword) {
+                  setInstructorSettingsFeedback("New passwords do not match.", true);
+                  return;
+                }
+                const result = await ApiClient.updateInstructorPassword(currentPassword, newPassword);
+                setInstructorSettingsFeedback(result?.ok ? "Password changed successfully." : (result?.message || "Unable to change password."), !result?.ok);
+              },
+            },
+          ],
+        });
+        globalOptionPaneMessage.innerHTML = `
+          <form class="settings-edit-form" id="instructorPasswordEditForm">
+            <label>Current Password<input name="currentPassword" type="password" autocomplete="current-password" required></label>
+            <label>New Password<input name="newPassword" type="password" autocomplete="new-password" minlength="6" required></label>
+            <label>Confirm New Password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required></label>
+          </form>`;
+      }
+      document.getElementById("openInstructorPasswordEditBtn")?.addEventListener("click", openInstructorPasswordEditor);
       document.getElementById("settingsPhotoBtn")?.addEventListener("click", (event) => {
         event.stopPropagation();
         instructorPhotoInput?.click();

@@ -403,6 +403,23 @@ try {
         respond(['ok' => true]);
     }
 
+    if ($resource === 'auth' && $id === 'instructor-password' && $method === 'PATCH') {
+        $user = currentUser($pdo, ['instructor'], true);
+        requireFields($data, ['current_password', 'new_password']);
+        $currentPassword = (string)$data['current_password'];
+        $newPassword = (string)$data['new_password'];
+        if (!credentialIsStrong($newPassword, 6)) respond(['ok' => false, 'message' => 'New password must contain at least 6 characters.'], 422);
+        $credential = $pdo->prepare("SELECT password FROM instructor_accounts WHERE account_uid=? AND archived_at IS NULL AND status='active'");
+        $credential->execute([$user['user_uid']]);
+        if (!passwordMatches($currentPassword, (string)$credential->fetchColumn())) respond(['ok' => false, 'message' => 'Current password is incorrect.'], 403);
+        $update = $pdo->prepare("UPDATE instructor_accounts SET password=? WHERE account_uid=? AND archived_at IS NULL AND status='active'");
+        $update->execute([password_hash($newPassword, PASSWORD_DEFAULT), $user['user_uid']]);
+        $sessions = $pdo->prepare("UPDATE api_sessions SET revoked_at=NOW() WHERE role='instructor' AND user_uid=? AND token_hash<>? AND revoked_at IS NULL");
+        $sessions->execute([$user['user_uid'], hash('sha256', bearerToken())]);
+        audit($pdo, $user, 'change_password', 'instructor', (string)$user['user_uid']);
+        respond(['ok' => true]);
+    }
+
     if ($resource === 'auth' && $method === 'POST' && $id !== 'logout') {
         $role = $id;
         $identity = '';

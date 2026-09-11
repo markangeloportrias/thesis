@@ -2519,6 +2519,16 @@
       return { ok: false, message: error.message };
     }
   };
+  ApiClient.updateInstructorPassword = async function (currentPassword, newPassword) {
+    try {
+      return await mysqlRequest('auth/instructor-password', {
+        method: 'PATCH',
+        body: JSON.stringify({ current_password: currentPassword || '', new_password: newPassword || '' })
+      });
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
   ApiClient.createDatabaseBackup = async function () {
     try {
       var result = await mysqlRequest('backup');
