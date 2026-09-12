@@ -3954,7 +3954,9 @@
         }
       }
 
+      let yearlyYearsRenderVersion = 0;
       async function renderYearlyYears() {
+        const renderVersion = ++yearlyYearsRenderVersion;
         populateAllSchoolYearSelects();
         if (yearlyYearsTbody) yearlyYearsTbody.innerHTML = "";
         const [result, allCases, blocksResult, assignmentsResult] = await Promise.all([
@@ -3963,6 +3965,8 @@
           ApiClient.getStudentBlocks("").catch(() => null),
           ApiClient.getAllAssignedStudents().catch(() => null),
         ]);
+        if (renderVersion !== yearlyYearsRenderVersion) return;
+        if (yearlyYearsTbody) yearlyYearsTbody.innerHTML = "";
         const allBlocks =
           blocksResult && Array.isArray(blocksResult.blocks)
             ? blocksResult.blocks
