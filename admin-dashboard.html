@@ -2518,17 +2518,47 @@
         });
       }
 
-      function showAddStudentModal() {
+      async function showAddStudentModal() {
         // Keep the Students block selected when this form opens, even if
         // navigation state changes before the form is submitted.
         const blockContext = {
           blockId: studentsNav.blockId,
           schoolYear: studentsNav.schoolYear,
         };
+        let availableBlocks = [];
+        const needsBlockSelection = !blockContext.blockId || !blockContext.schoolYear;
+        if (needsBlockSelection) {
+          const controller = new AbortController();
+          const timeout = window.setTimeout(() => controller.abort(), 20000);
+          try {
+            const result = await ApiClient.getStudentBlocks(blockContext.schoolYear || "", { signal: controller.signal });
+            if (!result?.ok) throw new Error(result?.message || "Unable to load blocks.");
+            availableBlocks = (result.blocks || []).filter(block => block.id && (block.school_year || blockContext.schoolYear));
+            if (!availableBlocks.length) {
+              showStudentsNavMessage("No blocks are available. Open an academic year and add a block first.", "error");
+              return;
+            }
+          } catch (error) {
+            showStudentsNavMessage(controller.signal.aborted ? "Loading blocks timed out. Please try Add Student again." : error.message, "error");
+            return;
+          } finally {
+            window.clearTimeout(timeout);
+          }
+        }
         openStudentsAddModal({
           title: "Add Student",
           submitLabel: "Add Student",
           fields: [
+            ...(needsBlockSelection ? [{
+              id: "modalStudentBlock",
+              key: "selected_block",
+              label: "Academic Year / Block",
+              type: "select",
+              options: [{ value: "", label: "Select the student's block" }, ...availableBlocks.map(block => ({
+                value: String(block.id),
+                label: `${block.school_year || blockContext.schoolYear} / ${block.label}`,
+              }))],
+            }] : []),
             {
               id: "modalStudentId",
               key: "student_id",
@@ -2568,7 +2598,22 @@
               placeholder: "11-digit contact number",
             },
           ],
-          onSubmit: async (values) => submitNewStudentInBlock(values, blockContext),
+          onSubmit: async (values) => {
+            if (needsBlockSelection) {
+              const block = availableBlocks.find(item => String(item.id) === values.selected_block);
+              if (!block) return { ok: false, message: "Select the student's academic year and block." };
+              blockContext.blockId = block.id;
+              blockContext.schoolYear = block.school_year || blockContext.schoolYear;
+            }
+            const { selected_block, ...payload } = values;
+            const result = await submitNewStudentInBlock(payload, blockContext);
+            if (result?.ok && needsBlockSelection) {
+              studentsNav.schoolYear = blockContext.schoolYear;
+              const block = availableBlocks.find(item => String(item.id) === String(blockContext.blockId));
+              openStudentsBlock(blockContext.blockId, block?.label || "");
+            }
+            return result;
+          },
         });
       }
 
