@@ -4524,9 +4524,38 @@ html body.role-admin #notificationsCard .empty {
 
 /* Minimal System Settings surface. */
 html body.role-admin #systemToolsCard {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   padding: 18px 20px !important;
   border-radius: 14px !important;
   box-shadow: 0 4px 16px rgba(0, 41, 107, 0.06) !important;
+}
+
+/* Keep long audit records from expanding the settings workspace. */
+html body.role-admin #systemToolsCard :is(.system-tool-panel, .table-wrap) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+html body.role-admin #systemToolsCard .audit-panel table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+}
+
+html body.role-admin #systemToolsCard .audit-panel table :is(th, td) {
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+html body.role-admin #systemToolsCard .audit-panel table :is(th, td):nth-child(1) {
+  width: 110px !important;
+}
+
+html body.role-admin #systemToolsCard .audit-panel table :is(th, td):nth-child(2) {
+  width: 130px !important;
 }
 
 html body.role-admin #systemToolsCard > .workspace-header {
