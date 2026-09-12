@@ -3,6 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/record-validation.php';
 require __DIR__ . '/case-selection.php';
+require __DIR__ . '/block-identities.php';
 require __DIR__ . '/edit-permissions.php';
 
 function validateContactNumberInput($value, string $label = 'Contact number'): void
@@ -698,6 +699,16 @@ try {
 
     if ($resource === 'blocks') {
         $user = currentUser($pdo, ['admin', 'instructor']);
+        if ($user['role'] === 'admin') {
+            try {
+                ensureBlockIdentities($pdo);
+            } catch (Throwable $error) {
+                error_log('Block identity repair: ' . $error->getMessage());
+                respond(['ok' => false, 'block_repair_required' => true, 'message' => $error instanceof PDOException
+                    ? 'The database could not finish repairing block IDs. Check database ALTER permissions and the server error log.'
+                    : $error->getMessage()]);
+            }
+        }
         if ($method === 'GET') {
             $year = trim((string)($_GET['school_year'] ?? ''));
             $stmt = $pdo->prepare('SELECT b.id, b.label, y.label AS school_year, b.status, b.created_at, COUNT(DISTINCT s.student_id) AS student_count FROM student_blocks b JOIN school_years y ON y.id=b.school_year_id LEFT JOIN student_block_assignments a ON a.block_id=b.id AND a.archived_at IS NULL LEFT JOIN students s ON s.student_id=a.student_id AND s.archived_at IS NULL WHERE b.archived_at IS NULL '.($year !== '' ? 'AND y.label=?' : '').' GROUP BY b.id,b.label,y.label,b.status,b.created_at,y.start_year ORDER BY y.start_year DESC,b.label');

@@ -2589,6 +2589,7 @@
     try { primary = await mysqlRequest('blocks' + (query ? '?' + query : ''), requestOptions); } catch (error) {
       if (requestOptions && requestOptions.signal && requestOptions.signal.aborted) throw error;
     }
+    if (primary && primary.block_repair_required) return primary;
     var primaryBlocks = blocksForSelectedYear(primary, !!selectedYear);
     if (primary && primary.ok && primaryBlocks.length) {
       return { ok: true, blocks: primaryBlocks };
