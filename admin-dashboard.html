@@ -2519,12 +2519,11 @@
       }
 
       function showAddStudentModal() {
-        const annualRecordsActive = !document.getElementById("yearlyReportsCard")?.classList.contains("hidden");
-        const activeNav = annualRecordsActive ? yearlyNav : studentsNav;
+        // Keep the Students block selected when this form opens, even if
+        // navigation state changes before the form is submitted.
         const blockContext = {
-          blockId: activeNav.blockId,
-          schoolYear: activeNav.schoolYear,
-          annualRecords: annualRecordsActive,
+          blockId: studentsNav.blockId,
+          schoolYear: studentsNav.schoolYear,
         };
         openStudentsAddModal({
           title: "Add Student",
@@ -3034,13 +3033,6 @@
           payload,
         );
         if (result && result.ok) {
-          if (blockContext.annualRecords) {
-            await renderYearlyStudentList();
-            await renderYearlyBlocks();
-            await renderYearlyYears();
-            refreshOverview();
-            return { ok: true };
-          }
           showStudentsNavMessage("Student added to block.", "success");
           await renderBlockStudents();
           await renderStudentBlocks();
