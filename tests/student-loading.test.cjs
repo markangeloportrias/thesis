@@ -27,3 +27,24 @@ window.StudentLoading.begin('sync-state', {})();
 assert.equal(timers.size, 0);
 console.log('PASS: delayed loading, overlapping requests, mutation button state, cleanup and silent version polling');
 
+window.StudentLoading.setScope('dashboardCard');
+const oldRequest = window.StudentLoading.begin('audit-trail', {});
+for (const fn of timers.values()) fn(); timers.clear();
+assert.equal(panel.hidden, false);
+window.StudentLoading.setScope('instructorsCard');
+assert.equal(panel.hidden, true, 'Previous section must not keep the current section loading');
+const instructors = window.StudentLoading.begin('instructors', {});
+for (const fn of timers.values()) fn(); timers.clear();
+assert.equal(panel.hidden, false);
+instructors();
+assert.equal(panel.hidden, true, 'Current section is ready even while the previous request is pending');
+const saving = window.StudentLoading.begin('instructors/1', { method: 'PATCH' });
+window.StudentLoading.setScope('studentsCard');
+for (const fn of timers.values()) fn(); timers.clear();
+assert.equal(panel.hidden, false, 'Saves remain visible across navigation');
+saving();
+oldRequest();
+assert.equal(panel.hidden, true);
+assert.equal(button.disabled, false);
+console.log('PASS: admin section loading isolation and save visibility across navigation');
+
