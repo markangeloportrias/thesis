@@ -2519,6 +2519,13 @@
       }
 
       function showAddStudentModal() {
+        const annualRecordsActive = !document.getElementById("yearlyReportsCard")?.classList.contains("hidden");
+        const activeNav = annualRecordsActive ? yearlyNav : studentsNav;
+        const blockContext = {
+          blockId: activeNav.blockId,
+          schoolYear: activeNav.schoolYear,
+          annualRecords: annualRecordsActive,
+        };
         openStudentsAddModal({
           title: "Add Student",
           submitLabel: "Add Student",
@@ -2562,7 +2569,7 @@
               placeholder: "11-digit contact number",
             },
           ],
-          onSubmit: async (values) => submitNewStudentInBlock(values),
+          onSubmit: async (values) => submitNewStudentInBlock(values, blockContext),
         });
       }
 
@@ -3001,8 +3008,8 @@
         await showAssignStudentModal();
       }
 
-      async function submitNewStudentInBlock(payload) {
-        if (!studentsNav.blockId || !studentsNav.schoolYear) {
+      async function submitNewStudentInBlock(payload, blockContext = studentsNav) {
+        if (!blockContext.blockId || !blockContext.schoolYear) {
           return { ok: false, message: "Open a block first." };
         }
         const initialPassword = String(payload.password || "").trim();
@@ -3022,11 +3029,18 @@
           return { ok: false, message: "Parent/Guardian contact must contain exactly 11 digits." };
         }
         const result = await ApiClient.registerStudentInBlock(
-          studentsNav.blockId,
-          studentsNav.schoolYear,
+          blockContext.blockId,
+          blockContext.schoolYear,
           payload,
         );
         if (result && result.ok) {
+          if (blockContext.annualRecords) {
+            await renderYearlyStudentList();
+            await renderYearlyBlocks();
+            await renderYearlyYears();
+            refreshOverview();
+            return { ok: true };
+          }
           showStudentsNavMessage("Student added to block.", "success");
           await renderBlockStudents();
           await renderStudentBlocks();
