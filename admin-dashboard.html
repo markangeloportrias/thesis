@@ -1929,7 +1929,9 @@
       }
 
       function showCard(targetId) {
+        if (targetId === "instructorsCard") renderInstructorAccounts();
         if (targetId === "studentsCard") {
+          renderArchivedStudents();
           if (studentsNav.level !== "years") {
             backToStudentsYears();
           } else {
@@ -1947,6 +1949,7 @@
         }
         // Hide only the main cards (Dashboard, Instructors, Students, Cases, EditRequests, Notifications)
         if (targetId === "casesCard") {
+          populateAllSchoolYearSelects();
           renderProgressOverview();
         }
         if (targetId === "systemToolsCard") {
@@ -3757,9 +3760,9 @@
         }
       }
 
-      function populateAllSchoolYearSelects() {
+      function populateAllSchoolYearSelects(schoolYearsResult) {
         // Prefer school years returned by ApiClient (includes stored years)
-        ApiClient.getSchoolYears().then((res) => {
+        (schoolYearsResult ? Promise.resolve(schoolYearsResult) : ApiClient.getSchoolYears()).then((res) => {
           let databaseRanges = [];
           if (
             res &&
@@ -4027,7 +4030,6 @@
       let yearlyYearsRenderVersion = 0;
       async function renderYearlyYears() {
         const renderVersion = ++yearlyYearsRenderVersion;
-        populateAllSchoolYearSelects();
         if (yearlyYearsTbody) yearlyYearsTbody.innerHTML = "";
         const [result, allCases, blocksResult, assignmentsResult] = await Promise.all([
           ApiClient.getSchoolYears(),
@@ -4036,6 +4038,7 @@
           ApiClient.getAllAssignedStudents().catch(() => null),
         ]);
         if (renderVersion !== yearlyYearsRenderVersion) return;
+        populateAllSchoolYearSelects(result);
         if (yearlyYearsTbody) yearlyYearsTbody.innerHTML = "";
         const allBlocks =
           blocksResult && Array.isArray(blocksResult.blocks)
@@ -7209,18 +7212,10 @@
       function startAdminDashboard() {
         if (adminDashboardInitialized) return;
         adminDashboardInitialized = true;
-        renderInstructorAccounts();
         refreshOverview();
         setStudentsNavLevel("years");
-        renderSchoolYears();
-        renderArchivedStudents();
-        renderProgressOverview();
         loadAdminNotifications();
-        loadAdminEditRequests();
-        populateAllSchoolYearSelects();
-        renderYearlyYears();
         loadAdminActivityLog();
-        refreshAdminLiveData();
         setInterval(refreshAdminLiveData, 5000);
         window.addEventListener("focus", refreshAdminLiveData);
         document.addEventListener("visibilitychange", () => {
