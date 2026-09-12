@@ -3100,8 +3100,8 @@ html body.role-admin #instructorsCard .instructor-row-actions .mini-btn {
 /* Give Student Management block actions a comfortable, consistent click target. */
 html body.role-admin #studentsBlockPanel.active table th:last-child,
 html body.role-admin #studentsBlockPanel.active table td.action-cell {
-  width: 190px !important;
-  min-width: 190px !important;
+  width: 280px !important;
+  min-width: 280px !important;
   white-space: nowrap !important;
 }
 

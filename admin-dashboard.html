@@ -2816,6 +2816,7 @@
           <td class="action-cell">
             <button class="mini-btn" type="button" data-block-open="${block.id || ""}" data-block-label="${(block.label || "").replace(/"/g, "&quot;")}">Open</button>
             <button class="mini-btn" type="button" data-block-action="edit" data-id="${block.id || ""}" data-label="${(block.label || "").replace(/"/g, "&quot;")}">Edit</button>
+            <button class="mini-btn danger" type="button" data-block-action="delete" data-id="${block.id || ""}" data-label="${escapeHtml(block.label || "")}">Delete</button>
           </td>
         `;
           blocksTbody.appendChild(tr);
@@ -2897,11 +2898,18 @@
         }
       }
 
-      async function deleteStudentBlock(blockId) {
-        showStudentsNavMessage(
-          "Permanent block deletion is disabled to preserve historical records.",
-          "error",
-        );
+      async function deleteStudentBlock(blockId, blockLabel) {
+        const confirmed = await showOptionPane(`Permanently delete ${blockLabel || "this block"}? This cannot be undone. Blocks with student assignments cannot be deleted.`, { title: "Delete Block", confirmLabel: "Delete" });
+        if (!confirmed) return;
+        try {
+          const result = await ApiClient.request(`blocks/${encodeURIComponent(blockId)}/delete`, { method: "POST", body: "{}" });
+          if (!result?.ok) throw new Error(result?.message || "Unable to delete block.");
+          showStudentsNavMessage("Block deleted.", "success");
+          await renderStudentBlocks();
+          await renderSchoolYears();
+        } catch (error) {
+          showStudentsNavMessage(error.message || "Unable to delete block.", "error");
+        }
       }
 
       function getBlockStudentsFiltered(students) {
@@ -6956,7 +6964,7 @@
         const blockId = btn.getAttribute("data-id");
         if (action === "edit")
           editStudentBlockLabel(blockId, btn.getAttribute("data-label") || "");
-        if (action === "delete") deleteStudentBlock(blockId);
+        if (action === "delete") deleteStudentBlock(blockId, btn.getAttribute("data-label") || "");
       });
       openAddStudentBtn?.addEventListener("click", showAddStudentModal);
       openAssignStudentBtn?.addEventListener("click", showAssignStudentModal);

@@ -715,6 +715,28 @@ try {
             $stmt->execute($year !== '' ? [$year] : []);
             respond(['ok' => true, 'blocks' => $stmt->fetchAll()]);
         }
+        if ($method === 'POST' && $action === 'delete' && $id !== '') {
+            if ($user['role'] !== 'admin') respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $pdo->beginTransaction();
+            $select = $pdo->prepare('SELECT id,label FROM student_blocks WHERE id=? FOR UPDATE');
+            $select->execute([$id]);
+            $blocks = $select->fetchAll();
+            if (count($blocks) !== 1 || (int)$id <= 0) {
+                $pdo->rollBack();
+                respond(['ok'=>false,'message'=>'The block could not be uniquely identified. Refresh the block list.'],409);
+            }
+            $assigned = $pdo->prepare('SELECT block_id FROM student_block_assignments WHERE block_id=? LIMIT 1 FOR UPDATE');
+            $assigned->execute([$id]);
+            if ($assigned->fetch()) {
+                $pdo->rollBack();
+                respond(['ok'=>false,'message'=>'This block has current or historical student assignments and cannot be deleted.'],409);
+            }
+            $delete = $pdo->prepare('DELETE FROM student_blocks WHERE id=?');
+            $delete->execute([$id]);
+            audit($pdo, $user, 'delete', 'student_block', $id, ['label'=>$blocks[0]['label']]);
+            $pdo->commit();
+            respond(['ok'=>true]);
+        }
         if ($method === 'POST') {
             if (!in_array($user['role'], ['admin', 'instructor'], true)) respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['label', 'school_year']);
