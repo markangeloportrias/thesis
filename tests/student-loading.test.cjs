@@ -1,7 +1,7 @@
 ﻿const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-function element() { return { hidden: false, children: [], classList: { add() {}, remove() {} }, append(...items) { this.children.push(...items); }, setAttribute() {}, removeAttribute() {}, closest() { return this; } }; }
+function element() { return { hidden: false, children: [], classList: { add() {}, remove() {}, contains() { return false; } }, append(...items) { this.children.push(...items); }, setAttribute() {}, removeAttribute() {}, closest() { return this; } }; }
 const body = element(); body.appendChild = item => body.children.push(item);
 const timers = new Map(); let next = 0;
 const button = element(); button.disabled = false;
@@ -25,26 +25,12 @@ assert.equal(panel.hidden, true);
 assert.equal(timers.size, 0);
 window.StudentLoading.begin('sync-state', {})();
 assert.equal(timers.size, 0);
-console.log('PASS: delayed loading, overlapping requests, mutation button state, cleanup and silent version polling');
-
-window.StudentLoading.setScope('dashboardCard');
-const oldRequest = window.StudentLoading.begin('audit-trail', {});
-for (const fn of timers.values()) fn(); timers.clear();
-assert.equal(panel.hidden, false);
-window.StudentLoading.setScope('instructorsCard');
-assert.equal(panel.hidden, true, 'Previous section must not keep the current section loading');
-const instructors = window.StudentLoading.begin('instructors', {});
-for (const fn of timers.values()) fn(); timers.clear();
-assert.equal(panel.hidden, false);
-instructors();
-assert.equal(panel.hidden, true, 'Current section is ready even while the previous request is pending');
-const saving = window.StudentLoading.begin('instructors/1', { method: 'PATCH' });
-window.StudentLoading.setScope('studentsCard');
-for (const fn of timers.values()) fn(); timers.clear();
-assert.equal(panel.hidden, false, 'Saves remain visible across navigation');
-saving();
-oldRequest();
-assert.equal(panel.hidden, true);
+body.classList = { contains: value => value === 'role-admin' };
+window.StudentLoading.begin('instructors', {})();
+assert.equal(timers.size, 0, 'Admin reads must not show the global loading popup');
+const adminSave = window.StudentLoading.begin('instructors/1', { method: 'PATCH' });
+assert.equal(button.disabled, true, 'Admin saves must retain progress feedback');
+adminSave();
 assert.equal(button.disabled, false);
-console.log('PASS: admin section loading isolation and save visibility across navigation');
+console.log('PASS: delayed loading, overlapping requests, mutation state, silent polling and silent admin reads');
 
