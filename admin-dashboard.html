@@ -1156,7 +1156,7 @@
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
-    <script src="assets/js/api-client.js?v=20260910-student-loading-1"></script>
+    <script src="assets/js/api-client.js?v=20260912-students-block-loading-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -2728,9 +2728,28 @@
         showAddSchoolYearModal();
       }
 
+      let studentBlocksRequest = null;
       async function renderStudentBlocks() {
+        if (studentBlocksRequest) studentBlocksRequest.abort();
         if (!studentsNav.schoolYear) return;
-        const result = await ApiClient.getStudentBlocks(studentsNav.schoolYear);
+        const schoolYear = studentsNav.schoolYear;
+        const controller = new AbortController();
+        studentBlocksRequest = controller;
+        showDatabaseLoading(blocksTbody, 3, "Loading blocks...");
+        if (blocksEmpty) blocksEmpty.style.display = "none";
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
+        let result;
+        try {
+          result = await ApiClient.getStudentBlocks(schoolYear, { signal: controller.signal });
+        } catch (error) {
+          result = { ok: false, message: controller.signal.aborted
+            ? "Loading blocks timed out. Open this academic year again to retry."
+            : error.message || "Unable to load blocks. Please try again." };
+        } finally {
+          window.clearTimeout(timeout);
+        }
+        if (studentBlocksRequest !== controller || studentsNav.schoolYear !== schoolYear) return;
+        studentBlocksRequest = null;
         const blocks =
           result && result.ok && Array.isArray(result.blocks)
             ? result.blocks

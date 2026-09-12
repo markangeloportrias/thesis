@@ -2563,7 +2563,7 @@
     try { return await mysqlRequest('school-years/' + encodeURIComponent(schoolYearId), { method: 'PATCH', body: JSON.stringify({ status: next }) }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
-  ApiClient.getStudentBlocks = async function (schoolYear) {
+  ApiClient.getStudentBlocks = async function (schoolYear, requestOptions) {
     var selectedYear = normalize(schoolYear);
     var normalizedSelectedYear = normalizeSchoolYearRange(selectedYear) || selectedYear;
     var query = selectedYear ? 'school_year=' + encodeURIComponent(selectedYear) : '';
@@ -2586,13 +2586,17 @@
       });
     }
 
-    try { primary = await mysqlRequest('blocks' + (query ? '?' + query : '')); } catch (error) {}
+    try { primary = await mysqlRequest('blocks' + (query ? '?' + query : ''), requestOptions); } catch (error) {
+      if (requestOptions && requestOptions.signal && requestOptions.signal.aborted) throw error;
+    }
     var primaryBlocks = blocksForSelectedYear(primary, !!selectedYear);
     if (primary && primary.ok && primaryBlocks.length) {
       return { ok: true, blocks: primaryBlocks };
     }
 
-    try { directory = await mysqlRequest('block-directory' + (query ? '?' + query : '')); } catch (error) {}
+    try { directory = await mysqlRequest('block-directory' + (query ? '?' + query : ''), requestOptions); } catch (error) {
+      if (requestOptions && requestOptions.signal && requestOptions.signal.aborted) throw error;
+    }
     var directoryBlocks = blocksForSelectedYear(directory, !!selectedYear);
     if (directory && directory.ok && directoryBlocks.length) {
       return { ok: true, blocks: directoryBlocks };
@@ -2602,7 +2606,7 @@
     // academic-year response even when a dedicated block route is empty.
     if (normalizedSelectedYear) {
       try {
-        var yearsResult = await mysqlRequest('school-years');
+        var yearsResult = await mysqlRequest('school-years', requestOptions);
         var years = yearsResult && (yearsResult.years || yearsResult.school_years) || [];
         var year = Array.isArray(years) ? years.find(function (item) {
           var label = normalize(item && item.label);
@@ -2616,7 +2620,9 @@
             })
           };
         }
-      } catch (error) {}
+      } catch (error) {
+        if (requestOptions && requestOptions.signal && requestOptions.signal.aborted) throw error;
+      }
     }
 
     if (primary && primary.ok) return { ok: true, blocks: primaryBlocks };
