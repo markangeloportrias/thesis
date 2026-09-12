@@ -2446,7 +2446,7 @@
     var apiBase = location.protocol === 'file:' ? 'http://localhost/THESIS6/api/' : 'api/';
     var finishLoading;
     try {
-      if (window.StudentLoading) finishLoading = window.StudentLoading.begin(path, options);
+      if (window.StudentLoading && !options.silent) finishLoading = window.StudentLoading.begin(path, options);
       var response = await fetch(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
       var result = await response.json().catch(function () { return null; });
       if (response.status === 401 && token) {

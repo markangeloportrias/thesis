@@ -7169,67 +7169,37 @@
         "editRequestsCardCollapsed",
       ].forEach((key) => localStorage.removeItem(key));
 
-      // Live portal synchronization. The open screen is refreshed in place,
-      // while active form fields are left untouched until the user finishes.
+      // Background synchronization updates text counters only. Never rebuild
+      // an active table, move focus, or restore an obsolete scroll position.
       let adminLiveRefreshBusy = false;
       let adminLiveVersion = "";
       async function refreshAdminLiveData() {
-        const focused = document.activeElement;
-        if (
-          document.hidden ||
-          adminLiveRefreshBusy ||
-          (focused && ["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName))
-        ) return;
+        if (document.hidden || adminLiveRefreshBusy) return;
         adminLiveRefreshBusy = true;
         try {
           const sync = await ApiClient.getSyncState();
-          const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
+          const nextVersion = sync?.ok ? String(sync.version || "") : "";
           if (!nextVersion || nextVersion === adminLiveVersion) return;
-          const isFirstCheck = !adminLiveVersion;
-          adminLiveVersion = nextVersion;
-          if (isFirstCheck) return;
-          const scrollX = window.scrollX;
-          const scrollY = window.scrollY;
-          const scrollers = Array.from(document.querySelectorAll(".main-content, .table-wrap, .clinical-form-table-container"))
-            .map((element) => ({ element, top: element.scrollTop, left: element.scrollLeft }));
-          const activeCard = [
-            "dashboardCard", "instructorsCard", "studentsCard", "casesCard",
-            "yearlyReportsCard", "editRequestsCard", "notificationsCard", "systemToolsCard",
-          ].find((id) => !document.getElementById(id)?.classList.contains("hidden"));
-
-          if (activeCard === "dashboardCard") {
-            await refreshOverview();
-            await loadAdminActivityLog();
-          } else if (activeCard === "instructorsCard") {
-            await renderInstructorAccounts();
-          } else if (activeCard === "studentsCard") {
-            // Student lists can be large; do not replace the active table
-            // while the live-sync timer is running.
-            return;
-          } else if (activeCard === "casesCard") {
-            if (activeCasesStudentId) await openCasesStudentRecords(activeCasesStudentId, activeCasesStudentName);
-            else if (activeCasesBlockId) await openCasesBlockStudents(activeCasesBlockId, activeCasesBlockLabel);
-            else if (activeCasesYear) await openCasesYearBlocks(activeCasesYear);
-            else await renderCasesYears();
-          } else if (activeCard === "yearlyReportsCard") {
-            if (yearlyNav.level === "years") await renderYearlyYears();
-            else if (yearlyNav.level === "blocks") await renderYearlyBlocks();
-            else if (yearlyNav.level === "students") await renderYearlyStudentList();
-            else renderYearlyReports();
-          } else if (activeCard === "editRequestsCard") {
-            await loadAdminEditRequests();
-          } else if (activeCard === "notificationsCard") {
-            await loadAdminNotifications();
-          } else if (activeCard === "systemToolsCard") {
-            await loadAdminActivityLog();
-          }
-          requestAnimationFrame(() => {
-            window.scrollTo(scrollX, scrollY);
-            scrollers.forEach(({ element, top, left }) => {
-              element.scrollTop = top;
-              element.scrollLeft = left;
-            });
+          const result = await ApiClient.request("dashboard-stats", { silent: true });
+          if (!result?.ok || document.hidden) return;
+          const counts = result.counts || {};
+          const values = {
+            sidebarCountStudents: counts.students,
+            sidebarCountInstructors: counts.instructors,
+            sidebarCountYears: counts.school_years,
+            dashboardStudentsValue: counts.students,
+            dashboardInstructorsValue: counts.instructors,
+            dashboardRecordsValue: counts.records,
+          };
+          Object.entries(values).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            const text = String(value || 0);
+            if (element && element.textContent !== text) element.textContent = text;
           });
+          updatePendingRequestCounts(counts.pending_requests || 0);
+          adminLiveVersion = nextVersion;
+        } catch (error) {
+          // Keep the current screen intact; retry on the next timer tick.
         } finally {
           adminLiveRefreshBusy = false;
         }
