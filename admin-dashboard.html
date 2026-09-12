@@ -1155,7 +1155,7 @@
     </div>
 
     <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
-    <script src="assets/js/student-loading.js?v=20260912-admin-silent-reads-1"></script>
+    <script src="assets/js/student-loading.js?v=20260912-admin-scope-2"></script>
     <script src="assets/js/api-client.js?v=20260912-block-identities-1"></script>
     <script>
       (() => {
@@ -1929,6 +1929,7 @@
       }
 
       function showCard(targetId) {
+        window.StudentLoading?.setScope(targetId);
         if (targetId === "instructorsCard") renderInstructorAccounts();
         if (targetId === "studentsCard") {
           renderArchivedStudents();
@@ -7212,6 +7213,7 @@
       function startAdminDashboard() {
         if (adminDashboardInitialized) return;
         adminDashboardInitialized = true;
+        window.StudentLoading?.setScope("dashboardCard");
         refreshOverview();
         setStudentsNavLevel("years");
         loadAdminNotifications();
