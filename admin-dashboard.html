@@ -676,7 +676,7 @@
             </div>
 
             <div class="card hidden" id="editRequestsCard">
-              <div class="workspace-header">
+              <div class="workspace-header" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
                 <div class="instructor-title-heading">
                   <span class="instructor-title-icon" aria-hidden="true"><i class="fas fa-pencil-alt"></i></span>
                   <div class="instructor-title-copy">
@@ -684,6 +684,9 @@
                     <div class="workspace-subtitle">Review student correction requests and track their approval status.</div>
                   </div>
                 </div>
+                <button type="button" class="btn btn-secondary" id="refreshEditRequestsBtn" style="margin-left:auto;flex-shrink:0">
+                  <i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh
+                </button>
               </div>
               <div class="request-status-tabs" id="requestStatusTabs" aria-label="Request status filters">
                 <button type="button" data-request-status="pending" aria-pressed="true">Pending <span data-request-count="pending">0</span></button>
@@ -700,9 +703,6 @@
                   />
                 </div>
                 <input type="hidden" id="editRequestsStatusFilter" value="pending">
-                <button class="btn btn-secondary" id="refreshEditRequestsBtn">
-                  <i class="fas fa-sync-alt" aria-hidden="true"></i> Refresh
-                </button>
               </div>
               <div class="table-wrap">
                 <table>
@@ -7375,7 +7375,17 @@
         if (action === "delete-archived-notification") deleteArchivedNotification(notificationId, btn);
       });
 
-      refreshEditRequestsBtn?.addEventListener("click", loadAdminEditRequests);
+      refreshEditRequestsBtn?.addEventListener("click", async () => {
+        if (refreshEditRequestsBtn.disabled) return;
+        setButtonLoading(refreshEditRequestsBtn, true);
+        refreshEditRequestsBtn.setAttribute("aria-busy", "true");
+        try {
+          await loadAdminEditRequests();
+        } finally {
+          setButtonLoading(refreshEditRequestsBtn, false);
+          refreshEditRequestsBtn.removeAttribute("aria-busy");
+        }
+      });
       document.getElementById('requestStatusTabs')?.addEventListener('click', (event) => {
         const button = event.target.closest('[data-request-status]');
         if (!button) return;
