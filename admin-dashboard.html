@@ -1569,7 +1569,28 @@
         await loadAdminActivityLog();
       }
 
+      const adminTableRenderJobs = new WeakMap();
+      function renderAdminRows(tbody, entries, createRow) {
+        const previousJob = adminTableRenderJobs.get(tbody);
+        if (previousJob) clearTimeout(previousJob.timer);
+        const job = { timer: null };
+        adminTableRenderJobs.set(tbody, job);
+        tbody.replaceChildren();
+        let index = 0;
+        const renderBatch = () => {
+          if (adminTableRenderJobs.get(tbody) !== job) return;
+          const fragment = document.createDocumentFragment();
+          const end = Math.min(index + 25, entries.length);
+          for (; index < end; index += 1) fragment.appendChild(createRow(entries[index], index));
+          tbody.appendChild(fragment);
+          if (index < entries.length) job.timer = setTimeout(renderBatch, 0);
+          else adminTableRenderJobs.delete(tbody);
+        };
+        job.timer = setTimeout(renderBatch, 0);
+      }
+
       function renderAuditLog() {
+        if (document.getElementById("systemToolsCard")?.classList.contains("hidden")) return;
         const tbody = document.getElementById("auditLogTbody");
         const empty = document.getElementById("auditLogEmpty");
         if (!tbody) return;
@@ -1579,11 +1600,11 @@
           empty.textContent = adminActivityLoadError || "No administrative activity recorded yet.";
           empty.style.display = entries.length ? "none" : "block";
         }
-        entries.forEach((entry) => {
+        renderAdminRows(tbody, entries, (entry) => {
           const tr = document.createElement("tr");
           const timestamp = entry.created_at || entry.timestamp || entry.date_time;
           tr.innerHTML = `<td>${escapeHtml(timestamp ? PhilippineTime.parse(timestamp).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Not available")}</td><td><strong>${escapeHtml(activityActionLabel(entry))}</strong></td><td>${escapeHtml(activityDetails(entry))}</td>`;
-          tbody.appendChild(tr);
+          return tr;
         });
       }
 
@@ -2186,12 +2207,16 @@
           await showMessageDialog(error.message || "Unable to load instructor information.", "Instructor Information");
         }
       }
+      let instructorAccountsLoadVersion = 0;
       async function renderInstructorAccounts() {
+        const version = ++instructorAccountsLoadVersion;
+        renderAdminRows(instructorsTbody, [], () => null);
         instructorsTbody.innerHTML = "";
         instructorsEmpty.style.display = "block";
         sidebarCountInstructors.textContent = "0";
         try {
           const result = await ApiClient.getInstructorAccounts();
+          if (version !== instructorAccountsLoadVersion) return;
           const list =
             result && result.ok && Array.isArray(result.accounts)
               ? result.accounts
@@ -2200,7 +2225,7 @@
           instructorsEmpty.style.display = list.length ? "none" : "block";
           sidebarCountInstructors.textContent = list.length;
 
-          list.forEach((acc, index) => {
+          renderAdminRows(instructorsTbody, list, (acc, index) => {
             const tr = document.createElement("tr");
             const created = acc.created_at
               ? PhilippineTime.parse(acc.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" })
@@ -2220,7 +2245,7 @@
               </div>
             </td>
           `;
-            instructorsTbody.appendChild(tr);
+            return tr;
           });
         } catch (error) {
           showInstructorMessage("Database unavailable. Start Apache and MySQL.", "error");
@@ -3648,6 +3673,7 @@
       }
 
       function renderNotifications() {
+        if (document.getElementById("notificationsCard")?.classList.contains("hidden")) return;
         const notifications = getNotificationsFiltered();
         notificationsTbody.innerHTML = "";
         notificationsEmpty.style.display = notifications.length
@@ -3667,7 +3693,7 @@
             : `No ${viewingArchivedNotifications ? "archived" : "active"} notifications.`;
         }
 
-        notifications.forEach((notif, index) => {
+        renderAdminRows(notificationsTbody, notifications, (notif, index) => {
           const event = notificationEventMeta(notif.event_type);
           notif.case_no = notificationCaseNumber(notif);
           const notificationId = escapeHtml(notif.id ?? "");
@@ -3692,7 +3718,7 @@
           <td><div class="notification-message">${escapeHtml(notif.message || "No message provided.")}</div></td>
           <td class="action-cell"><div class="notification-row-actions">${rowActions}</div></td>
         `;
-          notificationsTbody.appendChild(tr);
+          return tr;
         });
       }
 
@@ -7467,7 +7493,7 @@
           ? (callback) => window.requestIdleCallback(callback, { timeout: 800 })
           : (callback) => window.setTimeout(callback, 0);
         deferAdminStartupLoad(() => {
-          refreshOverview();
+          refreshAdminLiveData();
           loadAdminNotifications();
           loadAdminActivityLog();
           setInterval(refreshAdminLiveData, 5000);
