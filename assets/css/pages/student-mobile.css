@@ -443,10 +443,18 @@
   html body.role-student #chatTab.mobile-chat-selected .chat-conversation {
     display: grid !important;
   }
+  html body.role-student .dashboard > .main-content:has(#chatTab.mobile-chat-selected[style*="display: block"]) {
+    padding-bottom: 0 !important;
+  }
+  html body.role-student #chatTab.mobile-chat-selected {
+    margin-bottom: 0 !important;
+  }
   html body.role-student #chatTab .chat-conversation {
     width: 100% !important;
     min-width: 0 !important;
-    height: clamp(360px, calc(100dvh - 120px), 680px) !important;
+    /* Subtract the 56px header, 12px top gap and 2px card border. */
+    height: calc(100vh - 70px) !important;
+    height: calc(100dvh - 70px) !important;
     flex: 0 0 auto !important;
     grid-template-columns: minmax(0, 1fr);
   }
