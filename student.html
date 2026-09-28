@@ -6588,7 +6588,10 @@
         button.addEventListener("click", () => {
           const procedureKey = button.getAttribute("data-progress-procedure") || "all";
           applyStudentProgressProcedureFilter(procedureKey);
-          document.getElementById("summaryProcedureTables")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          // Keep mobile navigation in place; scrollIntoView also scrolls outer containers.
+          if (!window.matchMedia("(max-width: 767px)").matches) {
+            document.getElementById("summaryProcedureTables")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
       });
       document?.addEventListener("visibilitychange", () => {
