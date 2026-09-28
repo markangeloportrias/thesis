@@ -46,7 +46,8 @@
     width: min(300px, 90vw) !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    height: auto !important;
+    height: calc(100vh - 56px) !important;
+    height: calc(100dvh - 56px) !important;
     max-height: calc(100dvh - 56px) !important;
     visibility: hidden !important;
     pointer-events: none !important;
@@ -72,7 +73,7 @@
   html body.role-student .sidebar .sidebar-bottom {
     display: flex !important;
     flex: 0 0 auto !important;
-    margin: 0 !important;
+    margin: auto 0 0 !important;
     padding: 0 !important;
   }
 
@@ -499,6 +500,15 @@
     height: 44px !important;
     min-height: 44px !important;
     padding: 0 10px !important;
+  }
+}
+
+@media screen and (max-width: 767px) and (hover: none) {
+  html body.role-student .dashboard > .sidebar .sidebar-nav-item:not(.active):hover {
+    background: transparent !important;
+    color: rgba(255,255,255,.88) !important;
+    box-shadow: none !important;
+    transform: none !important;
   }
 }
 
