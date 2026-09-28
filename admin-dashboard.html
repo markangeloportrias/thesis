@@ -1533,6 +1533,7 @@
         if (details && typeof details === "object") {
           message = Object.entries(details)
             .filter(([, value]) => value !== null && value !== undefined && value !== "")
+            .filter(([key, value]) => !(key === "comment_id" && String(value).trim() === "0"))
             .map(([key, value]) => `${activityEntityLabel(key)}: ${typeof value === "object" ? JSON.stringify(value) : value}`)
             .join(" • ");
         } else {
