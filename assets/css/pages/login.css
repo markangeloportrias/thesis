@@ -1634,9 +1634,22 @@ body {
   .auth-panel { padding: 78px 16px 30px; }
   .top-bar-btn span { display: none; }
   .top-bar-btn { width: 44px; padding: 0; }
-  /* Keep the mobile institution mark visually connected to its name. */
-  .auth-header-mobile { gap: 5px; }
-  .mobile-logo-container { margin-bottom: 1px; }
+  /* Connect the mobile branding to the sign-in form within one card. */
+  .auth-card .auth-header-mobile {
+    gap: 6px;
+    margin-bottom: 22px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dbe7f4;
+    animation: none;
+  }
+  .auth-card .mobile-logo-container {
+    margin-bottom: 4px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    backdrop-filter: none;
+  }
   .auth-header-mobile h1 { line-height: 1.2; }
   .auth-header-mobile p { line-height: 1.35; }
   .auth-card { padding: 30px 22px; border-radius: 18px; }

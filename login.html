@@ -11,7 +11,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="assets/css/pages/login.css" />
+    <link rel="stylesheet" href="assets/css/pages/login.css?v=20260928-mobile-branding-1" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-1" />
     <style>
       /* Intro logo only: modern heartbeat reveal before the login screen. */
@@ -210,21 +210,6 @@
 
       <!-- RIGHT AUTHENTICATION PANEL -->
       <div class="auth-panel">
-        <!-- Mobile Header (Hidden on Desktop) -->
-        <div class="auth-header-mobile">
-          <div class="mobile-logo-container">
-            <img
-              src="assets/images/logo1.png"
-              alt="College of Midwifery Logo"
-              class="mobile-logo"
-            />
-            <div class="mobile-logo-divider"></div>
-            <img src="assets/images/logo2.png" alt="BISU Logo" class="mobile-logo" />
-          </div>
-          <h1>College of Midwifery</h1>
-          <p>Bohol Island State University</p>
-        </div>
-
         <!-- Top Utility Bar (Admin Access) -->
         <div class="auth-top-bar">
           <button
@@ -240,6 +225,16 @@
 
         <!-- Auth Form Card -->
         <div class="auth-card" id="authCard">
+          <!-- Mobile branding is part of the sign-in card. -->
+          <div class="auth-header-mobile">
+            <div class="mobile-logo-container">
+              <img src="assets/images/logo1.png" alt="College of Midwifery Logo" class="mobile-logo" />
+              <div class="mobile-logo-divider"></div>
+              <img src="assets/images/logo2.png" alt="BISU Logo" class="mobile-logo" />
+            </div>
+            <h1>College of Midwifery</h1>
+            <p>Bohol Island State University</p>
+          </div>
           <div class="auth-card-header">
             <div class="auth-eyebrow"><i class="fas fa-shield-heart"></i> Secure portal access</div>
             <h2>Welcome Back</h2>
