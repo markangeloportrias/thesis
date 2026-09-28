@@ -15,7 +15,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/css/layout/app-shell.css?v=20260827-3" />
-    <link rel="stylesheet" href="assets/css/pages/student.css?v=20260903-archive-delete-1" />
+    <link rel="stylesheet" href="assets/css/pages/student.css?v=20260928-unsent-alignment" />
     <link rel="stylesheet" href="assets/css/components/student-loading.css?v=1" />
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
@@ -4745,7 +4745,9 @@
           const item = document.createElement("div");
           const isUnsentNotice = message.text === "You unsent a message";
           item.className = `chat-message ${message.sender === "instructor" ? "instructor" : "student"}${isUnsentNotice ? " is-unsent" : ""}`;
-          item.textContent = message.text;
+          item.textContent = isUnsentNotice && message.sender === "instructor"
+            ? "Instructor unsent a message"
+            : message.text;
           const time = document.createElement("small");
           const senderLabel = message.sender === "instructor"
             ? (message.instructorName || selectedInstructor.display_name || "Instructor")
