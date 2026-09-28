@@ -11,7 +11,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <link rel="stylesheet" href="assets/css/pages/login.css?v=20260928-mobile-spacing-2" />
+    <link rel="stylesheet" href="assets/css/pages/login.css?v=20260928-mobile-admin-3" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-1" />
     <style>
       /* Intro logo only: modern heartbeat reveal before the login screen. */
@@ -500,6 +500,18 @@
     <script src="assets/js/api-client.js?v=20260906-instructor-login-1"></script>
     <script src="assets/js/site-protection.js?v=20260906-instructor-login-1"></script>
     <script>
+      // Keep the same admin button inside the card only at mobile widths.
+      const mobileAdminLayout = window.matchMedia("(max-width: 576px)");
+      const adminUtilityBar = document.querySelector(".auth-top-bar");
+      const loginAuthCard = document.getElementById("authCard");
+      const loginAuthPanel = document.querySelector(".auth-panel");
+      function positionAdminUtilityBar() {
+        if (mobileAdminLayout.matches) loginAuthCard.prepend(adminUtilityBar);
+        else loginAuthPanel.insertBefore(adminUtilityBar, loginAuthCard);
+      }
+      positionAdminUtilityBar();
+      mobileAdminLayout.addEventListener("change", positionAdminUtilityBar);
+
       // DOM Elements Configuration
       const studentIdInput = document.getElementById("studentid");
       const passwordInput = document.getElementById("password");

@@ -1633,9 +1633,10 @@ body {
 @media (max-width: 576px) {
   .auth-panel { padding: 16px 16px 24px; }
   .auth-top-bar {
-    position: static;
-    align-self: flex-end;
-    margin-bottom: 10px;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    margin: 0;
   }
   .top-bar-btn span { display: none; }
   .top-bar-btn { width: 44px; padding: 0; }
@@ -1648,6 +1649,7 @@ body {
     animation: none;
   }
   .auth-card .mobile-logo-container {
+    max-width: calc(100% - 88px);
     margin-bottom: 4px;
     padding: 0;
     background: transparent;
