@@ -2778,7 +2778,7 @@
       .chat-msg { max-width: 78%; padding: 8px 10px; border-radius: 10px; font-size: 13px; }
       .chat-msg.instructor { align-self: flex-end; background: var(--primary); color: #fff; }
       .chat-msg.student { align-self: flex-start; background: #f1f5ff; color: var(--text-primary); }
-      .chat-msg.is-unsent { align-self: center; background: #f3f6fa; color: #6b7b91; font-style: italic; text-align: center; }
+      .chat-msg.is-unsent { background: #f3f6fa; color: #6b7b91; font-style: italic; }
       .chat-input { display: flex; padding: 8px; border-top: 1px solid #f3f6fb; gap: 8px; align-items: center; }
       .chat-input input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
 

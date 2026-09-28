@@ -14,7 +14,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/css/layout/app-shell.css?v=20260827-3" />
-    <link rel="stylesheet" href="assets/css/pages/instructor.css?v=20260824-3" />
+    <link rel="stylesheet" href="assets/css/pages/instructor.css?v=20260928-unsent-alignment" />
     <link rel="stylesheet" href="assets/css/components/student-loading.css?v=1" />
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/components/buttons.css" />
@@ -1631,7 +1631,10 @@
             nextChats[key].messages.push({
               id: message.id ?? message.message_id ?? "",
               from: message.sender_role,
-              text: message.message,
+              text: message.message === "You unsent a message" && message.sender_role !== "instructor"
+                ? "Student unsent a message"
+                : message.message,
+              isUnsent: message.message === "You unsent a message",
               ts: message.created_at,
               identity: message,
             });
@@ -1852,7 +1855,7 @@
         }
         msgs.forEach((message) => {
           const bubble = document.createElement("div");
-          const isUnsentNotice = message.text === "You unsent a message";
+          const isUnsentNotice = message.isUnsent || message.text === "You unsent a message";
           bubble.className = "chat-msg " + (message.from === "instructor" ? "instructor" : "student") + (isUnsentNotice ? " is-unsent" : "");
           const content = document.createElement("span");
           content.className = "chat-message-text";
