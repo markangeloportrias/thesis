@@ -120,24 +120,41 @@
   }
   html body.role-student #dashboardProgressSection .stat-card-h {
     display: grid !important;
-    grid-template-columns: 32px minmax(0, 1fr) !important;
+    grid-template-columns: 40px minmax(0, 1fr) !important;
     grid-template-rows: auto auto auto !important;
     height: auto !important;
-    min-height: 96px !important;
+    min-height: 88px !important;
     align-items: center !important;
     align-content: start;
-    padding: 14px !important;
-    gap: 8px 10px !important;
+    padding: 12px 32px 12px 12px !important;
+    gap: 5px 12px !important;
     border-radius: 14px !important;
     box-shadow: 0 3px 12px rgba(0, 41, 107, .06) !important;
+  }
+  html body.role-student #dashboardProgressSection .stats-row > .stat-card-h:nth-child(n) {
+    position: relative !important;
+    background: #fff !important;
+    border: 1px solid #dbe5f0 !important;
+  }
+  html body.role-student #dashboardProgressSection .stats-row > .stat-card-h::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    width: 6px;
+    height: 6px;
+    border-top: 2px solid #7890ac;
+    border-right: 2px solid #7890ac;
+    transform: translateY(-50%) rotate(45deg);
+    pointer-events: none;
   }
   html body.role-student #dashboardProgressSection .stats-row > .stat-card-h .stat-icon-wrap {
     position: static !important;
     grid-column: 1 !important;
-    grid-row: 1 !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    height: 32px !important;
+    grid-row: 1 / 4 !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
     margin: 0 !important;
     transform: none !important;
   }
@@ -161,13 +178,14 @@
     line-height: 1.4 !important;
     letter-spacing: 0 !important;
     text-transform: none !important;
+    color: #17375e !important;
     overflow-wrap: normal;
   }
   html body.role-student #dashboardProgressSection .stat-num {
     display: none !important;
   }
   html body.role-student #dashboardProgressSection .stat-sub {
-    grid-column: 1 / -1 !important;
+    grid-column: 2 !important;
     grid-row: 2 !important;
     display: flex !important;
     justify-content: space-between;
@@ -181,6 +199,7 @@
     position: static !important;
     margin: 0 !important;
     font-size: 13px !important;
+    color: #355575 !important;
   }
   html body.role-student #dashboardProgressSection .stat-sub::after {
     content: "0%";
@@ -190,10 +209,12 @@
     content: attr(data-progress);
   }
   html body.role-student #dashboardProgressSection .stat-progress {
-    grid-column: 1 / -1 !important;
+    grid-column: 2 !important;
     grid-row: 3 !important;
     width: 100%;
     margin: 0;
+    height: 5px !important;
+    border-radius: 999px !important;
   }
   html body.role-student .stat-card-h { min-width: 0 !important; gap: 10px !important; }
   html body.role-student .stat-info { flex: 1; min-width: 0 !important; }
