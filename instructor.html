@@ -2327,6 +2327,7 @@
         selectedProcedure = "",
       ) {
         if (!container) return;
+        const showStatus = container === instructorStudentProcedureTables;
         const safeRecords = Array.isArray(records) ? records : [];
         const procedureKeys = selectedProcedure
           ? [selectedProcedure]
@@ -2368,11 +2369,22 @@
           if (container === instructorYearlyProcedureTables) {
             table.classList.add("instructor-yearly-procedure-table");
           }
+          if (showStatus) {
+            const columns = table.querySelector("colgroup");
+            const statusColumn = document.createElement("col");
+            statusColumn.style.width = "100px";
+            columns.insertBefore(statusColumn, columns.lastElementChild);
+            const header = table.querySelector("thead tr");
+            const statusHeader = document.createElement("th");
+            statusHeader.rowSpan = 2;
+            statusHeader.textContent = "Status";
+            header.insertBefore(statusHeader, header.lastElementChild);
+          }
           const body = document.createElement("tbody");
 
           if (!procedureRecords.length) {
             const emptyRow = document.createElement("tr");
-            emptyRow.innerHTML = '<td colspan="9" class="instructor-procedure-empty">No records for this procedure.</td>';
+            emptyRow.innerHTML = `<td colspan="${showStatus ? 10 : 9}" class="instructor-procedure-empty">No records for this procedure.</td>`;
             body.appendChild(emptyRow);
           } else {
             procedureRecords.forEach((record) => {
@@ -2393,6 +2405,20 @@
                 cell.style.whiteSpace = "pre-line";
                 row.appendChild(cell);
               });
+              if (showStatus) {
+                const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
+                const statusLabels = { verified: "Verified", submitted: "Submitted", resubmitted: "Resubmitted", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", changes_requested: "Changes Requested", invalid: "Invalid", draft: "Draft" };
+                const status = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
+                const statusCell = document.createElement("td");
+                statusCell.style.textAlign = "center";
+                const badge = document.createElement("span");
+                badge.className = "record-status-badge";
+                badge.dataset.status = status;
+                badge.textContent = status;
+                badge.style.cssText = "max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;justify-content:center;";
+                statusCell.appendChild(badge);
+                row.appendChild(statusCell);
+              }
               const actionCell = document.createElement("td");
               actionCell.className = "record-action-cell";
               const actions = document.createElement("div");
