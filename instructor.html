@@ -1585,6 +1585,21 @@
           const result = await ApiClient.getAllStudents();
           instructorChatStudents = Array.isArray(result?.students) ? result.students : [];
         } catch (error) { instructorChatStudents = []; }
+        renderConversations();
+      }
+      function setInstructorChatAvatar(avatar, studentId, name) {
+        if (!avatar) return;
+        const student = instructorChatStudents.find((entry) => String(entry.student_id || entry.id || "") === String(studentId));
+        const photo = String(student?.profile_photo || "").trim();
+        const initial = String(name || "Student").charAt(0).toUpperCase();
+        avatar.textContent = initial;
+        if (!photo) return;
+        const image = document.createElement("img");
+        image.alt = `${name || "Student"} profile photo`;
+        image.style.cssText = "width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;";
+        image.addEventListener("error", () => { avatar.textContent = initial; }, { once: true });
+        avatar.replaceChildren(image);
+        image.src = photo;
       }
       function openStudentConversation(student) {
         if (!student) return;
@@ -1660,9 +1675,12 @@
           elMain.className = "conv" + (key === activeChatKey ? " active" : "");
           const initial = String(chat.name || "S").charAt(0).toUpperCase();
           elMain.innerHTML = `<span class="conversation-avatar">${initial}</span><span class="conversation-meta"><strong>${chat.name}</strong><small>${last?.text || "Start a conversation"}</small></span><span class="conversation-id">${chat.id}</span>`;
+          setInstructorChatAvatar(elMain.querySelector(".conversation-avatar"), chat.id, chat.name);
           elMain.addEventListener("click", () => selectConversation(key)); list.appendChild(elMain);
         });
         if (!entries.length) list.innerHTML = '<div class="messages-empty-list">No student conversations yet.</div>';
+        const activeChat = instructorChats[activeChatKey];
+        if (activeChat) setInstructorChatAvatar(document.querySelector(".messages-chat-header .messages-avatar"), activeChat.id, activeChat.name);
       }
 
       function selectConversation(key) {

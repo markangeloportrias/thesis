@@ -1758,6 +1758,20 @@
         const title = document.getElementById("chatConversationTitle");
         const subtitle = document.getElementById("chatConversationSubtitle");
         if (title) title.textContent = selected?.display_name || selected?.username || "Select an instructor";
+        const avatar = document.querySelector("#chatTab .chat-conversation-avatar");
+        if (avatar) {
+          const showFallback = () => { avatar.innerHTML = '<i class="fas fa-user-tie" aria-hidden="true"></i>'; };
+          showFallback();
+          const photo = String(selected?.profile_photo || "").trim();
+          if (photo) {
+            const image = document.createElement("img");
+            image.alt = `${selected.display_name || selected.username || "Instructor"} profile photo`;
+            image.style.cssText = "width:100%;height:100%;border-radius:inherit;object-fit:cover;display:block;";
+            image.addEventListener("error", showFallback, { once: true });
+            avatar.replaceChildren(image);
+            image.src = photo;
+          }
+        }
         if (subtitle) subtitle.textContent = selected
           ? (selected.role_title || "Clinical Instructor")
           : "Choose a registered instructor from the left";
