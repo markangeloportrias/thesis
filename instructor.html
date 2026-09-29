@@ -7119,7 +7119,7 @@
           }
           const recordInstructor = String(record.instructor_name || record.checked_by || "").trim();
           if (recordInstructor && !/^ins_[a-z0-9_-]+$/i.test(recordInstructor)) return recordInstructor;
-          return "Clinical Instructor";
+          return "Not assigned";
         };
         const remarkDate = (value) => PhilippineTime.parse(value);
         const formatDate = (value) => {

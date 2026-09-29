@@ -39,6 +39,13 @@ function rejectInappropriateMessage(string $message): void
     }
 }
 
+function ensureInstructorCaseAccess(array $user, array $case): void
+{
+    if ($user['role'] === 'instructor' && (string)($case['instructor_uid'] ?? '') !== (string)$user['user_uid']) {
+        respond(['ok' => false, 'message' => 'This clinical record is assigned to another instructor.'], 403);
+    }
+}
+
 function normalizeCaseRoleValue(string $value): string
 {
     $value = preg_replace('/\s+/', '', trim($value)) ?? '';
@@ -787,6 +794,7 @@ try {
             }
             if (!$case) respond(['ok' => false, 'message' => 'Case not found.'], 404);
             if ($user['role'] === 'student' && $user['user_uid'] !== $case['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
+            ensureInstructorCaseAccess($user, $case);
 
             $caseId = (string)$case['id'];
             $commentScope = caseCommentScope($case);
@@ -802,7 +810,7 @@ try {
             $legacyExistsStmt->execute([$commentScope, $legacy]);
             if ($uniqueCaseId && !$legacyExistsStmt->fetchColumn() && $legacy !== '' && !preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $legacy)) {
                 $legacyStmt = $pdo->prepare("INSERT IGNORE INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,source_key,record_scope) VALUES (?,?,?,?,?,?,?)");
-                $legacyStmt->execute([$caseId,$case['instructor_uid'] ?: null,$case['instructor_name'] ?: 'Clinical Instructor','instructor',$legacy,'legacy-case:'.$caseId,$commentScope]);
+                $legacyStmt->execute([$caseId,$case['instructor_uid'] ?: null,$case['instructor_name'] ?: 'Not assigned','instructor',$legacy,'legacy-case:'.$caseId,$commentScope]);
             }
 
             $requestStmt = $pdo->prepare("SELECT id,procedure_key,case_numbers,rejection_remarks,rejected_at FROM edit_requests WHERE student_id=? AND status='rejected' AND rejection_remarks IS NOT NULL");
@@ -825,7 +833,7 @@ try {
                 $existingRequestComment->execute([$commentScope, $remark, $request['rejected_at']]);
                 if ($existingRequestComment->fetchColumn() !== false) continue;
                 $requestSource = 'edit-request:'.$request['id'].':'.hash('sha256', $commentScope.json_encode($request));
-                $insertRequestComment->execute([$caseId,null,$case['instructor_name'] ?: 'Clinical Instructor','instructor',$remark,$requestSource,$request['rejected_at'],$commentScope]);
+                $insertRequestComment->execute([$caseId,null,$case['instructor_name'] ?: 'Not assigned','instructor',$remark,$requestSource,$request['rejected_at'],$commentScope]);
             }
 
             $archived = ($_GET['archived'] ?? '0') === '1';
@@ -833,9 +841,10 @@ try {
             $stmt->execute([$commentScope]); respond(['ok'=>true,'comments'=>$stmt->fetchAll()]);
         }
         if ($method === 'PATCH' && $id !== '' && in_array($action, ['archive','restore'], true)) {
-            $ownerStmt=$pdo->prepare('SELECT c.student_id FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?');$ownerStmt->execute([$id]);$owner=$ownerStmt->fetchColumn();
-            if (!$owner) respond(['ok'=>false,'message'=>'Comment not found.'],404);
+            $ownerStmt=$pdo->prepare('SELECT c.student_id,c.instructor_uid FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?');$ownerStmt->execute([$id]);$ownerRecord=$ownerStmt->fetch();$owner=$ownerRecord['student_id'] ?? null;
+            if (!$ownerRecord) respond(['ok'=>false,'message'=>'Comment not found.'],404);
             if ($user['role']==='student' && $user['user_uid']!==$owner) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            ensureInstructorCaseAccess($user, $ownerRecord);
             $sql=$action==='archive'?'UPDATE case_comments SET archived_at=NOW(),archived_by=? WHERE id=? AND archived_at IS NULL':'UPDATE case_comments SET archived_at=NULL,archived_by=NULL WHERE id=? AND archived_at IS NOT NULL';
             $stmt=$pdo->prepare($sql);$stmt->execute($action==='archive'?[$user['user_uid'],$id]:[$id]);audit($pdo,$user,$action,'case_comment',$id);respond(['ok'=>$stmt->rowCount()>0]);
         }
@@ -887,11 +896,12 @@ try {
             // intermediate request failed or was blocked by the old owner lookup.
             $allowActiveDelete = $user['role'] === 'student';
             $archiveFilter = $allowActiveDelete ? '' : ' AND m.archived_at IS NOT NULL';
-            $ownerStmt=$pdo->prepare('SELECT c.student_id,m.case_id,m.source_key,m.comment_text FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?'.$archiveFilter);
+            $ownerStmt=$pdo->prepare('SELECT c.student_id,c.instructor_uid,m.case_id,m.source_key,m.comment_text FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?'.$archiveFilter);
             $ownerStmt->execute([$id]);
             $comment=$ownerStmt->fetch();
             if (!$comment) respond(['ok'=>false,'message'=>$allowActiveDelete ? 'Comment not found.' : 'Archived comment not found.'],404);
             if ($user['role']==='student' && $user['user_uid']!==$comment['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
+            ensureInstructorCaseAccess($user, $comment);
             $pdo->beginTransaction();
             try {
                 $deleteFilter = $allowActiveDelete ? '' : ' AND archived_at IS NOT NULL';
@@ -975,6 +985,7 @@ try {
             $archived = ($_GET['archived'] ?? '0') === '1';
             $conditions = [$archived ? 'c.archived_at IS NOT NULL' : 'c.archived_at IS NULL']; $params = [];
             if ($user['role'] === 'student') { $conditions[] = 'c.student_id=?'; $params[] = $user['user_uid']; }
+            elseif ($user['role'] === 'instructor') { $conditions[] = 'c.instructor_uid=?'; $params[] = $user['user_uid']; }
             elseif (!empty($_GET['student_id'])) { $conditions[] = 'c.student_id=?'; $params[] = $_GET['student_id']; }
             if (!empty($_GET['school_year'])) { $conditions[] = 'c.academic_year=?'; $params[] = $_GET['school_year']; }
             if (!empty($_GET['procedure'])) { $conditions[] = 'c.procedure_key=?'; $params[] = $_GET['procedure']; }
@@ -989,6 +1000,34 @@ try {
                 FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.date_time_performed DESC, c.id DESC');
             $stmt->execute($params); respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
         }
+        if ($method === 'PATCH' && $id !== '' && $action === 'assign') {
+            if ($user['role'] !== 'admin') respond(['ok' => false, 'message' => 'Only an administrator can assign instructors.'], 403);
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            [$where, $params] = caseMutationSelection($id, $identity);
+            $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $where LIMIT 2");
+            $recordStmt->execute($params);
+            $matches = $recordStmt->fetchAll();
+            if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection.'], 409);
+            $record = $matches[0] ?? false;
+            if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
+
+            $instructorId = trim((string)($data['instructor_id'] ?? $data['instructorId'] ?? ''));
+            $instructorName = null;
+            if ($instructorId !== '') {
+                $instructorStmt = $pdo->prepare("SELECT account_uid,display_name,username FROM instructor_accounts WHERE account_uid=? AND archived_at IS NULL AND status='active' LIMIT 1");
+                $instructorStmt->execute([$instructorId]);
+                $instructor = $instructorStmt->fetch();
+                if (!$instructor) respond(['ok' => false, 'message' => 'Select an active instructor.'], 422);
+                $instructorName = trim((string)($instructor['display_name'] ?: $instructor['username']));
+            }
+            $update = $pdo->prepare("UPDATE case_records SET instructor_uid=?,instructor_name=? WHERE $where LIMIT 1");
+            $update->execute([$instructorId !== '' ? $instructorId : null, $instructorName, ...$params]);
+            audit($pdo, $user, 'assign_instructor', 'case', (string)$record['id'], [
+                'instructor_uid' => $instructorId !== '' ? $instructorId : null,
+                'instructor_name' => $instructorName,
+            ]);
+            respond(['ok' => true, 'instructor_uid' => $instructorId, 'instructor_name' => $instructorName]);
+        }
         if ($method === 'PATCH' && $id !== '' && $action === '') {
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
             $editStep = 'record-lookup';
@@ -999,6 +1038,7 @@ try {
             if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple records match this selection. No records were edited.'], 409);
             $record = $matches[0] ?? false;
             if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or access is denied.'], 404);
+            ensureInstructorCaseAccess($user, $record);
 
             if ($user['role'] === 'student') {
                 $editStep = 'permission-check';
@@ -1110,6 +1150,10 @@ try {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
             }
+            if ($user['role'] === 'instructor' && (string)($reviewRecord['instructor_uid'] ?? '') !== (string)$user['user_uid']) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => 'This clinical record is assigned to another instructor.'], 403);
+            }
             $reviewRemarks = trim((string)($data['remarks'] ?? ''));
             if ($status === 'verified') {
                 $missing = missingClinicalFields($reviewRecord);
@@ -1132,7 +1176,7 @@ try {
                 $commentExists = $pdo->prepare('SELECT id FROM case_comments WHERE record_scope=? AND comment_text=? AND archived_at IS NULL LIMIT 1');
                 $commentExists->execute([$reviewCommentScope, $reviewRemarks]);
                 if (!$commentExists->fetchColumn()) {
-                    $commentAuthor = trim((string)($instructorName ?? '')) ?: trim((string)($reviewRecord['instructor_name'] ?? '')) ?: 'Clinical Instructor';
+                    $commentAuthor = trim((string)($instructorName ?? '')) ?: trim((string)($reviewRecord['instructor_name'] ?? '')) ?: 'Not assigned';
                     $commentStmt = $pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,record_scope) VALUES (?,?,?,?,?,?)');
                     $commentStmt->execute([(string)$reviewRecord['id'], $user['user_uid'], $commentAuthor, $user['role'] === 'admin' ? 'admin' : 'instructor', $reviewRemarks, $reviewCommentScope]);
                 }
@@ -1240,8 +1284,9 @@ try {
                 $case=$matches[0] ?? false;
             }
             if (!$case) respond(['ok'=>false,'message'=>'Case not found.'],404);
+            ensureInstructorCaseAccess($user, $case);
             $id = (string)$case['id'];
-            $authorName=trim((string)($data['checked_by'] ?? '')) ?: ($case['instructor_name'] ?: 'Clinical Instructor');
+            $authorName=trim((string)($data['checked_by'] ?? '')) ?: ($case['instructor_name'] ?: 'Not assigned');
             $pdo->beginTransaction();
             $stmt=$pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,record_scope) VALUES (?,?,?,?,?,?)');
             $stmt->execute([$id,$user['user_uid'],$authorName,$user['role']==='admin'?'admin':'instructor',$remarks,caseCommentScope($case)]);
@@ -1262,6 +1307,15 @@ try {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => count($matches) ? 'Multiple records share this identity. No records were archived.' : 'Active record not found.'], count($matches) ? 409 : 404);
             }
+            if ($user['role'] === 'instructor') {
+                $access = $pdo->prepare('SELECT instructor_uid FROM case_records WHERE id=? LIMIT 1');
+                $access->execute([(string)$matches[0]['id']]);
+                $accessRecord = $access->fetch();
+                if (!$accessRecord || (string)($accessRecord['instructor_uid'] ?? '') !== (string)$user['user_uid']) {
+                    $pdo->rollBack();
+                    respond(['ok' => false, 'message' => 'This clinical record is assigned to another instructor.'], 403);
+                }
+            }
             $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NOW(), record_status='archived' WHERE $where LIMIT 1");
             $stmt->execute($params);
             audit($pdo, $user, 'archive', 'case', (string)$matches[0]['id'], ['record_identity' => $identity]);
@@ -1277,6 +1331,7 @@ try {
             if (count($matches) > 1) respond(['ok' => false, 'message' => 'Multiple archived records match these details. No records were restored.'], 409);
             $record = $matches[0] ?? false;
             if (!$record) respond(['ok' => false, 'message' => 'Archived case not found.'], 404);
+            ensureInstructorCaseAccess($user, $record);
 
             $recordAcademicYear = trim((string)($record['academic_year'] ?? ''));
             $roleContext = $recordAcademicYear === ''
@@ -1321,7 +1376,7 @@ try {
             respond(['ok' => $restored]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'delete') {
-            $where = $user['role'] === 'student' ? ' AND student_id=?' : '';
+            $where = $user['role'] === 'student' ? ' AND student_id=?' : ($user['role'] === 'instructor' ? ' AND instructor_uid=?' : '');
             $params = [$id];
             if ($where) $params[] = $user['user_uid'];
             $stmt = $pdo->prepare('DELETE FROM case_records WHERE id=? AND archived_at IS NOT NULL' . $where);
@@ -1330,7 +1385,7 @@ try {
             respond(['ok' => $stmt->rowCount() > 0]);
         }
         if ($method === 'DELETE' && $id !== '') {
-            $where = $user['role'] === 'student' ? ' AND student_id=?' : ''; $params = [$id]; if ($where) $params[] = $user['user_uid'];
+            $where = $user['role'] === 'student' ? ' AND student_id=?' : ($user['role'] === 'instructor' ? ' AND instructor_uid=?' : ''); $params = [$id]; if ($where) $params[] = $user['user_uid'];
             $stmt = $pdo->prepare('DELETE FROM case_records WHERE id=? AND archived_at IS NOT NULL' . $where);
             $stmt->execute($params); audit($pdo, $user, 'delete_permanently', 'case', $id); respond(['ok' => $stmt->rowCount() > 0]);
         }
@@ -1653,10 +1708,26 @@ try {
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $rows = $stmt->fetchAll();
-        } elseif ($user['role'] === 'instructor' && ($_GET['mine'] ?? '') === '1') {
-            $stmt = $pdo->prepare("SELECT * FROM audit_trail WHERE actor_role='instructor' AND actor_uid=? ORDER BY created_at DESC, id DESC LIMIT 500");
-            $stmt->execute([$user['user_uid']]);
-            $rows = $stmt->fetchAll();
+        } elseif ($user['role'] === 'instructor') {
+            if ($recordId !== '') {
+                $caseAccess = $pdo->prepare('SELECT instructor_uid FROM case_records WHERE id=? LIMIT 1');
+                $caseAccess->execute([$recordId]);
+                $case = $caseAccess->fetch();
+                ensureInstructorCaseAccess($user, (array)$case);
+                $stmt = $pdo->prepare("SELECT * FROM audit_trail WHERE entity_type = 'case' AND entity_uid = ? ORDER BY created_at DESC");
+                $stmt->execute([$recordId]);
+                $rows = $stmt->fetchAll();
+            } else {
+                $stmt = $pdo->prepare("SELECT a.*, COALESCE(NULLIF(i.display_name, ''), NULLIF(s.student_name, ''), CASE WHEN a.actor_role = 'admin' THEN 'Administrator' ELSE NULL END) AS actor_name
+                    FROM audit_trail a
+                    LEFT JOIN case_records c ON a.entity_type = 'case' AND a.entity_uid = CAST(c.id AS CHAR)
+                    LEFT JOIN instructor_accounts i ON a.actor_role = 'instructor' AND i.account_uid = a.actor_uid
+                    LEFT JOIN students s ON a.actor_role = 'student' AND s.student_id = a.actor_uid
+                    WHERE (a.entity_type = 'case' AND c.instructor_uid = ?) OR (a.actor_role = 'instructor' AND a.actor_uid = ?)
+                    ORDER BY a.created_at DESC, a.id DESC LIMIT 500");
+                $stmt->execute([$user['user_uid'], $user['user_uid']]);
+                $rows = $stmt->fetchAll();
+            }
         } elseif ($recordId !== '') {
             $stmt = $pdo->prepare("SELECT * FROM audit_trail WHERE entity_type = 'case' AND entity_uid = ? ORDER BY created_at DESC");
             $stmt->execute([$recordId]);

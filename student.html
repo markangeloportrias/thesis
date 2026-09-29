@@ -2733,7 +2733,7 @@
       function getInstructorComments(rec) {
         if (rec.feedbackCommentsLoaded) return Array.isArray(rec.feedbackComments) ? rec.feedbackComments : [];
         const fallback = getInstructorRemarks(rec);
-        return fallback ? [{ id: `legacy-${getCaseKey(rec)}`, author_name: rec.instructorName || rec.checkedBy || "Clinical Instructor", comment_text: fallback, created_at: rec.updatedAt || rec.checkedAt || "" }] : [];
+        return fallback ? [{ id: `legacy-${getCaseKey(rec)}`, author_name: rec.instructorName || rec.checkedBy || "Not assigned", comment_text: fallback, created_at: rec.updatedAt || rec.checkedAt || "" }] : [];
       }
 
       function getCommentReadToken(comments) {
@@ -2889,7 +2889,7 @@
             identity.innerHTML = '<span class="feedback-author-avatar"><i class="fas fa-user-shield" aria-hidden="true"></i></span>';
             const author = document.createElement("span");
             const authorName = document.createElement("strong");
-            authorName.textContent = comment.author_name || "Clinical Instructor";
+            authorName.textContent = comment.author_name || "Not assigned";
             const timestamp = document.createElement("small");
             const created = comment.created_at ? PhilippineTime.parse(comment.created_at) : null;
             timestamp.textContent = created && !Number.isNaN(created.getTime())

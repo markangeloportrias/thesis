@@ -649,7 +649,7 @@
                     <colgroup>
                       <col style="width:19.16%"><col style="width:5.04%"><col style="width:12.89%">
                       <col style="width:7.29%"><col style="width:16.81%"><col style="width:12.89%">
-                      <col style="width:8.96%"><col style="width:8.96%"><col style="width:8%">
+                      <col style="width:8.96%"><col style="width:8.96%"><col style="width:8%"><col style="width:11%"><col style="width:8%">
                     </colgroup>
                     <thead>
                       <tr>
@@ -660,6 +660,7 @@
                         <th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th>
                         <th colspan="2">Supervised by</th>
                         <th rowspan="2">License No /<br>Expiry Date</th>
+                        <th rowspan="2">Assigned Instructor</th>
                         <th rowspan="2">Actions</th>
                       </tr>
                       <tr>
@@ -1907,6 +1908,64 @@
       async function getAdminCaseRecords() {
         const rows = await ApiClient.getAllCasesForInstructor("", "");
         return Array.isArray(rows) ? rows : [];
+      }
+
+      let adminCaseInstructorAccounts = [];
+      let adminCaseInstructorAccountsPromise = null;
+      async function loadAdminCaseInstructorAccounts() {
+        if (adminCaseInstructorAccountsPromise) return adminCaseInstructorAccountsPromise;
+        adminCaseInstructorAccountsPromise = ApiClient.getInstructorAccounts()
+          .then((result) => {
+            const accounts = result && result.ok && Array.isArray(result.accounts) ? result.accounts : [];
+            adminCaseInstructorAccounts = accounts.filter((account) =>
+              !account.archived_at && String(account.status || "active").toLowerCase() === "active",
+            );
+          })
+          .catch(() => {
+            adminCaseInstructorAccounts = [];
+          })
+          .finally(() => {
+            adminCaseInstructorAccountsPromise = null;
+          });
+        return adminCaseInstructorAccountsPromise;
+      }
+
+      function adminCaseRecordIdentity(record) {
+        if (record && record.record_identity && typeof record.record_identity === "object") {
+          return record.record_identity;
+        }
+        return {
+          student_id: record.student_id || "",
+          procedure_key: record.procedure_key || "",
+          case_no: record.case_no || "",
+          patient_name: record.patient_name || "",
+          academic_year: record.academic_year || "",
+          patient_address: record.patient_address ?? null,
+          complete_diagnosis: record.complete_diagnosis ?? null,
+          date_time_performed: record.date_time_performed ?? null,
+          facility_name: record.facility_name ?? null,
+          facility_address: record.facility_address ?? null,
+          facility_contact_number: record.facility_contact_number ?? null,
+          supervisor_printed_name: record.supervisor_printed_name ?? null,
+          supervisor_contact_number: record.supervisor_contact_number ?? null,
+          supervisor_position_designation: record.supervisor_position_designation ?? null,
+          supervisor_license_no: record.supervisor_license_no ?? null,
+          supervisor_license_expiry_date: record.supervisor_license_expiry_date ?? null,
+          created_at: record.created_at ?? null,
+        };
+      }
+
+      function renderAdminCaseInstructorSelect(record) {
+        const selectedId = String(record.instructor_uid || record.instructor_id || "");
+        const options = [
+          `<option value=""${selectedId ? "" : " selected"}>Not assigned</option>`,
+          ...adminCaseInstructorAccounts.map((account) => {
+            const id = String(account.id || account.account_uid || "");
+            const name = account.display_name || account.username || "Clinical Instructor";
+            return `<option value="${escapeHtml(id)}"${id === selectedId ? " selected" : ""}>${escapeHtml(name)}</option>`;
+          }),
+        ].join("");
+        return `<select class="admin-case-instructor-select" data-case-instructor data-case-id="${escapeHtml(record.id || "")}" data-record-identity="${escapeHtml(JSON.stringify(adminCaseRecordIdentity(record)))}" aria-label="Assigned instructor">${options}</select>`;
       }
 
       function refreshOverview() {
@@ -3431,6 +3490,7 @@
         info.textContent = `Viewing the progress overview for ${activeCasesStudentName}. Choose a procedure card or tab to open its records.`;
       }
       async function renderCases() {
+        await loadAdminCaseInstructorAccounts();
         const cases = await getCasesFiltered();
         casesTbody.innerHTML = "";
         casesEmpty.style.display = "none";
@@ -3446,6 +3506,7 @@
           <td>${c.supervisor_printed_name || "-"}${c.supervisor_contact_number ? `<br><small>${c.supervisor_contact_number}</small>` : ""}</td>
           <td>${c.supervisor_position_designation || "-"}</td>
           <td>${c.supervisor_license_no || "-"}${c.supervisor_license_expiry_date ? `<br><small>${c.supervisor_license_expiry_date}</small>` : ""}</td>
+          <td>${renderAdminCaseInstructorSelect(c)}</td>
           <td class="action-cell"><button class="mini-btn" type="button" data-action="comment-case" data-id="${c.id || ""}"><i class="fas fa-comment"></i> Comment</button></td>
         `;
           casesTbody.appendChild(tr);
@@ -7351,6 +7412,26 @@
             showStudentsNavMessage("Record comment saved.", "success");
           })();
         }
+      });
+      casesTbody?.addEventListener("change", async (e) => {
+        const select = e.target.closest("[data-case-instructor]");
+        if (!select) return;
+        const caseId = select.getAttribute("data-case-id") || "";
+        let recordIdentity = {};
+        try {
+          recordIdentity = JSON.parse(select.getAttribute("data-record-identity") || "{}");
+        } catch (_) {
+          recordIdentity = {};
+        }
+        select.disabled = true;
+        const result = await ApiClient.assignCaseInstructor(caseId, select.value, recordIdentity);
+        if (!result?.ok) {
+          await renderCases();
+          await showMessageDialog(result?.message || "Unable to assign the instructor.", "Assignment Failed");
+          return;
+        }
+        await renderCases();
+        showStudentsNavMessage(select.value ? "Instructor assigned to this case." : "Case marked as not assigned.", "success");
       });
 
       refreshNotificationsBtn?.addEventListener("click", loadAdminNotifications);

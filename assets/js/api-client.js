@@ -2790,6 +2790,20 @@
     var result = await mysqlRequest('cases');
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
+  ApiClient.assignCaseInstructor = async function (caseId, instructorId, recordIdentity) {
+    try {
+      var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/assign', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          instructor_id: instructorId || '',
+          record_identity: recordIdentity || {}
+        })
+      });
+      return { ok: !!result.ok, message: result.message };
+    } catch (error) {
+      return { ok: false, message: error.message };
+    }
+  };
   ApiClient.getUnassignedStudents = async function (schoolYear) {
     return mysqlRequest('assignments?unassigned=1&school_year=' + encodeURIComponent(normalize(schoolYear)));
   };
