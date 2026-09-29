@@ -282,11 +282,17 @@ html body.role-student #prcPreviewOverlay .prc-export-form.prc-export-continuati
   /* Word template: fixed row height plus paragraph spacing before and after. */
   height: 35px !important;
   font: 400 10.67px/1.05 Cambria, "Times New Roman", serif !important;
-  text-align: left !important;
+  text-align: center !important;
 }
 
 #prcPreviewOverlay .prc-export-table tbody td:nth-child(3) {
   font-size: 8px !important;
+}
+
+#prcPreviewOverlay .prc-export-table th,
+#prcPreviewOverlay .prc-export-table td {
+  text-align: center !important;
+  text-transform: uppercase !important;
 }
 
 #prcPreviewOverlay .prc-export-continued {

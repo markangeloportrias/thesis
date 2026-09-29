@@ -6145,9 +6145,9 @@
           .prc-export-school-label { margin-left: 72pt; }
           .prc-export-school { min-width: 205pt; }
           .prc-export-table { width: 100%; border: 1px solid #000; border-collapse: collapse; border-spacing: 0; table-layout: fixed; color: #000; background: #fff; }
-          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
-          .prc-export-table th { padding: 1pt 2pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 700; line-height: 1; text-transform: uppercase; }
-          .prc-export-table td { height: 22pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 400; line-height: 1.1; text-align: left; }
+          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; text-transform: uppercase; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
+          .prc-export-table th { padding: 1pt 2pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 700; line-height: 1; }
+          .prc-export-table td { height: 22pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 400; line-height: 1.1; }
           .prc-export-table td:nth-child(3) { font-size: 6pt; }
         </style></head><body><div class="Section1">${forms}</div></body></html>`;
       }
@@ -6418,7 +6418,7 @@
           const characterProperties = Array.from(paragraphProperties.children).find((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "rPr");
           paragraphProperties.insertBefore(alignment, characterProperties || null);
         }
-        alignment.setAttributeNS(PRC_WORD_NS, "w:val", "left");
+        alignment.setAttributeNS(PRC_WORD_NS, "w:val", "center");
         const firstRun = paragraph.getElementsByTagNameNS(PRC_WORD_NS, "r")[0];
         const runProperties = firstRun?.getElementsByTagNameNS(PRC_WORD_NS, "rPr")[0]?.cloneNode(true) || paragraph.ownerDocument.createElementNS(PRC_WORD_NS, "w:rPr");
         let fonts = Array.from(runProperties.children).find((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "rFonts");
@@ -6444,7 +6444,7 @@
           run.appendChild(runProperties.cloneNode(true));
           const text = paragraph.ownerDocument.createElementNS(PRC_WORD_NS, "w:t");
           text.setAttributeNS(PRC_XML_NS, "xml:space", "preserve");
-          text.textContent = line;
+          text.textContent = line.toUpperCase();
           run.appendChild(text);
           paragraph.appendChild(run);
           if (index < lines.length - 1) {
