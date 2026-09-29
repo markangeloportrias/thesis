@@ -2878,6 +2878,8 @@
           list.appendChild(empty);
         } else {
           comments.forEach((comment, index) => {
+            // Saved comments are authored text, not legacy placeholder remarks.
+            const savedCommentText = String(comment.comment_text ?? "");
             const item = document.createElement("article");
             item.className = "feedback-comment-item";
             const header = document.createElement("header");
@@ -2907,7 +2909,7 @@
               ? comment.duplicateIds
               : [comment.id];
             const commentIds = candidateCommentIds.filter((id) => id != null && String(id).trim() !== "" && !String(id).startsWith("legacy-"));
-            const canDeleteByRecord = Boolean(config.record && normalizeInstructorFeedback(comment.comment_text));
+            const canDeleteByRecord = Boolean(config.record && savedCommentText.trim());
             deleteButton.disabled = !commentIds.length && !canDeleteByRecord;
             deleteButton.title = commentIds.length || canDeleteByRecord ? "Delete this comment" : "This comment cannot be deleted";
             deleteButton.addEventListener("click", (event) => {
@@ -2965,7 +2967,7 @@
 
             const body = document.createElement("div");
             body.className = "feedback-comment-body";
-            body.textContent = normalizeInstructorFeedback(comment.comment_text) || "Comment unavailable.";
+            body.textContent = savedCommentText.trim() ? savedCommentText : "Comment unavailable.";
             item.append(header, body);
             list.appendChild(item);
           });
