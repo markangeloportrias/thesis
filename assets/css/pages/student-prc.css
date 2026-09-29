@@ -161,6 +161,36 @@ table.prc-procedure-table td.record-status-cell.status-needs_revision { backgrou
 table.prc-procedure-table td.record-status-cell.status-reviewed { background: #fffbeb !important; }
 table.prc-procedure-table td.record-status-cell.status-submitted { background: #eff6ff !important; }
 
+/* Student My Records: compact PRC-style table typography and column proportions. */
+html body.role-student #recordProcedureTables table.procedure-records-table {
+  font-family: Cambria, "Times New Roman", serif !important;
+}
+
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(1) { width: 16% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(2) { width: 6% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(3) { width: 20% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(4) { width: 8% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(5) { width: 12% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(6) { width: 9% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(7) { width: 8% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(8) { width: 7% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(9) { width: 5% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(10) { width: 4% !important; }
+html body.role-student #recordProcedureTables table.procedure-records-table col:nth-child(11) { width: 5% !important; }
+
+html body.role-student #recordProcedureTables table.procedure-records-table tbody td,
+html body.role-student #recordProcedureTables table.procedure-records-table tbody td :where(span, small, div, input, textarea) {
+  font-family: Cambria, "Times New Roman", serif !important;
+  font-size: 8px !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+}
+
+html body.role-student #recordProcedureTables table.procedure-records-table tbody td:nth-child(3),
+html body.role-student #recordProcedureTables table.procedure-records-table tbody td:nth-child(3) :where(span, small, div, input, textarea) {
+  font-size: 6px !important;
+}
+
 html body.role-student #recordProcedureTables .procedure-records-table tbody td.record-detail-cell,
 html body.role-student #recordProcedureTables .procedure-records-table tbody td.record-detail-cell > :is(.record-detail-primary, .record-detail-secondary) {
   color: #000 !important;
