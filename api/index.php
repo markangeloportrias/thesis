@@ -985,7 +985,6 @@ try {
             $archived = ($_GET['archived'] ?? '0') === '1';
             $conditions = [$archived ? 'c.archived_at IS NOT NULL' : 'c.archived_at IS NULL']; $params = [];
             if ($user['role'] === 'student') { $conditions[] = 'c.student_id=?'; $params[] = $user['user_uid']; }
-            elseif ($user['role'] === 'instructor') { $conditions[] = 'c.instructor_uid=?'; $params[] = $user['user_uid']; }
             elseif (!empty($_GET['student_id'])) { $conditions[] = 'c.student_id=?'; $params[] = $_GET['student_id']; }
             if (!empty($_GET['school_year'])) { $conditions[] = 'c.academic_year=?'; $params[] = $_GET['school_year']; }
             if (!empty($_GET['procedure'])) { $conditions[] = 'c.procedure_key=?'; $params[] = $_GET['procedure']; }

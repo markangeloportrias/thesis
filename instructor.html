@@ -2230,6 +2230,20 @@
         return status;
       }
 
+      function isInstructorCaseAssigned(record) {
+        const assignedId = String(record?.instructor_id || record?.instructor_uid || "").trim();
+        if (!assignedId) return false;
+        const currentIds = [
+          currentInstructor?.id,
+          currentInstructor?.uid,
+          currentInstructor?.user_uid,
+          currentInstructor?.account_uid,
+        ]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean);
+        return currentIds.includes(assignedId);
+      }
+
       function createInstructorProcedureProgressMetric({
         name,
         count,
@@ -2439,8 +2453,11 @@
                 row.appendChild(cell);
               });
               if (showStatus) {
-                const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
-                const statusLabels = { verified: "Verified", submitted: "Submitted", resubmitted: "Resubmitted", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", changes_requested: "Changes Requested", invalid: "Invalid", draft: "Draft" };
+                const assignedToCurrentInstructor = isInstructorCaseAssigned(record);
+                const statusKey = assignedToCurrentInstructor
+                  ? (getInstructorProcedureRecordReviewStatus(record) || "submitted")
+                  : "unassigned";
+                const statusLabels = { verified: "Verified", submitted: "Submitted", resubmitted: "Resubmitted", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", changes_requested: "Changes Requested", invalid: "Invalid", draft: "Draft", unassigned: "Not assigned CI" };
                 const status = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
                 const statusCell = document.createElement("td");
                 statusCell.style.setProperty("text-align", "center", "important");
@@ -2453,7 +2470,8 @@
                   under_review: ["#fef3c7", "#a16207", "#fbbf24", "fa-clock"],
                   needs_revision: ["#ffedd5", "#c2410c", "#fb923c", "fa-triangle-exclamation"],
                   changes_requested: ["#ffedd5", "#c2410c", "#fb923c", "fa-triangle-exclamation"],
-                  invalid: ["#ffe4e6", "#be123c", "#fb7185", "fa-circle-xmark"]
+                  invalid: ["#ffe4e6", "#be123c", "#fb7185", "fa-circle-xmark"],
+                  unassigned: ["#f1f5f9", "#475569", "#cbd5e1", "fa-user-clock"]
                 };
                 const [background, color, border, iconClass] = statusStyles[statusKey] || ["#f1f5f9", "#475569", "#cbd5e1", "fa-file-lines"];
                 const badge = document.createElement("span");
@@ -2483,15 +2501,18 @@
                 event.stopPropagation();
                 showRecordDetail(record);
               });
-              const commentButton = document.createElement("button");
-              commentButton.type = "button";
-              commentButton.className = "record-action-btn record-comment-btn";
-              commentButton.innerHTML = '<i class="far fa-comment" aria-hidden="true"></i><span>Comment</span>';
-              commentButton.addEventListener("click", async (event) => {
-                event.stopPropagation();
-                await handleTableComment(record);
-              });
-              actions.append(viewButton, commentButton);
+              actions.appendChild(viewButton);
+              if (isInstructorCaseAssigned(record)) {
+                const commentButton = document.createElement("button");
+                commentButton.type = "button";
+                commentButton.className = "record-action-btn record-comment-btn";
+                commentButton.innerHTML = '<i class="far fa-comment" aria-hidden="true"></i><span>Comment</span>';
+                commentButton.addEventListener("click", async (event) => {
+                  event.stopPropagation();
+                  await handleTableComment(record);
+                });
+                actions.appendChild(commentButton);
+              }
               actionCell.appendChild(actions);
               row.appendChild(actionCell);
               row.addEventListener("click", () => showRecordDetail(record));
@@ -6774,7 +6795,7 @@
 		<td data-label="Supervisor">${formatCombined(rec.supervisor_printed_name, rec.supervisor_contact_number, "", "<br>")}</td>
 			<td data-label="Position / Designation">${rec.supervisor_position_designation || ""}</td>
 		<td data-label="License No. / Expiry Date">${formatCombined(rec.supervisor_license_no, rec.supervisor_license_expiry_date, "", "<br>")}</td>
-            <td class="record-action-cell" data-label="Action"><div class="record-table-actions"><button class="record-action-btn record-view-btn" type="button" data-record-view><i class="far fa-eye" aria-hidden="true"></i><span>View</span></button><button class="record-action-btn record-comment-btn" type="button" data-record-comment><i class="far fa-comment" aria-hidden="true"></i><span>Comment</span></button></div></td>
+            <td class="record-action-cell" data-label="Action"><div class="record-table-actions"><button class="record-action-btn record-view-btn" type="button" data-record-view><i class="far fa-eye" aria-hidden="true"></i><span>View</span></button>${isInstructorCaseAssigned(rec) ? '<button class="record-action-btn record-comment-btn" type="button" data-record-comment><i class="far fa-comment" aria-hidden="true"></i><span>Comment</span></button>' : ''}</div></td>
       	`;
           tr.querySelector("[data-record-view]")?.addEventListener("click", (event) => {
             event.stopPropagation();
@@ -6796,7 +6817,10 @@
         const detailOverlay = document.getElementById("detailModalOverlay");
         const detailContent = document.getElementById("detailContent");
 
-        const status = rec.status || (rec.checked_by ? "Verified" : "Submitted");
+        const assignedToCurrentInstructor = isInstructorCaseAssigned(rec);
+        const status = assignedToCurrentInstructor
+          ? (rec.status || (rec.checked_by ? "Verified" : "Submitted"))
+          : "Not assigned CI";
         const detailValue = (value) => escapeHtml(value || "N/A");
         detailContent.innerHTML = `
           <section class="detail-group detail-group-overview">
@@ -6895,6 +6919,13 @@
           const value = field.querySelector('.detail-value');
           if (value && value.textContent.trim() === 'N/A') field.classList.add('record-quality-missing');
         });
+        if (detailReviewActions) {
+          detailReviewActions.style.display = assignedToCurrentInstructor ? "" : "none";
+        }
+        const detailRemarksButton = detailContent.querySelector("[data-detail-view-remarks]");
+        if (detailRemarksButton) {
+          detailRemarksButton.style.display = assignedToCurrentInstructor ? "" : "none";
+        }
         detailOverlay.classList.add("active");
       }
 
@@ -7210,6 +7241,10 @@
         const reviewRecord = currentReviewRecord;
         if (!reviewRecord) {
           showOptionMessage("No Record Selected", "Open a clinical record before using a review action.");
+          return;
+        }
+        if (!isInstructorCaseAssigned(reviewRecord)) {
+          showOptionMessage("Not Assigned", "This record is not assigned to you for review.");
           return;
         }
         if (status === "Verified") {
