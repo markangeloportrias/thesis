@@ -6146,7 +6146,7 @@
           .prc-export-school { min-width: 205pt; }
           .prc-export-table { width: 100%; border: 1px solid #000; border-collapse: collapse; border-spacing: 0; table-layout: fixed; color: #000; background: #fff; }
           .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
-          .prc-export-table th { font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 700; line-height: 1.1; }
+          .prc-export-table th { padding: 1pt 2pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 700; line-height: 1; text-transform: uppercase; }
           .prc-export-table td { height: 22pt; font-family: Cambria, "Times New Roman", serif; font-size: 8pt; font-weight: 400; line-height: 1.1; text-align: left; }
           .prc-export-table td:nth-child(3) { font-size: 6pt; }
         </style></head><body><div class="Section1">${forms}</div></body></html>`;
@@ -6455,6 +6455,44 @@
         });
       }
 
+      function compactAndUppercasePrcTemplateHeaders(xml) {
+        Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl")).forEach((table) => {
+          const gridColumns = Array.from(table.getElementsByTagNameNS(PRC_WORD_NS, "gridCol"));
+          if (gridColumns.length !== PRC_EXPORT_TABLE_COLUMNS.length) return;
+          const headerRows = Array.from(table.children)
+            .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tr")
+            .slice(0, 2);
+          headerRows.forEach((row) => {
+            const rowProperties = prcEnsureWordChild(xml, row, "trPr");
+            const rowHeight = prcEnsureWordChild(xml, rowProperties, "trHeight");
+            rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "0");
+            rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "atLeast");
+            Array.from(row.children)
+              .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc")
+              .forEach((cell) => {
+                const cellProperties = prcEnsureWordChild(xml, cell, "tcPr");
+                const cellMargins = prcEnsureWordChild(xml, cellProperties, "tcMar");
+                ["top", "bottom"].forEach((side) => {
+                  const margin = prcEnsureWordChild(xml, cellMargins, side);
+                  margin.setAttributeNS(PRC_WORD_NS, "w:w", "20");
+                  margin.setAttributeNS(PRC_WORD_NS, "w:type", "dxa");
+                });
+                Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "p")).forEach((paragraph) => {
+                  const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+                  const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:line", "200");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
+                });
+                Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "t")).forEach((textNode) => {
+                  textNode.textContent = (textNode.textContent || "").toUpperCase();
+                });
+              });
+          });
+        });
+      }
+
       function formatPrcDocxDateTime(value) {
         if (!value) return "";
         const date = PhilippineTime.parse(value, true);
@@ -6497,7 +6535,7 @@
         const headerCells = headerRow ? Array.from(headerRow.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc") : [];
         const diagnosisCell = headerCells[2];
         if (!diagnosisCell) return;
-        setPrcTemplateText(diagnosisCell, getPrcDiagnosisHeader(procedureKey));
+        setPrcTemplateText(diagnosisCell, getPrcDiagnosisHeader(procedureKey).toUpperCase());
       }
 
       function setPrcTemplateFooterLicense(paragraph) {
@@ -6591,6 +6629,7 @@
         addDeliveryAssistedPrcSheet(xml);
         synchronizePrcTemplateWithPreview(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
+        compactAndUppercasePrcTemplateHeaders(xml);
         setPrcTemplateColumnWidths(xml);
         const studentName = exportStudent.student_name || exportStudent.name || "";
         const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
