@@ -3655,7 +3655,7 @@
               <col style="width:14%"><col style="width:5%"><col style="width:16%">
               <col style="width:7%"><col style="width:13%"><col style="width:10%">
               <col style="width:11%"><col style="width:8%"><col style="width:7%">
-              <col style="width:10%"><col style="width:9%">
+              <col style="width:7%"><col style="width:9%">
             </colgroup>
             <thead>
               <tr>
@@ -3719,7 +3719,7 @@
           const statusCell = document.createElement("td");
           statusCell.style.textAlign = "center";
           statusCell.style.verticalAlign = "middle";
-          statusCell.style.padding = "10px 8px";
+          statusCell.style.padding = "6px 3px";
           const reviewStatus = getProcedureRecordReviewStatus(rec);
           statusCell.className = `record-status-cell status-${reviewStatus || "submitted"}`;
           const statusLabels = { verified: "Verified", invalid: "Invalid", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", submitted: "Submitted", resubmitted: "Resubmitted", draft: "Draft" };
@@ -3736,7 +3736,7 @@
           const statusCellBackgrounds = { verified: "#ecfdf5", invalid: "#fff1f2", needs_revision: "#fff7ed", reviewed: "#fffbeb", submitted: "#eff6ff" };
           statusCell.style.setProperty("background", "#fff", "important");
           const statusKey = reviewStatus || "submitted";
-          statusCell.innerHTML = `<span class="record-status-badge ${statusKey}" style="${statusStyle}display:inline-flex !important;flex-wrap:wrap;align-items:center;justify-content:center;gap:3px;min-width:0 !important;max-width:100%;box-sizing:border-box;padding:3px 4px !important;border-radius:8px !important;font-size:clamp(9px, .7vw, 11px) !important;font-weight:900 !important;line-height:1.3;letter-spacing:.01em;text-transform:none;white-space:normal;text-align:center;box-shadow:0 1px 2px rgba(15,23,42,.08);"><i class="fas ${statusIcons[statusKey] || "fa-clock"}" aria-hidden="true" style="flex-shrink:0;"></i><span style="min-width:0;max-width:100%;font-size:inherit !important;font-weight:800 !important;line-height:1.3 !important;color:inherit !important;white-space:normal !important;word-break:normal !important;overflow-wrap:anywhere !important;">${statusLabels[statusKey] || "Submitted"}</span></span>`;
+          statusCell.innerHTML = `<span class="record-status-badge ${statusKey}" style="${statusStyle}display:inline-flex !important;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;min-width:0 !important;max-width:100%;box-sizing:border-box;padding:2px 3px !important;border-radius:6px !important;font-size:clamp(8px, .62vw, 10px) !important;font-weight:900 !important;line-height:1.15;letter-spacing:.01em;text-transform:none;white-space:normal;text-align:center;box-shadow:0 1px 2px rgba(15,23,42,.08);"><i class="fas ${statusIcons[statusKey] || "fa-clock"}" aria-hidden="true" style="flex-shrink:0;"></i><span style="min-width:0;max-width:100%;font-size:inherit !important;font-weight:800 !important;line-height:1.15 !important;color:inherit !important;white-space:normal !important;word-break:normal !important;overflow-wrap:anywhere !important;">${statusLabels[statusKey] || "Submitted"}</span></span>`;
           row.appendChild(statusCell);
           const actions = document.createElement("td");
           const requestStatus = getEditRequestStatus(rec);
