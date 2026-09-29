@@ -6028,7 +6028,7 @@
           <td>${prcExportCell(record.supervisor_license_no, formatPrcExportDate(record.supervisor_license_expiry_date))}</td>
         </tr>`).join("");
         const blankRows = Math.max(0, rowCount - pageRecords.length);
-        const emptyRows = Array.from({ length: blankRows }, (_, rowIndex) => `<tr><td>${startIndex + pageRecords.length + rowIndex + 1}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join("");
+        const emptyRows = Array.from({ length: blankRows }, (_, rowIndex) => `<tr class="prc-export-blank-row"><td>${startIndex + pageRecords.length + rowIndex + 1}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join("");
         return `<table class="prc-export-table" style="width:${geometry.width}%">
           <colgroup>${geometry.columns.map((width) => `<col style="width:${width}%">`).join("")}</colgroup>
           <thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case<br>No.</th><th rowspan="2">${getPrcDiagnosisHeader(procedureKey)}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of<br>Facility &amp; Contact Number</th><th colspan="4">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>Signature</th><th>License No /<br>Expiry Date</th></tr></thead>
@@ -6505,6 +6505,11 @@
       function fillPrcTemplateTable(table, records) {
         const rows = Array.from(table.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tr").slice(2);
         rows.forEach((row, index) => {
+          const rowProperties = prcEnsureWordChild(table.ownerDocument, row, "trPr");
+          if (row.firstElementChild !== rowProperties) row.insertBefore(rowProperties, row.firstElementChild);
+          const rowHeight = prcEnsureWordChild(table.ownerDocument, rowProperties, "trHeight");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "900");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "atLeast");
           const record = records[index] || {};
           const cells = Array.from(row.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc");
           const values = [
