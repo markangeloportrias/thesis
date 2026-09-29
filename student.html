@@ -6468,6 +6468,23 @@
         });
       }
 
+      function compactPrcTemplateHeaderSpacing(xml) {
+        const body = xml.getElementsByTagNameNS(PRC_WORD_NS, "body")[0];
+        if (!body) return;
+        Array.from(body.children)
+          .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "p")
+          .forEach((paragraph) => {
+            const text = prcWordText(paragraph).trim();
+            if (!/^(?:PROFESSIONAL REGULATION COMMISSION|Cebu City|BOARD OF MIDWIFERY|Record of |Please check if applicant is:|Graduate Midwife|Name of Applicant:)/i.test(text)) return;
+            const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+            const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of /i.test(text) ? "240" : "180");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+          });
+      }
+
       function setPrcTemplateCell(cell, value, preserveNumbering = false, fontSizeHalfPoints = 16) {
         const paragraph = cell.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
         if (!paragraph) return;
@@ -6485,7 +6502,7 @@
         spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
         spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
         spacing.setAttributeNS(PRC_WORD_NS, "w:line", String(Math.round(fontSizeHalfPoints * 10.5)));
-        spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
         if (!preserveNumbering) {
           Array.from(paragraphProperties.children)
             .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "numPr")
@@ -6562,7 +6579,7 @@
                   spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:line", "168");
-                  spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
                 });
                 Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "t")).forEach((textNode) => {
                   textNode.textContent = (textNode.textContent || "").toUpperCase();
@@ -6702,6 +6719,7 @@
         addDeliveryAssistedPrcSheet(xml);
         setPrcTemplatePageLayout(xml);
         synchronizePrcTemplateWithPreview(xml);
+        compactPrcTemplateHeaderSpacing(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
         compactAndUppercasePrcTemplateHeaders(xml);
         setPrcTemplateColumnWidths(xml);
