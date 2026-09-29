@@ -1879,6 +1879,18 @@
           content.className = "chat-message-text";
           content.textContent = message.text || "";
           bubble.appendChild(content);
+          const timestamp = document.createElement("small");
+          timestamp.className = "instructor-chat-timestamp";
+          timestamp.style.cssText = "display:block;margin-top:5px;opacity:.72;font-size:10px;color:inherit;";
+          const senderLabel = message.from === "instructor"
+            ? "You"
+            : (instructorChats[activeChatKey].name || "Student");
+          const sentAt = message.ts ? PhilippineTime.parse(message.ts) : null;
+          const formattedTime = sentAt && !Number.isNaN(sentAt.getTime())
+            ? sentAt.toLocaleString("en-PH", { timeZone: "Asia/Manila" })
+            : "";
+          timestamp.textContent = formattedTime ? `${senderLabel} · ${formattedTime}` : senderLabel;
+          bubble.appendChild(timestamp);
           if (message.from === "instructor" && !isUnsentNotice) {
             const menuButton = document.createElement("button");
             menuButton.type = "button";
