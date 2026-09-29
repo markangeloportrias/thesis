@@ -2623,11 +2623,16 @@
         const control = document.createElement("div");
         control.style.display = "grid";
         control.style.gap = "5px";
-        control.style.minWidth = "128px";
+        control.style.width = "100%";
+        control.style.minWidth = "0";
+        control.style.maxWidth = "100%";
 
         const select = document.createElement("select");
         select.className = "case-instructor-select";
         select.setAttribute("aria-label", "Assigned clinical instructor");
+        select.style.width = "100%";
+        select.style.minWidth = "0";
+        select.style.boxSizing = "border-box";
         select.innerHTML = [
           `<option value="">Not assigned</option>`,
           ...studentCaseInstructorOptions.map((account) => `<option value="${escapeHtml(account.id)}">${escapeHtml(account.name)}</option>`),
@@ -2637,8 +2642,22 @@
         const button = document.createElement("button");
         button.type = "button";
         button.className = "case-assignment-btn";
-        button.textContent = selectedId ? "Change instructor" : "Assign instructor";
+        button.textContent = selectedId ? "Change" : "Assign instructor";
         button.setAttribute("aria-label", selectedId ? "Change assigned instructor" : "Assign instructor");
+        button.style.width = "100%";
+        button.style.minWidth = "0";
+        button.style.boxSizing = "border-box";
+        button.style.padding = "3px 4px";
+        button.style.border = "1px solid #00509d";
+        button.style.borderRadius = "4px";
+        button.style.background = "#ffffff";
+        button.style.color = "#00509d";
+        button.style.fontSize = "10px";
+        button.style.fontWeight = "700";
+        button.style.lineHeight = "1.15";
+        button.style.whiteSpace = "normal";
+        button.style.overflowWrap = "anywhere";
+        button.style.cursor = "pointer";
         button.addEventListener("click", async () => {
           const previousId = String(record.instructorId || "");
           select.disabled = true;
@@ -2653,7 +2672,7 @@
           }
           record.instructorId = select.value;
           record.instructorName = result.instructor_name || studentCaseInstructorOptions.find((account) => account.id === select.value)?.name || "";
-          button.textContent = select.value ? "Change instructor" : "Assign instructor";
+          button.textContent = select.value ? "Change" : "Assign instructor";
           button.disabled = false;
           select.disabled = false;
           showOptionPane({
