@@ -6921,7 +6921,11 @@
           if (value && value.textContent.trim() === 'N/A') field.classList.add('record-quality-missing');
         });
         if (detailReviewActions) {
-          detailReviewActions.style.display = assignedToCurrentInstructor ? "" : "none";
+          detailReviewActions.style.setProperty(
+            "display",
+            assignedToCurrentInstructor ? "flex" : "none",
+            "important",
+          );
         }
         const detailRemarksButton = detailContent.querySelector("[data-detail-view-remarks]");
         if (detailRemarksButton) {
