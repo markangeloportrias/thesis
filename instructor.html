@@ -7068,10 +7068,17 @@
         });
         renderRecordHistoryPane([], "loading");
 
+        const recordIdentity = record.record_identity || record.recordIdentity || {
+          student_id: record.student_id,
+          procedure_key: record.procedure_key || String(record.procedure_name || "").trim().toLowerCase(),
+          case_no: record.case_no,
+          patient_name: record.patient_name,
+          academic_year: record.academic_year || record.school_year || "",
+        };
         const commentsPromise =
-          record.id && typeof ApiClient !== "undefined" && typeof ApiClient.getCaseComments === "function"
-            ? ApiClient.getCaseComments(record.id, false, record.record_identity)
-            : Promise.resolve({ ok: true, comments: [] });
+          typeof ApiClient !== "undefined" && typeof ApiClient.getCaseComments === "function"
+            ? ApiClient.getCaseComments(record.id ?? "resolve", false, recordIdentity)
+            : Promise.resolve({ ok: false, comments: [] });
         const instructorsPromise =
           typeof ApiClient !== "undefined" && typeof ApiClient.getInstructorAccounts === "function"
             ? Promise.resolve(ApiClient.getInstructorAccounts()).catch(() => ({ ok: false, accounts: [] }))
@@ -7089,7 +7096,12 @@
           return;
         }
 
-        const comments = Array.isArray(commentsResult?.comments) ? commentsResult.comments : [];
+        if (currentReviewRecord !== record) return;
+        if (!commentsResult?.ok) {
+          renderRecordHistoryPane([], "error");
+          return;
+        }
+        const comments = Array.isArray(commentsResult.comments) ? commentsResult.comments : [];
         const instructorAccounts = Array.isArray(instructorsResult)
           ? instructorsResult
           : (Array.isArray(instructorsResult?.accounts) ? instructorsResult.accounts : []);
@@ -7131,7 +7143,7 @@
         };
         const timeline = [];
         let remarkHistory = [];
-        if ((!comments.length || comments.some((comment) => !comment.created_at)) &&
+        if (comments.some((comment) => !comment.created_at) &&
             record.id && typeof ApiClient !== "undefined" && typeof ApiClient.getRecordHistory === "function") {
           try {
             const result = await ApiClient.getRecordHistory(record.id);
@@ -7161,21 +7173,8 @@
           });
         });
 
-        if (!comments.length) {
-          const legacyRemark = String(record.remarks || record.teacher_remarks || "").trim();
-          if (legacyRemark && !/^(?:n\/?a|none|null|undefined|no\s+remarks?|not\s+available|-)$/i.test(legacyRemark)) {
-            const legacyDate = savedRemarkDate(legacyRemark) || record.updated_at || record.checked_at || record.created_at;
-            timeline.push({
-              kind: "remark",
-              date: legacyDate,
-              formattedDate: formatDate(legacyDate),
-              author: String(record.instructor_name || record.checked_by || "Clinical Instructor").trim() || "Clinical Instructor",
-              body: legacyRemark,
-            });
-          }
-        }
-
         timeline.sort((a, b) => parseDate(b.date) - parseDate(a.date));
+        if (currentReviewRecord !== record) return;
         renderRecordHistoryPane(timeline);
       }
 
