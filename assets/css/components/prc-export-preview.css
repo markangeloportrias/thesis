@@ -98,6 +98,8 @@
 
 #prcPreviewOverlay .prc-export-form:last-child { margin-bottom: 0; }
 #prcPreviewOverlay .prc-export-form.prc-export-continuation { padding-top: 36px; }
+html body.role-student #prcPreviewOverlay .prc-export-form { padding-top: 24px !important; }
+html body.role-student #prcPreviewOverlay .prc-export-form.prc-export-continuation { padding-top: 24px !important; }
 
 #prcPreviewOverlay .prc-export-heading {
   position: relative;
