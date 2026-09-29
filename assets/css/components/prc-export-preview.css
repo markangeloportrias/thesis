@@ -210,7 +210,7 @@
   overflow: visible !important;
   color: #000 !important;
   background: #fff !important;
-  font-family: Arial, Helvetica, sans-serif !important;
+  font-family: Cambria, "Times New Roman", serif !important;
 }
 
 #prcPreviewOverlay .prc-export-table thead,
@@ -262,7 +262,7 @@
 
 #prcPreviewOverlay .prc-export-table th {
   height: 29px !important;
-  font: 700 10.67px/1.05 "Times New Roman", Times, serif !important;
+  font: 700 10.67px/1.05 Cambria, "Times New Roman", serif !important;
   text-align: center !important;
 }
 
@@ -277,8 +277,12 @@
 #prcPreviewOverlay .prc-export-table td {
   /* Word template: fixed row height plus paragraph spacing before and after. */
   height: 35px !important;
-  font: 400 10.67px/1.05 Arial, Helvetica, sans-serif !important;
+  font: 400 10.67px/1.05 Cambria, "Times New Roman", serif !important;
   text-align: left !important;
+}
+
+#prcPreviewOverlay .prc-export-table tbody td:nth-child(3) {
+  font-size: 8px !important;
 }
 
 #prcPreviewOverlay .prc-export-continued {
