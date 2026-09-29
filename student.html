@@ -1483,8 +1483,7 @@
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
           <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
-          <button type="button" class="btn-secondary" id="prcPreviewDraftBtn">Download Draft</button>
-          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download Verified Form</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download PRC Form</button>
         </div>
       </div>
     </div>
@@ -6663,7 +6662,6 @@
           setPrcTemplateDiagnosisHeader(table, procedureKey);
           fillPrcTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount));
         });
-        if (options.draft) RecordQuality.markDraftDocument(xml, PRC_WORD_NS);
         documentEntry.data = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${new XMLSerializer().serializeToString(xml.documentElement)}`);
         return new Blob([createPrcDocxZip(entries)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
       }
@@ -6702,7 +6700,6 @@
           if (!pages) throw new Error("The PRC preview dialog is unavailable.");
           pages.innerHTML = forms;
           RecordQuality.showPreflight(records, currentStudent);
-          RecordQuality.markDraftPreview(pages, true);
           pages.scrollTop = 0;
           pages.scrollLeft = 0;
           const overlay = document.getElementById("prcPreviewOverlay");
@@ -6729,29 +6726,27 @@
       document.getElementById("prcPreviewOverlay")?.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) closePrcPreview();
       });
-      document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn').forEach((button) => {
+      document.querySelectorAll('#prcPreviewDownloadBtn').forEach((button) => {
         button.addEventListener('click', async () => {
           const studentId = currentStudent?.student_id;
           if (!studentId || !document.getElementById('prcPreviewPages')?.children.length) {
             RecordQuality.notify('Open a student PRC preview before downloading.', 'Select a Preview');
             return;
           }
-          const draft = button.id === 'prcPreviewDraftBtn';
-          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn');
+          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn');
           buttons.forEach((item) => { item.disabled = true; });
           try {
-            const snapshot = await RecordQuality.prepareExport(studentId, draft);
+            const snapshot = await RecordQuality.prepareExport(studentId);
             const blob = await buildPrcTemplateDocx(snapshot.records, snapshot);
             if (String(currentStudent?.student_id) === String(studentId)) {
               const pages = document.getElementById('prcPreviewPages');
               pages.innerHTML = buildPrcExportForms(snapshot.records, await getPrcLogoDataUrl(), snapshot.student);
               RecordQuality.showPreflight(snapshot.records, snapshot.student);
-              RecordQuality.markDraftPreview(pages, draft);
             }
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
+            link.download = `PRC-FORM-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
             document.body.appendChild(link);
             link.click();
             link.remove();

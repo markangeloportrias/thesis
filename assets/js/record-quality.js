@@ -82,19 +82,15 @@
     if (value.includes('internal')) return 'internal-exam';
     return '';
   }
-  function exportSelection(records, draft) {
+  function exportSelection(records) {
     const selected = [];
-    const shortfalls = [];
     for (const [key, target] of Object.entries(targets)) {
-      const candidates = records.filter((record) => procedureKey(record) === key &&
-        (draft || (status(record) === 'verified' && missing(record).length === 0)));
+      const candidates = records.filter((record) => procedureKey(record) === key);
       selected.push(...candidates.slice(0, target));
-      if (candidates.length < target) shortfalls.push(`${key.replace(/-/g, ' ')}: ${candidates.length} / ${target}`);
     }
-    if (!draft && shortfalls.length) throw new Error(`The verified form requires complete, verified cases for every procedure. ${shortfalls.join('; ')}. You can download a draft while completing these requirements.`);
     return selected;
   }
-  async function prepareExport(studentId, draft) {
+  async function prepareExport(studentId) {
     if (!studentId) throw new Error('Select a student before exporting.');
     const [records, profile] = await Promise.all([
       window.ApiClient.getJoinedCases(studentId, '', ''),
@@ -102,29 +98,8 @@
     ]);
     if (!Array.isArray(records)) throw new Error('Unable to refresh the clinical records.');
     if (!profile?.ok || !profile.student) throw new Error(profile?.message || 'Unable to refresh the student profile.');
-    if (!draft && !String(profile.student.student_name || '').trim()) throw new Error('The applicant name is required for a verified form.');
     const scoped = records.filter((record) => String(record.student_id) === String(studentId) && !record.archived_at);
-    return { records: exportSelection(scoped, draft), student: profile.student, draft };
-  }
-  function markDraftDocument(xml, namespace) {
-    // Mark each table page without adding paragraphs that shift the template layout.
-    Array.from(xml.getElementsByTagNameNS(namespace, 'tbl')).forEach((table) => {
-      const firstText = table.getElementsByTagNameNS(namespace, 't')[0];
-      if (firstText) firstText.textContent = `DRAFT - ${firstText.textContent}`;
-    });
-  }
-  function markDraftPreview(pages, draft) {
-    pages.querySelectorAll('.prc-export-form').forEach((page) => {
-      page.classList.toggle('is-draft', draft);
-      page.querySelector('[data-draft-label]')?.remove();
-      if (draft) {
-        const label = document.createElement('div');
-        label.dataset.draftLabel = '';
-        label.className = 'prc-draft-label';
-        label.textContent = 'DRAFT - NOT FOR SUBMISSION';
-        page.prepend(label);
-      }
-    });
+    return { records: exportSelection(scoped), student: profile.student };
   }
   function notify(message, title = 'Message') {
     const existing = document.querySelector('[data-record-quality-notice]');
@@ -164,5 +139,5 @@
       close.focus();
     });
   }
-  window.RecordQuality = { missing, status, reviewPanel, showPreflight, exportSelection, prepareExport, markDraftDocument, markDraftPreview, notify };
+  window.RecordQuality = { missing, status, reviewPanel, showPreflight, exportSelection, prepareExport, notify };
 })();
