@@ -3939,7 +3939,6 @@
           }));
 
           await reconcilePendingEditRequestStates(silentRefresh);
-          await hydrateCaseComments(silentRefresh);
           deliveryRecords.forEach((record) => {
             if (record.editRequestStatus) {
               setEditRequestStatus(record, record.editRequestStatus);
