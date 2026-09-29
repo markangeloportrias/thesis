@@ -43,7 +43,7 @@
     totalRecords: "btn-my-records",
     pendingRequests: "btn-nav-edit-requests",
     approvedCases: "btn-my-records",
-    activeStudents: "btn-nav-students"
+    activeStudents: "btn-my-records"
   };
   Object.keys(instructorMetricTargets).forEach(function (valueId) {
     const value = document.getElementById(valueId);
@@ -53,8 +53,14 @@
     card.classList.add("is-actionable");
     card.tabIndex = 0;
     card.setAttribute("role", "button");
-    card.setAttribute("aria-label", "Open " + target.textContent.trim().replace(/\s+/g, " "));
-    const activate = function () { target.click(); };
+    card.setAttribute("aria-label", "Open " + (card.querySelector(".stat-label")?.textContent || target.textContent).trim().replace(/\s+/g, " "));
+    const activate = function () {
+      if (typeof window.openInstructorDashboardMetric === "function") {
+        window.openInstructorDashboardMetric(valueId);
+      } else {
+        target.click();
+      }
+    };
     card.addEventListener("click", activate);
     card.addEventListener("keydown", function (event) {
       if (event.key === "Enter" || event.key === " ") {

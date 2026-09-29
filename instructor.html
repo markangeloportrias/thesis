@@ -669,7 +669,7 @@
               <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
               <div class="stat-label">Submitted records</div>
               <div class="stat-value" id="totalRecords">0</div>
-              <div class="stat-desc">Across all procedures</div>
+              <div class="stat-desc">Submitted and resubmitted</div>
             </div>
           </div>
           <div class="stat-card warning">
@@ -2535,7 +2535,11 @@
       }
 
       async function refreshDashboardCounts() {
-        const cases = await getInstructorAllCases();
+        const [cases, studentResult, yearsResult] = await Promise.all([
+          getInstructorAllCases(),
+          ApiClient.getAllAssignedStudents().catch(() => null),
+          ApiClient.getSchoolYears().catch(() => null),
+        ]);
         const grouped = {
           "delivery-handled": 0,
           "delivery-assisted": 0,
@@ -2569,11 +2573,17 @@
           statusCounts["Changes Requested"] + statusCounts.Resubmitted + statusCounts.Verified;
         const percent = total ? Math.round((approved / total) * 100) : 0;
 
-        setTextById("totalRecords", total);
+        setTextById("totalRecords", cases.filter((record) => matchesDashboardMetric(record, "totalRecords")).length);
         setTextById("navCountRecords", total);
-        setTextById("approvedCases", approved);
-        setTextById("activeStudents", activeStudentIds.size);
-        setTextById("pendingRequests", statusCounts.Submitted);
+        setTextById("approvedCases", cases.filter((record) => matchesDashboardMetric(record, "approvedCases")).length);
+        const activeYear = yearsResult?.school_years?.find((year) => String(year.status || "").toLowerCase() === "active")?.label;
+        const students = studentResult?.ok && Array.isArray(studentResult.students)
+          ? studentResult.students.filter((student) => !activeYear || String(student.registered_school_year || "") === String(activeYear))
+          : null;
+        setTextById("activeStudents", students && yearsResult?.ok
+          ? new Set(students.map((student) => String(student.student_id || "")).filter(Boolean)).size
+          : "—");
+        setTextById("pendingRequests", cases.filter((record) => matchesDashboardMetric(record, "pendingRequests")).length);
         setTextById("underReviewRecords", statusCounts["Under Review"]);
         setTextById("changesRequestedRecords", statusCounts["Changes Requested"]);
         setTextById("resubmittedRecords", statusCounts.Resubmitted);
@@ -2606,8 +2616,35 @@
         });
       }
 
+      let dashboardMetricFilter = "";
+      const dashboardMetricTitles = {
+        totalRecords: "Submitted Records",
+        pendingRequests: "Records Needing Review",
+        approvedCases: "Verified Records",
+      };
+      function matchesDashboardMetric(record, metric) {
+        const status = getInstructorProcedureRecordReviewStatus(record) || "submitted";
+        if (metric === "totalRecords") return ["submitted", "resubmitted"].includes(status);
+        if (metric === "pendingRequests") return ["submitted", "resubmitted", "reviewed", "under_review"].includes(status);
+        if (metric === "approvedCases") return status === "verified";
+        return true;
+      }
+      window.openInstructorDashboardMetric = function (metric) {
+        if (metric === "activeStudents") {
+          setActiveSection("my-records");
+          return;
+        }
+        const filter = dashboardMetricFilter === metric ? "" : metric;
+        setActiveSection("dashboard", { dashboardMetric: filter });
+      };
+
       function renderDashboardRecentRecords(records) {
         if (!dashboardRecentRecordsBody) return;
+        records = (Array.isArray(records) ? records : []).filter((record) => matchesDashboardMetric(record, dashboardMetricFilter));
+        if (dashboardMetricFilter) {
+          if (activeTitleText) activeTitleText.textContent = dashboardMetricTitles[dashboardMetricFilter];
+          if (activeSubtitle) activeSubtitle.textContent = "Records matching the selected card. Select the card again to show all records.";
+        }
 
         const timestamp = (record) => {
           const value =
@@ -2636,7 +2673,7 @@
             <tr class="recent-records-empty-row">
               <td colspan="9">
                 <i class="far fa-folder-open" aria-hidden="true"></i>
-                <span>No recent clinical records found.</span>
+                <span>No matching clinical records found.</span>
               </td>
             </tr>
           `;
@@ -7593,6 +7630,7 @@
       }
 
       function setActiveSection(type, options = {}) {
+        dashboardMetricFilter = type === "dashboard" ? (options.dashboardMetric || "") : "";
         const previousType = activeType;
         if (type === "my-records" && !options.preserveCurrentRecordsBlock) {
           selectedCurrentRecordsStudent = null;
@@ -8185,7 +8223,7 @@
         window.__updateEmptyTables = updateEmptyTables;
       })();
     </script>
-    <script src="assets/js/modern-shell.js?v=20260913-philippine-time-1"></script>
+    <script src="assets/js/modern-shell.js?v=20260929-instructor-metrics-1"></script>
     <script src="assets/js/site-protection.js?v=20260903-validation-2"></script>
   </body>
 </html>
