@@ -2799,7 +2799,12 @@
           record_identity: recordIdentity || {}
         })
       });
-      return { ok: !!result.ok, message: result.message };
+      return {
+        ok: !!result.ok,
+        message: result.message,
+        instructor_id: result.instructor_uid || "",
+        instructor_name: result.instructor_name || ""
+      };
     } catch (error) {
       return { ok: false, message: error.message };
     }

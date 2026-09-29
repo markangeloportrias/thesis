@@ -2586,6 +2586,87 @@
       let focusedCaseKey = null;
       let liveEditRequestsCache = [];
       let liveEditRequestsLoaded = false;
+      let studentCaseInstructorOptions = [];
+      let studentCaseInstructorDirectoryPromise = null;
+
+      async function loadStudentCaseInstructorOptions() {
+        if (studentCaseInstructorOptions.length) return studentCaseInstructorOptions;
+        if (studentCaseInstructorDirectoryPromise) return studentCaseInstructorDirectoryPromise;
+        studentCaseInstructorDirectoryPromise = (async () => {
+          try {
+            const result = typeof ApiClient.getActiveInstructorDirectory === "function"
+              ? await ApiClient.getActiveInstructorDirectory()
+              : await ApiClient.getInstructorAccounts();
+            const accounts = result && result.ok && Array.isArray(result.accounts) ? result.accounts : [];
+            studentCaseInstructorOptions = accounts
+              .filter((account) => !account.archived_at && String(account.status || "active").toLowerCase() === "active")
+              .map((account) => ({
+                id: String(account.id || account.account_uid || ""),
+                name: account.display_name || account.username || "Clinical Instructor",
+              }))
+              .filter((account) => account.id);
+          } catch (_) {
+            studentCaseInstructorOptions = [];
+          } finally {
+            studentCaseInstructorDirectoryPromise = null;
+          }
+          return studentCaseInstructorOptions;
+        })();
+        return studentCaseInstructorDirectoryPromise;
+      }
+
+      function createStudentCaseInstructorCell(record) {
+        const cell = document.createElement("td");
+        cell.className = "record-assignment-cell";
+        cell.style.verticalAlign = "middle";
+        const selectedId = String(record.instructorId || "");
+        const control = document.createElement("div");
+        control.style.display = "grid";
+        control.style.gap = "5px";
+        control.style.minWidth = "128px";
+
+        const select = document.createElement("select");
+        select.className = "case-instructor-select";
+        select.setAttribute("aria-label", "Assigned clinical instructor");
+        select.innerHTML = [
+          `<option value="">Not assigned</option>`,
+          ...studentCaseInstructorOptions.map((account) => `<option value="${escapeHtml(account.id)}">${escapeHtml(account.name)}</option>`),
+        ].join("");
+        select.value = selectedId;
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "case-assignment-btn";
+        button.textContent = selectedId ? "Change instructor" : "Assign instructor";
+        button.setAttribute("aria-label", selectedId ? "Change assigned instructor" : "Assign instructor");
+        button.addEventListener("click", async () => {
+          const previousId = String(record.instructorId || "");
+          select.disabled = true;
+          button.disabled = true;
+          const result = await ApiClient.assignCaseInstructor(record.id, select.value, record.recordIdentity || {});
+          if (!result?.ok) {
+            select.value = previousId;
+            select.disabled = false;
+            button.disabled = false;
+            showOptionPane({ title: "Assignment Failed", message: result?.message || "Unable to assign the instructor." });
+            return;
+          }
+          record.instructorId = select.value;
+          record.instructorName = result.instructor_name || studentCaseInstructorOptions.find((account) => account.id === select.value)?.name || "";
+          button.textContent = select.value ? "Change instructor" : "Assign instructor";
+          button.disabled = false;
+          select.disabled = false;
+          showOptionPane({
+            title: select.value ? "Instructor Assigned" : "Assignment Removed",
+            message: select.value
+              ? `${record.instructorName} can now access this clinical record.`
+              : "This clinical record is now marked as Not assigned.",
+          });
+        });
+        control.append(select, button);
+        cell.appendChild(control);
+        return cell;
+      }
 
       function getCaseKey(rec) {
         return String(rec.id || `${rec.procedureKey || activeProcedureKey}-${rec.caseNo || rec.patientName || "case"}`);
@@ -3555,7 +3636,7 @@
               <col style="width:14%"><col style="width:5%"><col style="width:16%">
               <col style="width:7%"><col style="width:13%"><col style="width:10%">
               <col style="width:11%"><col style="width:8%"><col style="width:7%">
-              <col style="width:9%">
+              <col style="width:10%"><col style="width:9%">
             </colgroup>
             <thead>
               <tr>
@@ -3565,6 +3646,7 @@
                 <th rowspan="2">Date &amp; Time<br>Performed</th>
                 <th rowspan="2">Full Name, Address of Facility &amp;<br>Contact Number</th>
                 <th colspan="3">Supervised by</th>
+                <th rowspan="2">Assigned<br>Instructor</th>
                 <th rowspan="2">Status</th>
                 <th rowspan="2">Actions</th>
               </tr>
@@ -3614,6 +3696,7 @@
             });
             row.appendChild(td);
           });
+          row.appendChild(createStudentCaseInstructorCell(rec));
           const statusCell = document.createElement("td");
           statusCell.style.textAlign = "center";
           statusCell.style.verticalAlign = "middle";
@@ -3826,6 +3909,7 @@
             teacherRemarks: rec.teacher_remarks || rec.remarks || "",
             checkedBy: rec.checked_by || "",
             instructorName: rec.instructor_name || "",
+            instructorId: rec.instructor_id || "",
             checkedAt: rec.checked_at || "",
             updatedAt: rec.updated_at || "",
             status:
@@ -3843,6 +3927,7 @@
             }
           });
 
+          await loadStudentCaseInstructorOptions();
           renderDeliveryRecordsTable();
         } catch (error) {
           console.error("Error loading delivery-assisted records:", error);

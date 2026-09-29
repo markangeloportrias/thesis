@@ -1001,9 +1001,9 @@ try {
             $stmt->execute($params); respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'assign') {
-            if ($user['role'] !== 'admin') respond(['ok' => false, 'message' => 'Only an administrator can assign instructors.'], 403);
+            if (!in_array($user['role'], ['admin', 'student'], true)) respond(['ok' => false, 'message' => 'Only the student or an administrator can assign an instructor.'], 403);
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
-            [$where, $params] = caseMutationSelection($id, $identity);
+            [$where, $params] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
             $recordStmt = $pdo->prepare("SELECT * FROM case_records WHERE $where LIMIT 2");
             $recordStmt->execute($params);
             $matches = $recordStmt->fetchAll();
