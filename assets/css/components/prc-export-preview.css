@@ -291,8 +291,8 @@ html body.role-student #prcPreviewOverlay .prc-export-form.prc-export-continuati
 
 #prcPreviewOverlay .prc-export-table tbody tr.prc-export-blank-row,
 #prcPreviewOverlay .prc-export-table tbody tr.prc-export-blank-row td {
-  height: 56px !important;
-  min-height: 56px !important;
+  height: 52px !important;
+  min-height: 52px !important;
 }
 
 #prcPreviewOverlay .prc-export-table th,
