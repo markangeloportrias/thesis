@@ -344,7 +344,7 @@ try {
 
     if ($resource === 'instructor-directory' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor', 'student']);
-        $rows=$pdo->query("SELECT account_uid AS id,username,display_name,role_title,status FROM instructor_accounts WHERE archived_at IS NULL AND status='active' ORDER BY display_name")->fetchAll();
+        $rows=$pdo->query("SELECT account_uid AS id,username,display_name,profile_photo,role_title,status FROM instructor_accounts WHERE archived_at IS NULL AND status='active' ORDER BY display_name")->fetchAll();
         respond(['ok'=>true,'accounts'=>$rows]);
     }
 
