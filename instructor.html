@@ -2482,7 +2482,7 @@
                 const icon = document.createElement("i");
                 icon.className = `fas ${iconClass}`;
                 icon.setAttribute("aria-hidden", "true");
-                icon.style.cssText = "color:inherit !important;font-size:inherit !important;";
+                icon.style.cssText = `color:inherit !important;font-size:inherit !important;${compactStatus ? "display:none !important;" : ""}`;
                 const label = document.createElement("span");
                 label.textContent = status;
                 label.style.cssText = `min-width:0;max-width:100%;color:inherit !important;font-size:inherit !important;font-weight:inherit !important;white-space:${compactStatus ? "nowrap" : "normal"} !important;overflow-wrap:anywhere;`;
