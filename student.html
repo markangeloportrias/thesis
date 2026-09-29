@@ -6508,7 +6508,7 @@
           const rowProperties = prcEnsureWordChild(table.ownerDocument, row, "trPr");
           if (row.firstElementChild !== rowProperties) row.insertBefore(rowProperties, row.firstElementChild);
           const rowHeight = prcEnsureWordChild(table.ownerDocument, rowProperties, "trHeight");
-          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "750");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "690");
           rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "atLeast");
           const record = records[index] || {};
           const cells = Array.from(row.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc");
