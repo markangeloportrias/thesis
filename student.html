@@ -6425,6 +6425,49 @@
         });
       }
 
+      function setPrcTemplatePageLayout(xml) {
+        const section = xml.getElementsByTagNameNS(PRC_WORD_NS, "sectPr")[0];
+        if (section) {
+          const pageMargins = prcEnsureWordChild(xml, section, "pgMar");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "360");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:right", "864");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:bottom", "864");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:left", "864");
+        }
+        const body = xml.getElementsByTagNameNS(PRC_WORD_NS, "body")[0];
+        if (!body) return;
+        const isEmptyParagraph = (node) => node?.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
+          !prcWordText(node).trim() && !node.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length;
+        const logoParagraphs = Array.from(body.children).filter((node) =>
+          node.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
+          Array.from(node.getElementsByTagNameNS(PRC_WORD_NS, "docPr")).some((drawing) => drawing.getAttribute("name") === "Picture 2"),
+        );
+        logoParagraphs.forEach((paragraph, index) => {
+          let previous = paragraph.previousElementSibling;
+          while (isEmptyParagraph(previous)) {
+            const before = previous.previousElementSibling;
+            previous.remove();
+            previous = before;
+          }
+          if (index > 0) {
+            const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+            const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
+            pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+          }
+        });
+        const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
+        PRC_EXPORT_PAGE_LAYOUT.forEach((page, index) => {
+          if (index === 0 || page.procedureKey !== PRC_EXPORT_PAGE_LAYOUT[index - 1].procedureKey) return;
+          const table = tables[index];
+          const firstCell = table?.getElementsByTagNameNS(PRC_WORD_NS, "tc")[0];
+          const firstParagraph = firstCell?.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
+          if (!firstParagraph) return;
+          const paragraphProperties = prcEnsureWordChild(xml, firstParagraph, "pPr");
+          const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
+          pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+        });
+      }
+
       function setPrcTemplateCell(cell, value, preserveNumbering = false, fontSizeHalfPoints = 16) {
         const paragraph = cell.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
         if (!paragraph) return;
@@ -6441,7 +6484,7 @@
         const spacing = prcEnsureWordChild(paragraph.ownerDocument, paragraphProperties, "spacing");
         spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
         spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-        spacing.setAttributeNS(PRC_WORD_NS, "w:line", "200");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:line", String(Math.round(fontSizeHalfPoints * 10.5)));
         spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
         if (!preserveNumbering) {
           Array.from(paragraphProperties.children)
@@ -6518,7 +6561,7 @@
                   const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-                  spacing.setAttributeNS(PRC_WORD_NS, "w:line", "200");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:line", "168");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
                 });
                 Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "t")).forEach((textNode) => {
@@ -6657,6 +6700,7 @@
         const xml = parser.parseFromString(new TextDecoder().decode(documentEntry.data), "application/xml");
         if (xml.querySelector("parsererror")) throw new Error("The PRC Word template could not be read.");
         addDeliveryAssistedPrcSheet(xml);
+        setPrcTemplatePageLayout(xml);
         synchronizePrcTemplateWithPreview(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
         compactAndUppercasePrcTemplateHeaders(xml);
