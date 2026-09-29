@@ -6002,8 +6002,42 @@
       function prcExportCell(...values) {
         const lines = values
           .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
-          .map((value) => escapeHtml(value));
+          .map((value) => escapeHtml(value).replace(/\r?\n/g, "<br>"));
         return lines.length ? lines.join("<br>") : "&nbsp;";
+      }
+
+      function getPrcExportRecordsByProcedure(records) {
+        return PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
+          groupedRecords[procedureKey] = (Array.isArray(records) ? records : [])
+            .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
+            .slice(0, PROCEDURE_TARGETS[procedureKey] || 0);
+          return groupedRecords;
+        }, {});
+      }
+
+      function getPrcExportRecordValues(record, rowNumber) {
+        const patient = [record?.patient_name, record?.patient_address]
+          .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+          .map((value) => String(value))
+          .join("\n");
+        if (!record) return [String(rowNumber), "", "", "", "", "", "", "", ""];
+        return [
+          patient ? `${rowNumber}. ${patient}` : String(rowNumber),
+          record.case_no || "",
+          record.complete_diagnosis || "",
+          formatPrcDocxDateTime(record.date_time_performed),
+          [record.facility_name, record.facility_address, record.facility_contact_number]
+            .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+            .join("\n"),
+          [record.supervisor_printed_name, record.supervisor_contact_number]
+            .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+            .join("\n"),
+          record.supervisor_position_designation || "",
+          "",
+          [record.supervisor_license_no, formatPrcDocxDate(record.supervisor_license_expiry_date)]
+            .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
+            .join("\n"),
+        ];
       }
 
       function buildPrcExportTable(procedureKey, records, startIndex = 0, rowCount = PROCEDURE_TARGETS[procedureKey] || 5) {
@@ -6015,19 +6049,15 @@
           "internal-exam": { width: 100, columns: PRC_EXPORT_TABLE_COLUMNS },
         }[procedureKey] || { width: 100, columns: PRC_EXPORT_TABLE_COLUMNS };
         const pageRecords = records.slice(startIndex, startIndex + rowCount);
-        const rows = pageRecords.map((record, rowIndex) => `<tr>
-          <td>${startIndex + rowIndex + 1}. ${prcExportCell(record.patient_name, record.patient_address)}</td>
-          <td>${prcExportCell(record.case_no)}</td>
-          <td>${prcExportCell(record.complete_diagnosis)}</td>
-          <td>${formatPrcExportDateTime(record.date_time_performed) || "&nbsp;"}</td>
-          <td>${prcExportCell(record.facility_name, record.facility_address, record.facility_contact_number)}</td>
-          <td>${prcExportCell(record.supervisor_printed_name, record.supervisor_contact_number)}</td>
-          <td>${prcExportCell(record.supervisor_position_designation)}</td>
-          <td>&nbsp;</td>
-          <td>${prcExportCell(record.supervisor_license_no, formatPrcExportDate(record.supervisor_license_expiry_date))}</td>
-        </tr>`).join("");
+        const rows = pageRecords.map((record, rowIndex) => {
+          const values = getPrcExportRecordValues(record, startIndex + rowIndex + 1);
+          return `<tr>${values.map((value) => `<td>${prcExportCell(value)}</td>`).join("")}</tr>`;
+        }).join("");
         const blankRows = Math.max(0, rowCount - pageRecords.length);
-        const emptyRows = Array.from({ length: blankRows }, (_, rowIndex) => `<tr class="prc-export-blank-row"><td>${startIndex + pageRecords.length + rowIndex + 1}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join("");
+        const emptyRows = Array.from({ length: blankRows }, (_, rowIndex) => {
+          const values = getPrcExportRecordValues(null, startIndex + pageRecords.length + rowIndex + 1);
+          return `<tr class="prc-export-blank-row">${values.map((value) => `<td>${prcExportCell(value)}</td>`).join("")}</tr>`;
+        }).join("");
         return `<table class="prc-export-table" style="width:${geometry.width}%">
           <colgroup>${geometry.columns.map((width) => `<col style="width:${width}%">`).join("")}</colgroup>
           <thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case<br>No.</th><th rowspan="2">${getPrcDiagnosisHeader(procedureKey)}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of<br>Facility &amp; Contact Number</th><th colspan="4">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>Signature</th><th>License No /<br>Expiry Date</th></tr></thead>
@@ -6036,6 +6066,7 @@
       }
 
       let prcPreviewRecords = [];
+      let prcPreviewStudent = null;
       let prcLogoDataUrl = "";
 
       async function getPrcLogoDataUrl() {
@@ -6094,12 +6125,7 @@
       function buildPrcExportForms(records, logoSource, exportStudent = currentStudent) {
         const studentName = exportStudent.student_name || exportStudent.name || "";
         const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
-        const recordsByProcedure = PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
-          groupedRecords[procedureKey] = records
-            .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
-            .slice(0, PROCEDURE_TARGETS[procedureKey] || 0);
-          return groupedRecords;
-        }, {});
+        const recordsByProcedure = getPrcExportRecordsByProcedure(records);
         return PRC_EXPORT_PAGE_LAYOUT.map(({ procedureKey, pageIndex, startIndex, rowCount, isFinalPage }) => {
           const isContinuation = pageIndex > 0;
           return `<section class="prc-export-form${isContinuation ? " prc-export-continuation" : ""}">
@@ -6405,7 +6431,18 @@
         const cellProperties = prcEnsureWordChild(paragraph.ownerDocument, cell, "tcPr");
         const verticalAlignment = prcEnsureWordChild(paragraph.ownerDocument, cellProperties, "vAlign");
         verticalAlignment.setAttributeNS(PRC_WORD_NS, "w:val", "center");
+        const cellMargins = prcEnsureWordChild(paragraph.ownerDocument, cellProperties, "tcMar");
+        ["top", "bottom"].forEach((side) => {
+          const margin = prcEnsureWordChild(paragraph.ownerDocument, cellMargins, side);
+          margin.setAttributeNS(PRC_WORD_NS, "w:w", "30");
+          margin.setAttributeNS(PRC_WORD_NS, "w:type", "dxa");
+        });
         const paragraphProperties = prcEnsureWordChild(paragraph.ownerDocument, paragraph, "pPr");
+        const spacing = prcEnsureWordChild(paragraph.ownerDocument, paragraphProperties, "spacing");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:line", "200");
+        spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "atLeast");
         if (!preserveNumbering) {
           Array.from(paragraphProperties.children)
             .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "numPr")
@@ -6501,28 +6538,17 @@
 
       function formatPrcDocxDate(value) { return formatPrcExportDate(value).replace(/<[^>]+>/g, ""); }
 
-      function fillPrcTemplateTable(table, records) {
+      function fillPrcTemplateTable(table, records, startIndex = 0) {
         const rows = Array.from(table.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tr").slice(2);
         rows.forEach((row, index) => {
           const rowProperties = prcEnsureWordChild(table.ownerDocument, row, "trPr");
           if (row.firstElementChild !== rowProperties) row.insertBefore(rowProperties, row.firstElementChild);
           const rowHeight = prcEnsureWordChild(table.ownerDocument, rowProperties, "trHeight");
-          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "690");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", records[index] ? "525" : "720");
           rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "atLeast");
-          const record = records[index] || {};
           const cells = Array.from(row.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc");
-          const values = [
-            [record.patient_name, record.patient_address].filter(Boolean).join("\n"),
-            record.case_no,
-            record.complete_diagnosis,
-            formatPrcDocxDateTime(record.date_time_performed),
-            [record.facility_name, record.facility_address, record.facility_contact_number].filter(Boolean).join("\n"),
-            [record.supervisor_printed_name, record.supervisor_contact_number].filter(Boolean).join("\n"),
-            record.supervisor_position_designation,
-            "",
-            [record.supervisor_license_no, formatPrcDocxDate(record.supervisor_license_expiry_date)].filter(Boolean).join("\n"),
-          ];
-          cells.forEach((cell, cellIndex) => setPrcTemplateCell(cell, values[cellIndex] || "", cellIndex === 0, cellIndex === 2 ? 12 : 16));
+          const values = getPrcExportRecordValues(records[index] || null, startIndex + index + 1);
+          cells.forEach((cell, cellIndex) => setPrcTemplateCell(cell, values[cellIndex] || "", false, cellIndex === 2 ? 12 : 16));
         });
       }
 
@@ -6648,11 +6674,7 @@
           }
           if (school && schoolNode) schoolNode.textContent = school;
         });
-        const recordsByProcedure = { "delivery-handled": [], "delivery-assisted": [], suturing: [], "iv-insertion": [], "internal-exam": [] };
-        records.forEach((record) => {
-          const key = normalizeProcedureKey(record.procedure_key || record.procedure_name);
-          if (recordsByProcedure[key]) recordsByProcedure[key].push(record);
-        });
+        const recordsByProcedure = getPrcExportRecordsByProcedure(records);
         const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
         if (tables.length < PRC_EXPORT_PAGE_LAYOUT.length) {
           throw new Error("The PRC Word template is missing one or more form pages.");
@@ -6660,7 +6682,7 @@
         PRC_EXPORT_PAGE_LAYOUT.forEach(({ procedureKey, startIndex, rowCount }, tableIndex) => {
           const table = tables[tableIndex];
           setPrcTemplateDiagnosisHeader(table, procedureKey);
-          fillPrcTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount));
+          fillPrcTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount), startIndex);
         });
         documentEntry.data = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${new XMLSerializer().serializeToString(xml.documentElement)}`);
         return new Blob([createPrcDocxZip(entries)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
@@ -6690,16 +6712,17 @@
         const button = document.getElementById("studentProgressExportBtn");
         button?.setAttribute("disabled", "disabled");
         try {
-          const [records, logoSource] = await Promise.all([
-            ApiClient.getJoinedCases(currentStudent.student_id, "", ""),
+          const [snapshot, logoSource] = await Promise.all([
+            RecordQuality.prepareExport(currentStudent.student_id),
             getPrcLogoDataUrl(),
           ]);
-          const forms = buildPrcExportForms(records, logoSource);
-          prcPreviewRecords = records;
+          const forms = buildPrcExportForms(snapshot.records, logoSource, snapshot.student);
+          prcPreviewRecords = snapshot.records;
+          prcPreviewStudent = snapshot.student;
           const pages = document.getElementById("prcPreviewPages");
           if (!pages) throw new Error("The PRC preview dialog is unavailable.");
           pages.innerHTML = forms;
-          RecordQuality.showPreflight(records, currentStudent);
+          RecordQuality.showPreflight(snapshot.records, snapshot.student);
           pages.scrollTop = 0;
           pages.scrollLeft = 0;
           const overlay = document.getElementById("prcPreviewOverlay");
@@ -6736,7 +6759,10 @@
           const buttons = document.querySelectorAll('#prcPreviewDownloadBtn');
           buttons.forEach((item) => { item.disabled = true; });
           try {
-            const snapshot = await RecordQuality.prepareExport(studentId);
+            const snapshot = {
+              records: Array.isArray(prcPreviewRecords) ? prcPreviewRecords.slice() : [],
+              student: prcPreviewStudent || currentStudent,
+            };
             const blob = await buildPrcTemplateDocx(snapshot.records, snapshot);
             if (String(currentStudent?.student_id) === String(studentId)) {
               const pages = document.getElementById('prcPreviewPages');

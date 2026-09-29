@@ -74,12 +74,12 @@
   }
   const targets = { 'delivery-handled': 20, 'delivery-assisted': 20, 'suturing': 5, 'iv-insertion': 5, 'internal-exam': 20 };
   function procedureKey(record) {
-    const value = String(record.procedure_key || record.procedure_name || '').toLowerCase().replace(/[_-]/g, ' ');
-    if (value.includes('assisted')) return 'delivery-assisted';
-    if (value.includes('delivery') || value.includes('deliveries')) return 'delivery-handled';
+    const value = String(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName || '').toLowerCase().replace(/[_-]/g, ' ');
+    if (value.includes('delivery') && value.includes('assisted')) return 'delivery-assisted';
+    if ((value.includes('normal') && value.includes('delivery')) || (value.includes('delivery') && value.includes('handled'))) return 'delivery-handled';
     if (value.includes('sutur')) return 'suturing';
-    if (value.includes('intraven') || value.includes('iv')) return 'iv-insertion';
-    if (value.includes('internal')) return 'internal-exam';
+    if ((value.includes('iv') && value.includes('insert')) || value.includes('intraven')) return 'iv-insertion';
+    if (value.includes('internal') && value.includes('exam')) return 'internal-exam';
     return '';
   }
   function exportSelection(records) {
