@@ -85,7 +85,7 @@
   height: 816px;
   min-height: 816px;
   margin: 0 auto 28px;
-  padding: 89px 58px 58px;
+  padding: 48px 58px 58px;
   overflow: hidden;
   color: #000 !important;
   background: #fff !important;
@@ -97,7 +97,7 @@
 }
 
 #prcPreviewOverlay .prc-export-form:last-child { margin-bottom: 0; }
-#prcPreviewOverlay .prc-export-form.prc-export-continuation { padding-top: 60px; }
+#prcPreviewOverlay .prc-export-form.prc-export-continuation { padding-top: 36px; }
 
 #prcPreviewOverlay .prc-export-heading {
   position: relative;
