@@ -612,6 +612,150 @@
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
     <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260928-mobile-chat-height-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
+    <style id="student-instructor-assignment-styles">
+      html body.role-student .record-assignment-cell {
+        vertical-align: middle;
+      }
+
+      html body.role-student .case-assignment-control {
+        display: grid;
+        gap: 5px;
+        width: 100%;
+        min-width: 0;
+      }
+
+      html body.role-student .case-assignment-name {
+        color: #172554;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      html body.role-student .case-assignment-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        width: 100%;
+        min-width: 0;
+        min-height: 28px;
+        box-sizing: border-box;
+        padding: 4px 6px;
+        border: 1px solid #0759ad;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #0759ad;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.15;
+        text-align: center;
+        text-transform: uppercase;
+        cursor: pointer;
+      }
+
+      html body.role-student .case-assignment-btn:hover {
+        background: #edf6ff;
+      }
+
+      html body.role-student .option-pane.instructor-picker-dialog {
+        width: min(460px, calc(100vw - 32px));
+        max-width: 460px;
+        padding: 28px;
+        text-align: left;
+      }
+
+      html body.role-student .instructor-picker-dialog .option-pane-title {
+        padding-right: 32px;
+        color: #0b3266;
+        font-size: 20px;
+      }
+
+      html body.role-student .instructor-picker-dialog .option-pane-message {
+        margin: 0 0 18px;
+      }
+
+      html body.role-student .student-instructor-picker-intro {
+        margin: 0 0 12px;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      html body.role-student .student-instructor-picker-list {
+        display: grid;
+        gap: 8px;
+        max-height: 320px;
+        overflow-y: auto;
+        padding: 2px;
+      }
+
+      html body.role-student .student-instructor-picker-option {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d7e4f1;
+        border-radius: 10px;
+        background: #ffffff;
+        color: #15375f;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      html body.role-student .student-instructor-picker-option:hover,
+      html body.role-student .student-instructor-picker-option.current {
+        border-color: #5da3df;
+        background: #eff7ff;
+      }
+
+      html body.role-student .student-instructor-picker-option:disabled {
+        cursor: wait;
+        opacity: 0.65;
+      }
+
+      html body.role-student .student-instructor-picker-avatar {
+        display: grid;
+        flex: 0 0 36px;
+        width: 36px;
+        height: 36px;
+        place-items: center;
+        border-radius: 50%;
+        background: #dcebfa;
+        color: #0759ad;
+        font-size: 14px;
+      }
+
+      html body.role-student .student-instructor-picker-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 800;
+        overflow-wrap: anywhere;
+      }
+
+      html body.role-student .student-instructor-picker-current {
+        flex: 0 0 auto;
+        padding: 3px 7px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #0759ad;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      html body.role-student .student-instructor-picker-empty {
+        padding: 18px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 10px;
+        color: #64748b;
+        text-align: center;
+      }
+    </style>
     <script async src="assets/js/prc-export.js?v=8"></script>
   </head>
   <body>
@@ -2616,74 +2760,117 @@
         return studentCaseInstructorDirectoryPromise;
       }
 
+      async function openStudentCaseInstructorPicker(record, refreshCell) {
+        const currentInstructorId = String(record.instructorId || "");
+        showOptionPane({
+          title: currentInstructorId ? "Change Instructor" : "Assign Instructor",
+          message: "",
+          buttons: [{ label: "Cancel", variant: "secondary" }],
+        });
+        optionPane?.classList.add("instructor-picker-dialog");
+
+        const intro = document.createElement("p");
+        intro.className = "student-instructor-picker-intro";
+        intro.textContent = "Choose the clinical instructor who will review this record.";
+        const list = document.createElement("div");
+        list.className = "student-instructor-picker-list";
+        const loading = document.createElement("div");
+        loading.className = "student-instructor-picker-empty";
+        loading.textContent = "Loading instructors...";
+        list.appendChild(loading);
+        optionPaneMessage.replaceChildren(intro, list);
+
+        const instructors = await loadStudentCaseInstructorOptions();
+        list.replaceChildren();
+
+        if (!instructors.length) {
+          const empty = document.createElement("div");
+          empty.className = "student-instructor-picker-empty";
+          empty.textContent = "No active instructors are available.";
+          list.appendChild(empty);
+        } else {
+          instructors.forEach((instructor) => {
+            const isCurrent = instructor.id === currentInstructorId;
+            const choice = document.createElement("button");
+            choice.type = "button";
+            choice.className = `student-instructor-picker-option${isCurrent ? " current" : ""}`;
+            choice.setAttribute("aria-label", `${isCurrent ? "Currently assigned to" : "Assign to"} ${instructor.name}`);
+
+            const avatar = document.createElement("span");
+            avatar.className = "student-instructor-picker-avatar";
+            avatar.innerHTML = '<i class="fas fa-user-nurse" aria-hidden="true"></i>';
+            const name = document.createElement("span");
+            name.className = "student-instructor-picker-name";
+            name.textContent = instructor.name;
+            choice.append(avatar, name);
+
+            if (isCurrent) {
+              const badge = document.createElement("span");
+              badge.className = "student-instructor-picker-current";
+              badge.textContent = "Current";
+              choice.appendChild(badge);
+            }
+
+            choice.addEventListener("click", async () => {
+              if (isCurrent) {
+                closeOptionPane();
+                return;
+              }
+              list.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+              const result = await ApiClient.assignCaseInstructor(record.id, instructor.id, record.recordIdentity || {});
+              if (!result?.ok) {
+                closeOptionPane();
+                showOptionPane({
+                  title: "Assignment Failed",
+                  message: result?.message || "Unable to assign the instructor.",
+                });
+                return;
+              }
+              record.instructorId = instructor.id;
+              record.instructorName = result.instructor_name || instructor.name;
+              refreshCell();
+              closeOptionPane();
+              showOptionPane({
+                title: "Instructor Assigned",
+                message: `${record.instructorName} can now access this clinical record.`,
+              });
+            });
+            list.appendChild(choice);
+          });
+        }
+
+      }
+
       function createStudentCaseInstructorCell(record) {
         const cell = document.createElement("td");
         cell.className = "record-assignment-cell";
-        cell.style.verticalAlign = "middle";
-        const selectedId = String(record.instructorId || "");
         const control = document.createElement("div");
-        control.style.display = "grid";
-        control.style.gap = "5px";
-        control.style.width = "100%";
-        control.style.minWidth = "0";
-        control.style.maxWidth = "100%";
+        control.className = "case-assignment-control";
 
-        const select = document.createElement("select");
-        select.className = "case-instructor-select";
-        select.setAttribute("aria-label", "Assigned clinical instructor");
-        select.style.width = "100%";
-        select.style.minWidth = "0";
-        select.style.boxSizing = "border-box";
-        select.innerHTML = [
-          `<option value="">Not assigned</option>`,
-          ...studentCaseInstructorOptions.map((account) => `<option value="${escapeHtml(account.id)}">${escapeHtml(account.name)}</option>`),
-        ].join("");
-        select.value = selectedId;
-
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "case-assignment-btn";
-        button.textContent = selectedId ? "Change" : "Assign instructor";
-        button.setAttribute("aria-label", selectedId ? "Change assigned instructor" : "Assign instructor");
-        button.style.width = "100%";
-        button.style.minWidth = "0";
-        button.style.boxSizing = "border-box";
-        button.style.padding = "3px 4px";
-        button.style.border = "1px solid #00509d";
-        button.style.borderRadius = "4px";
-        button.style.background = "#ffffff";
-        button.style.color = "#00509d";
-        button.style.fontSize = "10px";
-        button.style.fontWeight = "700";
-        button.style.lineHeight = "1.15";
-        button.style.whiteSpace = "normal";
-        button.style.overflowWrap = "anywhere";
-        button.style.cursor = "pointer";
-        button.addEventListener("click", async () => {
-          const previousId = String(record.instructorId || "");
-          select.disabled = true;
-          button.disabled = true;
-          const result = await ApiClient.assignCaseInstructor(record.id, select.value, record.recordIdentity || {});
-          if (!result?.ok) {
-            select.value = previousId;
-            select.disabled = false;
-            button.disabled = false;
-            showOptionPane({ title: "Assignment Failed", message: result?.message || "Unable to assign the instructor." });
-            return;
+        const renderControl = () => {
+          control.replaceChildren();
+          const selectedId = String(record.instructorId || "");
+          if (selectedId) {
+            const assignedName = document.createElement("span");
+            assignedName.className = "case-assignment-name";
+            assignedName.textContent = record.instructorName
+              || studentCaseInstructorOptions.find((account) => account.id === selectedId)?.name
+              || "Assigned instructor";
+            control.appendChild(assignedName);
           }
-          record.instructorId = select.value;
-          record.instructorName = result.instructor_name || studentCaseInstructorOptions.find((account) => account.id === select.value)?.name || "";
-          button.textContent = select.value ? "Change" : "Assign instructor";
-          button.disabled = false;
-          select.disabled = false;
-          showOptionPane({
-            title: select.value ? "Instructor Assigned" : "Assignment Removed",
-            message: select.value
-              ? `${record.instructorName} can now access this clinical record.`
-              : "This clinical record is now marked as Not assigned.",
-          });
-        });
-        control.append(select, button);
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "case-assignment-btn";
+          button.innerHTML = selectedId
+            ? '<i class="fas fa-pen" aria-hidden="true"></i><span>Change</span>'
+            : '<i class="fas fa-user-plus" aria-hidden="true"></i><span>Assign Instructor</span>';
+          button.setAttribute("aria-label", selectedId ? "Change assigned instructor" : "Assign instructor");
+          button.addEventListener("click", () => openStudentCaseInstructorPicker(record, renderControl));
+          control.appendChild(button);
+        };
+
+        renderControl();
         cell.appendChild(control);
         return cell;
       }
@@ -2941,6 +3128,7 @@
         optionPaneOverlay.classList.remove("open");
         optionPaneOverlay.classList.remove("record-choice-overlay");
         optionPane?.classList.remove("record-choice-dialog");
+        optionPane?.classList.remove("instructor-picker-dialog");
       }
 
       optionPaneClose?.addEventListener("click", closeOptionPane);
