@@ -898,6 +898,10 @@ window.PrcExport = {
           .filter((paragraph) => prcWordText(paragraph).includes("Registered Midwives/ Clinical Instructors"))
           .forEach((paragraph) => {
             clearPrcTemplateNumbering(paragraph);
+            const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+            const noteIndent = prcEnsureWordChild(xml, paragraphProperties, "ind");
+            noteIndent.setAttributeNS(PRC_WORD_NS, "w:left", "1440");
+            ["right", "firstLine", "hanging"].forEach((attribute) => noteIndent.removeAttributeNS(PRC_WORD_NS, attribute));
             setPrcTemplateText(paragraph, PRC_FOOTER_COPY.noteTwo);
           });
         paragraphs
