@@ -51,7 +51,7 @@ window.PrcExport = {
       const PRC_DOCX_MARGIN = 432;
       const PRC_DOCX_CONTENT_WIDTH = PRC_DOCX_PAGE_WIDTH - (PRC_DOCX_MARGIN * 2);
       const PRC_FOOTER_COPY = {
-        noteOne: "(1)The Clinical Instructor should ensure competence of the students in the performance of actual deliveries before signing this form.",
+        noteOne: "(1) The Clinical Instructor should ensure competence of the students in the performance of actual deliveries before signing this form.",
         noteTwo: "(2) Registered Midwives/ Clinical Instructors who supervise Students/ Graduate Midwives/ Registered Nurses and affix signature in this Form must present a Certificate of Training on Expanded Functions of Midwife (R.A. 7392) pursuant to Board Resolution No. 07, Series of 2017, dated September 8, 2017.",
         licenseNumber: "RN-0508249/RM-0174915",
         expiryLine: "______________",
