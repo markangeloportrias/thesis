@@ -6439,7 +6439,7 @@
         const section = xml.getElementsByTagNameNS(PRC_WORD_NS, "sectPr")[0];
         if (section) {
           const pageMargins = prcEnsureWordChild(xml, section, "pgMar");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "0");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "113");
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:right", String(PRC_DOCX_MARGIN));
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:bottom", String(PRC_DOCX_MARGIN));
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:left", String(PRC_DOCX_MARGIN));
