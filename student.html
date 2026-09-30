@@ -6472,7 +6472,7 @@
               .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
               .forEach((node) => node.remove());
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:before", index === 1 ? "-113" : "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
             if (index === 1) {
               Array.from(paragraphProperties.children)
