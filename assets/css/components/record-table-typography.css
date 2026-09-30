@@ -47,7 +47,7 @@ html body:is(.role-student, .role-instructor, .role-admin) :is(
 /* Instructor Current Records table typography only. */
 html body.role-instructor #mainRecordsWrapper :is(
   #active-table,
-  #instructorStudentProcedureTables table.procedure-records-table
+  #instructorStudentProcedureTables table.instructor-current-procedure-table
 ) :is(th, td, span, small, strong, div, button) {
   font-family: Cambria, "Times New Roman", serif !important;
   text-transform: uppercase !important;
@@ -56,25 +56,25 @@ html body.role-instructor #mainRecordsWrapper :is(
 
 html body.role-instructor #mainRecordsWrapper :is(
   #active-table,
-  #instructorStudentProcedureTables table.procedure-records-table
+  #instructorStudentProcedureTables table.instructor-current-procedure-table
 ) th {
   font-size: 12px !important;
 }
 
 html body.role-instructor #mainRecordsWrapper :is(
   #active-table,
-  #instructorStudentProcedureTables table.procedure-records-table
+  #instructorStudentProcedureTables table.instructor-current-procedure-table
 ) :is(td, td span, td small, td strong, td div, td button) {
   font-size: 11px !important;
 }
 
 html body.role-instructor #mainRecordsWrapper :is(
   #active-table,
-  #instructorStudentProcedureTables table.procedure-records-table
+  #instructorStudentProcedureTables table.instructor-current-procedure-table
 ) tbody td:nth-child(3):not([colspan]),
 html body.role-instructor #mainRecordsWrapper :is(
   #active-table,
-  #instructorStudentProcedureTables table.procedure-records-table
+  #instructorStudentProcedureTables table.instructor-current-procedure-table
 ) tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
   font-size: 10px !important;
 }
