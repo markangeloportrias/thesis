@@ -378,7 +378,7 @@
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
     <link rel="stylesheet" href="assets/css/components/clinical-grid-borders.css?v=20260907-2" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
-    <script src="assets/js/prc-export.js?v=1"></script>
+    <script async src="assets/js/prc-export.js?v=2"></script>
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -4248,13 +4248,19 @@
       let studentPrcExportStudent = null;
 
       let studentPrcPreviewRecords = [];
-      const {
-        buildPrcExportForms: studentPrcBuildExportForms,
-        buildPrcTemplateDocx: studentPrcBuildTemplateDocx,
-        getPrcLogoDataUrl: studentPrcGetLogoDataUrl,
-      } = PrcExport.create({
-        escapeHtml, normalizeProcedureKey, PhilippineTime, getStudent: () => studentPrcExportStudent,
-      });
+      let sharedPrcExporter = null;
+      function getSharedPrcExporter() {
+        if (!sharedPrcExporter) {
+          if (!window.PrcExport) throw new Error("The PRC exporter is still loading. Please try again shortly.");
+          sharedPrcExporter = window.PrcExport.create({
+            escapeHtml, normalizeProcedureKey, PhilippineTime, getStudent: () => studentPrcExportStudent,
+          });
+        }
+        return sharedPrcExporter;
+      }
+      function studentPrcBuildExportForms(...args) { return getSharedPrcExporter().buildPrcExportForms(...args); }
+      function studentPrcBuildTemplateDocx(...args) { return getSharedPrcExporter().buildPrcTemplateDocx(...args); }
+      function studentPrcGetLogoDataUrl(...args) { return getSharedPrcExporter().getPrcLogoDataUrl(...args); }
 
       function studentPrcSetPreviewZoom(percent) {
         const nextPercent = Math.min(200, Math.max(50, Math.round((Number(percent) || 100) / 10) * 10));

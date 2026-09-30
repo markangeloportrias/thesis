@@ -612,7 +612,7 @@
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
     <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260928-mobile-chat-height-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
-    <script src="assets/js/prc-export.js?v=1"></script>
+    <script async src="assets/js/prc-export.js?v=2"></script>
   </head>
   <body>
     <div class="dashboard">
@@ -5993,9 +5993,19 @@
 
       let prcPreviewRecords = [];
       let prcPreviewStudent = null;
-      const { formatPrcExportDateTime, formatPrcExportDate, prcExportCell, getPrcExportRecordsByProcedure, getPrcExportRecordValues, buildPrcExportTable, getPrcLogoDataUrl, buildPrcExportFooter, buildPrcExportForms, buildPrcWordDocument, prcCrc32, prcZipU16, prcZipU32, prcInflate, readPrcTemplateZip, createPrcDocxZip, prcWordText, prcEnsureWordChild, setPrcTemplateLegalTableMargins, addDeliveryAssistedPrcSheet, setPrcTemplateColumnWidths, setPrcTemplatePageLayout, normalizePrcContinuationLabels, compactPrcTemplateHeaderSpacing, compactAssistedPrcHeader, setPrcTemplateCell, compactAndUppercasePrcTemplateHeaders, formatPrcDocxDateTime, formatPrcDocxDate, fillPrcTemplateTable, setPrcTemplateText, setPrcTemplateDiagnosisHeader, setPrcTemplateFooterLicense, synchronizePrcTemplateWithPreview, ensurePrcTemplateUniqueDrawingIds, buildPrcTemplateDocx } = PrcExport.create({
-        escapeHtml, normalizeProcedureKey, PhilippineTime, getStudent: () => currentStudent,
-      });
+      let sharedPrcExporter = null;
+      function getSharedPrcExporter() {
+        if (!sharedPrcExporter) {
+          if (!window.PrcExport) throw new Error("The PRC exporter is still loading. Please try again shortly.");
+          sharedPrcExporter = window.PrcExport.create({
+            escapeHtml, normalizeProcedureKey, PhilippineTime, getStudent: () => currentStudent,
+          });
+        }
+        return sharedPrcExporter;
+      }
+      function buildPrcExportForms(...args) { return getSharedPrcExporter().buildPrcExportForms(...args); }
+      function buildPrcTemplateDocx(...args) { return getSharedPrcExporter().buildPrcTemplateDocx(...args); }
+      function getPrcLogoDataUrl(...args) { return getSharedPrcExporter().getPrcLogoDataUrl(...args); }
 
       function setPrcPreviewZoom(percent) {
         const nextPercent = Math.min(200, Math.max(50, Math.round((Number(percent) || 100) / 10) * 10));
