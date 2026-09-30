@@ -6481,10 +6481,18 @@
             }
             const pageBreakParagraph = xml.createElementNS(PRC_WORD_NS, "w:p");
             const pageBreakProperties = xml.createElementNS(PRC_WORD_NS, "w:pPr");
-            const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:pageBreakBefore");
-            pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
-            pageBreakProperties.appendChild(pageBreak);
+            const pageBreakSpacing = xml.createElementNS(PRC_WORD_NS, "w:spacing");
+            pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+            pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+            pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:line", "1");
+            pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+            pageBreakProperties.appendChild(pageBreakSpacing);
             pageBreakParagraph.appendChild(pageBreakProperties);
+            const pageBreakRun = xml.createElementNS(PRC_WORD_NS, "w:r");
+            const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:br");
+            pageBreak.setAttributeNS(PRC_WORD_NS, "w:type", "page");
+            pageBreakRun.appendChild(pageBreak);
+            pageBreakParagraph.appendChild(pageBreakRun);
             body.insertBefore(pageBreakParagraph, paragraph);
           }
         });
@@ -6509,10 +6517,18 @@
           }
           const pageBreakParagraph = xml.createElementNS(PRC_WORD_NS, "w:p");
           const pageBreakProperties = xml.createElementNS(PRC_WORD_NS, "w:pPr");
-          const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:pageBreakBefore");
-          pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
-          pageBreakProperties.appendChild(pageBreak);
+          const pageBreakSpacing = xml.createElementNS(PRC_WORD_NS, "w:spacing");
+          pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+          pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+          pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:line", "1");
+          pageBreakSpacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+          pageBreakProperties.appendChild(pageBreakSpacing);
           pageBreakParagraph.appendChild(pageBreakProperties);
+          const pageBreakRun = xml.createElementNS(PRC_WORD_NS, "w:r");
+          const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:br");
+          pageBreak.setAttributeNS(PRC_WORD_NS, "w:type", "page");
+          pageBreakRun.appendChild(pageBreak);
+          pageBreakParagraph.appendChild(pageBreakRun);
           body.insertBefore(pageBreakParagraph, table);
         });
         normalizePrcContinuationLabels(xml);
