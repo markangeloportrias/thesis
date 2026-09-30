@@ -886,8 +886,9 @@ window.PrcExport = {
             if (textNodes.length >= 3) {
               textNodes[0].textContent = "Note: ";
               textNodes[0].setAttributeNS(PRC_XML_NS, "xml:space", "preserve");
-              textNodes[1].textContent = "(1)";
-              textNodes[2].textContent = PRC_FOOTER_COPY.noteOne.replace(/^\(1\)/, "");
+              textNodes[1].textContent = "(1) ";
+              textNodes[1].setAttributeNS(PRC_XML_NS, "xml:space", "preserve");
+              textNodes[2].textContent = PRC_FOOTER_COPY.noteOne.replace(/^\(1\)\s*/, "");
               textNodes.slice(3).forEach((textNode) => { textNode.textContent = ""; });
             } else {
               setPrcTemplateText(paragraph, `Note: ${PRC_FOOTER_COPY.noteOne}`);
