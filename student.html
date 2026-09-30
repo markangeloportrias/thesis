@@ -6562,6 +6562,9 @@
         const assistedLogo = logoParagraphs[1];
         if (!assistedLogo) return;
         const assistedLogoProperties = prcEnsureWordChild(xml, assistedLogo, "pPr");
+        const assistedHeaderSpacing = prcEnsureWordChild(xml, assistedLogoProperties, "spacing");
+        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "-567");
+        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
         Array.from(assistedLogoProperties.children)
           .filter((child) => child.namespaceURI === PRC_WORD_NS && ["keepNext", "keepLines"].includes(child.localName))
           .forEach((child) => child.remove());
