@@ -6476,12 +6476,28 @@
         PRC_EXPORT_PAGE_LAYOUT.forEach((page, index) => {
           if (index === 0 || page.procedureKey !== PRC_EXPORT_PAGE_LAYOUT[index - 1].procedureKey) return;
           const table = tables[index];
-          const firstCell = table?.getElementsByTagNameNS(PRC_WORD_NS, "tc")[0];
+          if (!table) return;
+          const firstCell = table.getElementsByTagNameNS(PRC_WORD_NS, "tc")[0];
           const firstParagraph = firstCell?.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
-          if (!firstParagraph) return;
-          const paragraphProperties = prcEnsureWordChild(xml, firstParagraph, "pPr");
-          const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
+          if (firstParagraph) {
+            const firstParagraphProperties = prcEnsureWordChild(xml, firstParagraph, "pPr");
+            Array.from(firstParagraphProperties.children)
+              .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
+              .forEach((node) => node.remove());
+          }
+          let previous = table.previousElementSibling;
+          while (isEmptyParagraph(previous)) {
+            const before = previous.previousElementSibling;
+            previous.remove();
+            previous = before;
+          }
+          const pageBreakParagraph = xml.createElementNS(PRC_WORD_NS, "w:p");
+          const pageBreakProperties = xml.createElementNS(PRC_WORD_NS, "w:pPr");
+          const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:pageBreakBefore");
           pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+          pageBreakProperties.appendChild(pageBreak);
+          pageBreakParagraph.appendChild(pageBreakProperties);
+          body.insertBefore(pageBreakParagraph, table);
         });
         normalizePrcContinuationLabels(xml);
       }
