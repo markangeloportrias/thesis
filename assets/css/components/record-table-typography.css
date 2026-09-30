@@ -1,0 +1,25 @@
+/* Clinical tables in My Records and Annual Records only. */
+html body :is(
+  #deliveryAssistedWorkspace table.prc-procedure-table,
+  #yearly-report-view #yearlyStudentRecordsPanel table,
+  #yearlyReportPanel #yearlyProcedureTables table,
+  #yearlyReportsCard #yearlyStudentRecordsPanel table
+) :is(th, td, th span, td span, td small, td div, td strong, td button, td select, td option) {
+  font-family: Cambria, "Times New Roman", serif !important;
+  text-transform: uppercase !important;
+}
+
+html body :is(
+  #deliveryAssistedWorkspace table.prc-procedure-table,
+  #yearly-report-view #yearlyStudentRecordsPanel table,
+  #yearlyReportPanel #yearlyProcedureTables table,
+  #yearlyReportsCard #yearlyStudentRecordsPanel table
+) > tbody > tr > td:nth-child(3):not([colspan]),
+html body :is(
+  #deliveryAssistedWorkspace table.prc-procedure-table,
+  #yearly-report-view #yearlyStudentRecordsPanel table,
+  #yearlyReportPanel #yearlyProcedureTables table,
+  #yearlyReportsCard #yearlyStudentRecordsPanel table
+) > tbody > tr > td:nth-child(3):not([colspan]) :is(span, small, div, strong) {
+  font-size: 10px !important;
+}
