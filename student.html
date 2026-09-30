@@ -6574,7 +6574,8 @@
         prcEnsureWordChild(xml, assistedLogoProperties, "pageBreakBefore")
           .setAttributeNS(PRC_WORD_NS, "w:val", "1");
         const assistedHeaderSpacing = prcEnsureWordChild(xml, assistedLogoProperties, "spacing");
-        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+        // Add 3 mm of breathing room above the Assisted header.
+        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "170");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:line", "1");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
