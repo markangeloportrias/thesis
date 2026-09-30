@@ -6429,10 +6429,10 @@
         const section = xml.getElementsByTagNameNS(PRC_WORD_NS, "sectPr")[0];
         if (section) {
           const pageMargins = prcEnsureWordChild(xml, section, "pgMar");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "120");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:right", "864");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:bottom", "864");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:left", "864");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "432");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:right", "432");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:bottom", "432");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:left", "432");
         }
         const body = xml.getElementsByTagNameNS(PRC_WORD_NS, "body")[0];
         if (!body) return;
