@@ -51,6 +51,170 @@
         min-width: 0;
         box-sizing: border-box;
       }
+
+      html body.role-instructor #instructorStudentProcedureTables.to-review-table-view {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      html body.role-instructor .instructor-to-review-card {
+        overflow: hidden;
+        border: 1px solid #d7e5f2;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 12px 28px rgba(20, 66, 112, 0.08);
+      }
+
+      html body.role-instructor .instructor-to-review-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e5edf5;
+        background: linear-gradient(135deg, #f7fbff, #eef6fd);
+      }
+
+      html body.role-instructor .instructor-to-review-card-header h3 {
+        margin: 0;
+        color: #123b70;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      html body.role-instructor .instructor-to-review-card-header p {
+        margin: 4px 0 0;
+        color: #6c819b;
+        font-size: 12px;
+      }
+
+      html body.role-instructor .instructor-to-review-count {
+        flex: 0 0 auto;
+        padding: 7px 11px;
+        border: 1px solid #c8dced;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #0c579c;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-table-wrap {
+        overflow-x: auto;
+      }
+
+      html body.role-instructor .instructor-to-review-table {
+        width: 100%;
+        min-width: 1060px;
+        border-collapse: separate;
+        border-spacing: 0;
+        color: #183c66;
+        font-size: 12px;
+        table-layout: fixed;
+      }
+
+      html body.role-instructor .instructor-to-review-table th {
+        padding: 13px 12px;
+        border-bottom: 1px solid #cadbea;
+        background: #eaf4fc;
+        color: #174a80;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-table td {
+        padding: 13px 12px;
+        border-bottom: 1px solid #e9f0f6;
+        background: #ffffff;
+        vertical-align: middle;
+      }
+
+      html body.role-instructor .instructor-to-review-table tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      html body.role-instructor .instructor-to-review-table tbody tr:hover td {
+        background: #f8fbff;
+      }
+
+      html body.role-instructor .instructor-to-review-student strong,
+      html body.role-instructor .instructor-to-review-facility strong {
+        display: block;
+        color: #163e6c;
+        font-weight: 800;
+      }
+
+      html body.role-instructor .instructor-to-review-student small,
+      html body.role-instructor .instructor-to-review-facility small {
+        display: block;
+        margin-top: 3px;
+        color: #7890a8;
+        font-size: 10px;
+      }
+
+      html body.role-instructor .instructor-to-review-diagnosis,
+      html body.role-instructor .instructor-to-review-supervisor,
+      html body.role-instructor .instructor-to-review-facility {
+        white-space: pre-line;
+      }
+
+      html body.role-instructor .instructor-to-review-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 82px;
+        padding: 5px 8px;
+        border: 1px solid #c8dced;
+        border-radius: 999px;
+        background: #f2f7fb;
+        color: #315b82;
+        font-size: 10px;
+        font-weight: 800;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-details {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0 11px;
+        border: 1px solid #0b63b6;
+        border-radius: 8px;
+        background: #0b63b6;
+        color: #ffffff;
+        font: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-details:hover {
+        border-color: #084e8f;
+        background: #084e8f;
+      }
+
+      html body.role-instructor .instructor-to-review-empty {
+        padding: 38px 20px !important;
+        color: #71869d;
+        text-align: center;
+      }
+
+      @media (max-width: 760px) {
+        html body.role-instructor .instructor-to-review-card-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
     </style>
     <style id="instructor-settings-minimal-styles">
       html body.role-instructor #settingsView.settings-minimal .settings-card.settings-minimal-shell {
@@ -2545,6 +2709,191 @@
           records,
           selectedProcedure,
         );
+      }
+
+      function renderInstructorToReviewTable(records) {
+        if (!instructorStudentProcedureTables) return;
+        const safeRecords = Array.isArray(records) ? records : [];
+        const statusLabels = {
+          verified: "Verified",
+          submitted: "Submitted",
+          resubmitted: "Resubmitted",
+          reviewed: "Under Review",
+          under_review: "Under Review",
+          needs_revision: "Changes Requested",
+          changes_requested: "Changes Requested",
+          invalid: "Invalid",
+          draft: "Draft",
+        };
+
+        instructorStudentProcedureTables.replaceChildren();
+        const card = document.createElement("div");
+        card.className = "instructor-to-review-card";
+
+        const cardHeader = document.createElement("div");
+        cardHeader.className = "instructor-to-review-card-header";
+        const heading = document.createElement("div");
+        const title = document.createElement("h3");
+        title.textContent = "Assigned Cases";
+        const subtitle = document.createElement("p");
+        subtitle.textContent = "Clinical records assigned to you for review.";
+        heading.append(title, subtitle);
+        const count = document.createElement("span");
+        count.className = "instructor-to-review-count";
+        count.textContent = `${safeRecords.length} ${safeRecords.length === 1 ? "case" : "cases"}`;
+        cardHeader.append(heading, count);
+
+        const tableWrap = document.createElement("div");
+        tableWrap.className = "instructor-to-review-table-wrap";
+        const table = document.createElement("table");
+        table.className = "instructor-to-review-table";
+        table.setAttribute("aria-label", "Cases assigned to this instructor for review");
+        table.innerHTML = `
+          <colgroup>
+            <col style="width: 14%">
+            <col style="width: 12%">
+            <col style="width: 8%">
+            <col style="width: 18%">
+            <col style="width: 10%">
+            <col style="width: 14%">
+            <col style="width: 10%">
+            <col style="width: 7%">
+            <col style="width: 7%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Procedure Type</th>
+              <th>Case No.</th>
+              <th>Complete Diagnosis</th>
+              <th>Date &amp; Time</th>
+              <th>Facility</th>
+              <th>Supervised By</th>
+              <th>Status</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+        `;
+        const body = document.createElement("tbody");
+
+        if (!safeRecords.length) {
+          const emptyRow = document.createElement("tr");
+          const emptyCell = document.createElement("td");
+          emptyCell.className = "instructor-to-review-empty";
+          emptyCell.colSpan = 9;
+          emptyCell.textContent = "No cases are currently assigned to you for review.";
+          emptyRow.appendChild(emptyCell);
+          body.appendChild(emptyRow);
+        } else {
+          safeRecords.forEach((record) => {
+            const row = document.createElement("tr");
+            const procedureKey = normalizeProcedureKey(
+              record.procedure_name || record.procedure_key,
+            );
+            const procedureCell = document.createElement("td");
+            procedureCell.textContent =
+              instructorProcedureProgressLabels[procedureKey] ||
+              record.procedure_name ||
+              "Clinical Record";
+
+            const studentCell = document.createElement("td");
+            studentCell.className = "instructor-to-review-student";
+            const studentName = document.createElement("strong");
+            studentName.textContent = record.student_name || "Student";
+            const studentId = document.createElement("small");
+            studentId.textContent = record.student_id
+              ? `Student ID: ${record.student_id}`
+              : "Student ID unavailable";
+            studentCell.append(studentName, studentId);
+
+            const caseCell = document.createElement("td");
+            caseCell.textContent = record.case_no || "-";
+
+            const diagnosisCell = document.createElement("td");
+            diagnosisCell.className = "instructor-to-review-diagnosis";
+            diagnosisCell.textContent = record.complete_diagnosis || "-";
+
+            const dateCell = document.createElement("td");
+            dateCell.textContent = record.date_time_performed || "-";
+            dateCell.style.whiteSpace = "pre-line";
+
+            const facilityCell = document.createElement("td");
+            facilityCell.className = "instructor-to-review-facility";
+            const facilityName = document.createElement("strong");
+            facilityName.textContent = record.facility_name || "Facility not specified";
+            const facilityDetails = document.createElement("small");
+            facilityDetails.textContent = [
+              record.facility_address,
+              record.facility_contact_number,
+            ]
+              .filter(Boolean)
+              .join("\n") || "No facility details";
+            facilityCell.append(facilityName, facilityDetails);
+
+            const supervisorCell = document.createElement("td");
+            supervisorCell.className = "instructor-to-review-supervisor";
+            const supervisorName = document.createElement("strong");
+            supervisorName.textContent = record.supervisor_printed_name || "Supervisor not specified";
+            const supervisorDetails = document.createElement("small");
+            supervisorDetails.textContent = [
+              record.supervisor_position_designation,
+              record.supervisor_contact_number,
+            ]
+              .filter(Boolean)
+              .join("\n") || "No supervisor details";
+            supervisorCell.append(supervisorName, supervisorDetails);
+
+            const statusCell = document.createElement("td");
+            const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
+            const status = document.createElement("span");
+            status.className = "instructor-to-review-status";
+            status.dataset.status = statusKey;
+            status.textContent = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
+            statusCell.appendChild(status);
+
+            const detailsCell = document.createElement("td");
+            const detailsButton = document.createElement("button");
+            detailsButton.type = "button";
+            detailsButton.className = "instructor-to-review-details";
+            detailsButton.innerHTML = '<i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Details</span>';
+            detailsButton.addEventListener("click", () => {
+              selectedCurrentRecordsBlock = {
+                id: record.block_id || record.block_label || "",
+                label: record.block_label || "Registered block",
+                schoolYear: record.registered_school_year || record.academic_year || "",
+              };
+              selectedCurrentRecordsStudent = {
+                student_id: record.student_id,
+                student_name: record.student_name || "Student",
+                block_label: record.block_label || "Registered block",
+              };
+              setActiveSection("my-records", {
+                preserveCurrentRecordsBlock: true,
+                preserveSelectedStudent: true,
+              });
+            });
+            detailsCell.appendChild(detailsButton);
+
+            row.append(
+              studentCell,
+              procedureCell,
+              caseCell,
+              diagnosisCell,
+              dateCell,
+              facilityCell,
+              supervisorCell,
+              statusCell,
+              detailsCell,
+            );
+            body.appendChild(row);
+          });
+        }
+
+        table.appendChild(body);
+        tableWrap.appendChild(table);
+        card.append(cardHeader, tableWrap);
+        instructorStudentProcedureTables.appendChild(card);
+        instructorStudentProcedureTables.style.removeProperty("display");
       }
 
       function renderInstructorYearlyProcedureTables(records, selectedProcedure = "") {
@@ -5887,6 +6236,7 @@
         hideInstructorProcedureProgress(instructorActiveRecordProgress);
         if (instructorStudentProcedureTables) {
           instructorStudentProcedureTables.replaceChildren();
+          instructorStudentProcedureTables.classList.remove("to-review-table-view");
           instructorStudentProcedureTables.style.display = "none";
         }
         if (
@@ -6124,8 +6474,9 @@
             activeTitleText.classList.remove("current-records-student-name");
           }
           if (instructorStudentProcedureTables) {
+            instructorStudentProcedureTables.classList.add("to-review-table-view");
             instructorStudentProcedureTables.style.display = "block";
-            renderInstructorStudentProcedureTables(assignedRecords);
+            renderInstructorToReviewTable(assignedRecords);
           }
           if (countActive) countActive.textContent = String(assignedRecords.length);
           return;
