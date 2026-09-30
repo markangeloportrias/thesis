@@ -47,6 +47,7 @@ html body:is(.role-student, .role-instructor, .role-admin) :is(
 /* Instructor All Records table typography only. */
 html body.role-instructor #mainRecordsWrapper #active-table :is(th, td, span, small, strong, div, button) {
   font-family: Cambria, "Times New Roman", serif !important;
+  text-transform: uppercase !important;
   text-align: center !important;
 }
 
