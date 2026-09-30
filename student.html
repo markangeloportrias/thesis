@@ -6470,6 +6470,9 @@
             const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
             const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
             pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+            const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
           }
         });
         const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
