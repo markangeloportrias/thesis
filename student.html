@@ -6468,39 +6468,17 @@
           }
           if (index > 0) {
             const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+            Array.from(paragraphProperties.children)
+              .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
+              .forEach((node) => node.remove());
             if (index === 1) {
-              Array.from(paragraphProperties.children)
-                .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
-                .forEach((node) => node.remove());
-              const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
-              spacing.setAttributeNS(PRC_WORD_NS, "w:before", "-840");
-              spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
               Array.from(paragraphProperties.children)
                 .filter((node) => node.namespaceURI === PRC_WORD_NS && ["ind", "rPr"].includes(node.localName))
                 .forEach((node) => node.remove());
-              const breakAfter = paragraph.previousElementSibling;
-              if (breakAfter?.namespaceURI === PRC_WORD_NS && breakAfter.localName === "p") {
-                const pageBreakRun = xml.createElementNS(PRC_WORD_NS, "w:r");
-                const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:br");
-                pageBreak.setAttributeNS(PRC_WORD_NS, "w:type", "page");
-                pageBreakRun.appendChild(pageBreak);
-                breakAfter.appendChild(pageBreakRun);
-              }
-            } else {
-              const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
-              pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
-            }
-            const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:line", "1");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
-            let headerNode = paragraph.nextElementSibling;
-            while (headerNode && !(headerNode.namespaceURI === PRC_WORD_NS && headerNode.localName === "tbl")) {
-              const next = headerNode.nextElementSibling;
-              if (isEmptyParagraph(headerNode)) headerNode.remove();
-              headerNode = next;
             }
           }
         });
+        normalizePrcContinuationLabels(xml);
         const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
         PRC_EXPORT_PAGE_LAYOUT.forEach((page, index) => {
           if (index === 0 || page.procedureKey !== PRC_EXPORT_PAGE_LAYOUT[index - 1].procedureKey) return;
@@ -6513,7 +6491,6 @@
           const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
           pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
         });
-        normalizePrcContinuationLabels(xml);
       }
 
       function normalizePrcContinuationLabels(xml) {
@@ -6535,6 +6512,12 @@
               .reverse()
               .find((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tbl");
             if (table && paragraph.previousElementSibling !== table) body.insertBefore(paragraph, table.nextElementSibling);
+            let next = paragraph.nextElementSibling;
+            while (isEmptyParagraph(next)) {
+              const after = next.nextElementSibling;
+              next.remove();
+              next = after;
+            }
             const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
