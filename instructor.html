@@ -2453,11 +2453,9 @@
                 cell.style.whiteSpace = "pre-line";
                 row.appendChild(cell);
               });
+              const assignedToCurrentInstructor = isInstructorCaseAssigned(record);
               if (showStatus) {
-                const assignedToCurrentInstructor = isInstructorCaseAssigned(record);
-                const statusKey = assignedToCurrentInstructor
-                  ? (getInstructorProcedureRecordReviewStatus(record) || "submitted")
-                  : "unassigned";
+                const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
                 const statusLabels = { verified: "Verified", submitted: "Submitted", resubmitted: "Resubmitted", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", changes_requested: "Changes Requested", invalid: "Invalid", draft: "Draft", unassigned: "Not assigned CI" };
                 const status = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
                 const compactStatus = statusKey === "unassigned";
@@ -2503,8 +2501,15 @@
                 event.stopPropagation();
                 showRecordDetail(record);
               });
+              if (showStatus && !assignedToCurrentInstructor) {
+                const assignmentBadge = document.createElement("span");
+                assignmentBadge.className = "record-assignment-badge";
+                assignmentBadge.textContent = "Not assigned CI";
+                assignmentBadge.style.cssText = "display:inline-flex !important;align-items:center;justify-content:center;min-width:0;box-sizing:border-box;padding:2px 4px !important;border:1px solid #cbd5e1 !important;border-radius:8px !important;background:#f1f5f9 !important;color:#475569 !important;font:900 9px/1.1 Inter,Arial,sans-serif !important;white-space:nowrap !important;";
+                actions.appendChild(assignmentBadge);
+              }
               actions.appendChild(viewButton);
-              if (isInstructorCaseAssigned(record)) {
+              if (assignedToCurrentInstructor) {
                 const commentButton = document.createElement("button");
                 commentButton.type = "button";
                 commentButton.className = "record-action-btn record-comment-btn";
