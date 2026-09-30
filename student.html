@@ -6555,13 +6555,24 @@
         if (!body) return;
         const isEmptyParagraph = (node) => node?.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
           !prcWordText(node).trim() && !node.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length;
-        const logoParagraphs = Array.from(body.children).filter((node) =>
+        const assistedTitle = Array.from(body.children).find((node) =>
           node.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
-          Array.from(node.getElementsByTagNameNS(PRC_WORD_NS, "docPr")).some((drawing) => drawing.getAttribute("name") === "Picture 2"),
+          /Record of Delivery Assisted/i.test(prcWordText(node)),
         );
-        const assistedLogo = logoParagraphs[1];
+        let assistedLogo = assistedTitle?.previousElementSibling;
+        while (assistedLogo && assistedLogo.localName === "p" &&
+          !assistedLogo.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length) {
+          assistedLogo = assistedLogo.previousElementSibling;
+        }
+        if (assistedLogo?.localName !== "p") return;
         if (!assistedLogo) return;
+        // Remove the blank paragraphs that Word otherwise carries onto this page.
+        while (isEmptyParagraph(assistedLogo.previousElementSibling)) {
+          assistedLogo.previousElementSibling.remove();
+        }
         const assistedLogoProperties = prcEnsureWordChild(xml, assistedLogo, "pPr");
+        prcEnsureWordChild(xml, assistedLogoProperties, "pageBreakBefore")
+          .setAttributeNS(PRC_WORD_NS, "w:val", "1");
         const assistedHeaderSpacing = prcEnsureWordChild(xml, assistedLogoProperties, "spacing");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
@@ -6584,7 +6595,7 @@
               .forEach((child) => child.remove());
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "180" : "135");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "360" : "240");
             spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
           }
           node = next;
