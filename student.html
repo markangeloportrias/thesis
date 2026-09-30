@@ -6483,7 +6483,8 @@
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of /i.test(text) ? "240" : "180");
+            const lineHeight = /Record of /i.test(text) ? "360" : /(?:PROFESSIONAL REGULATION|Cebu City|BOARD OF MIDWIFERY|Please check|Graduate Midwife|Name of Applicant:)/i.test(text) ? "240" : "180";
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", lineHeight);
             spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
           });
       }
@@ -6497,7 +6498,7 @@
         const cellMargins = prcEnsureWordChild(paragraph.ownerDocument, cellProperties, "tcMar");
         ["top", "bottom"].forEach((side) => {
           const margin = prcEnsureWordChild(paragraph.ownerDocument, cellMargins, side);
-          margin.setAttributeNS(PRC_WORD_NS, "w:w", "0");
+          margin.setAttributeNS(PRC_WORD_NS, "w:w", "10");
           margin.setAttributeNS(PRC_WORD_NS, "w:type", "dxa");
         });
         const paragraphProperties = prcEnsureWordChild(paragraph.ownerDocument, paragraph, "pPr");
