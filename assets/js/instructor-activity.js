@@ -23,25 +23,46 @@
           : action.replace(/^\w/, (letter) => letter.toUpperCase());
       }
 
+      function shortActivityText(value, limit = 88) {
+        const text = String(value ?? "").replace(/\s+/g, " ").trim();
+        return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text;
+      }
+
       function activityDetails(entry) {
         let details = entry?.details;
         if (typeof details === "string") {
           try { details = JSON.parse(details); } catch (error) { /* Keep plain-text details. */ }
         }
-        let message = "";
+        const messages = [];
+        const identity = details && typeof details === "object"
+          ? (details.record_identity || details.recordIdentity)
+          : null;
+        if (identity && typeof identity === "object") {
+          const caseNumber = identity.case_no || entry?.case_no;
+          const patientName = identity.patient_name;
+          const procedure = identity.procedure_key ? activityEntityLabel(identity.procedure_key) : "";
+          [caseNumber && `Case ${caseNumber}`, patientName, procedure].filter(Boolean).forEach((value) => {
+            messages.push(shortActivityText(value));
+          });
+        } else if (entry?.case_no) {
+          messages.push(shortActivityText(`Case ${entry.case_no}`));
+        }
         if (details && typeof details === "object") {
-          message = Object.entries(details)
-            .filter(([, value]) => value !== null && value !== undefined && value !== "")
-            .filter(([key, value]) => !(key === "comment_id" && String(value).trim() === "0"))
-            .map(([key, value]) => `${activityEntityLabel(key)}: ${typeof value === "object" ? JSON.stringify(value) : value}`)
-            .join(" • ");
-        } else {
-          message = String(details || "");
+          Object.entries(details)
+            .filter(([key, value]) => !["record_identity", "recordIdentity", "comment_id"].includes(key) && value !== null && value !== undefined && value !== "")
+            .forEach(([key, value]) => {
+              if (key === "fields" && Array.isArray(value)) messages.push(`Updated: ${value.map(activityEntityLabel).join(", ")}`);
+              else if (["remarks", "comment", "message"].includes(key)) messages.push(`Remarks: ${shortActivityText(value)}`);
+              else if (key === "status") messages.push(`Status: ${shortActivityText(value, 42)}`);
+              else if (["instructor_name", "instructor"].includes(key)) messages.push(`Instructor: ${shortActivityText(value, 56)}`);
+            });
+        } else if (details) {
+          messages.push(shortActivityText(details));
         }
         const actor = entry?.actor_role
           ? `By ${entry.actor_name || activityEntityLabel(entry.actor_role)}${entry.actor_name ? ` (${activityEntityLabel(entry.actor_role)})` : ''}`
           : "";
-        return [message, actor].filter(Boolean).join(" • ") || "No additional details";
+        return [messages.join(" • "), actor].filter(Boolean).join(" • ") || "No additional details";
       }
 
   function render() {
