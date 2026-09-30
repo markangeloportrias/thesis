@@ -6630,8 +6630,15 @@
                   const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-                  spacing.setAttributeNS(PRC_WORD_NS, "w:line", "168");
+                  spacing.setAttributeNS(PRC_WORD_NS, "w:line", "147");
                   spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+                });
+                Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "r")).forEach((run) => {
+                  const runProperties = prcEnsureWordChild(xml, run, "rPr");
+                  ["sz", "szCs"].forEach((property) => {
+                    const size = prcEnsureWordChild(xml, runProperties, property);
+                    size.setAttributeNS(PRC_WORD_NS, "w:val", "14");
+                  });
                 });
                 Array.from(cell.getElementsByTagNameNS(PRC_WORD_NS, "t")).forEach((textNode) => {
                   textNode.textContent = (textNode.textContent || "").toUpperCase();
@@ -6656,11 +6663,11 @@
           const rowProperties = prcEnsureWordChild(table.ownerDocument, row, "trPr");
           if (row.firstElementChild !== rowProperties) row.insertBefore(rowProperties, row.firstElementChild);
           const rowHeight = prcEnsureWordChild(table.ownerDocument, rowProperties, "trHeight");
-          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "900");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", "780");
           rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "exact");
           const cells = Array.from(row.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc");
           const values = getPrcExportRecordValues(records[index] || null, startIndex + index + 1);
-          cells.forEach((cell, cellIndex) => setPrcTemplateCell(cell, values[cellIndex] || "", false, cellIndex === 2 ? 12 : 16));
+          cells.forEach((cell, cellIndex) => setPrcTemplateCell(cell, values[cellIndex] || "", false, cellIndex === 2 ? 12 : 14));
         });
       }
 
