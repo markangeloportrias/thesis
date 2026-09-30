@@ -1,4 +1,47 @@
 /* Clinical tables in My Records and Annual Records only. */
+/* Match typography in the on-screen Student, Instructor and Admin summaries. */
+html body:is(.role-student, .role-instructor, .role-admin) :is(
+  #summaryTabSection #summaryProcedureTables,
+  #instructorProgressCopy #ipRecords,
+  #yearlyReportPanel #yearlyProcedureTables,
+  #yearly-report-view #yearlyStudentRecordsPanel #instructorYearlyProcedureTables
+) table:is(.prc-procedure-table, .ip-clinical-table) :is(th, td, span, small, strong, div) {
+  font-family: Cambria, "Times New Roman", serif !important;
+}
+
+html body:is(.role-student, .role-instructor, .role-admin) :is(
+  #summaryTabSection #summaryProcedureTables,
+  #instructorProgressCopy #ipRecords,
+  #yearlyReportPanel #yearlyProcedureTables,
+  #yearly-report-view #yearlyStudentRecordsPanel #instructorYearlyProcedureTables
+) table:is(.prc-procedure-table, .ip-clinical-table) th {
+  font-size: 12px !important;
+}
+
+html body:is(.role-student, .role-instructor, .role-admin) :is(
+  #summaryTabSection #summaryProcedureTables,
+  #instructorProgressCopy #ipRecords,
+  #yearlyReportPanel #yearlyProcedureTables,
+  #yearly-report-view #yearlyStudentRecordsPanel #instructorYearlyProcedureTables
+) table:is(.prc-procedure-table, .ip-clinical-table) :is(td, td span, td small, td strong, td div) {
+  font-size: 11px !important;
+}
+
+html body:is(.role-student, .role-instructor, .role-admin) :is(
+  #summaryTabSection #summaryProcedureTables,
+  #instructorProgressCopy #ipRecords,
+  #yearlyReportPanel #yearlyProcedureTables,
+  #yearly-report-view #yearlyStudentRecordsPanel #instructorYearlyProcedureTables
+) table:is(.prc-procedure-table, .ip-clinical-table) tbody td:nth-child(3):not([colspan]),
+html body:is(.role-student, .role-instructor, .role-admin) :is(
+  #summaryTabSection #summaryProcedureTables,
+  #instructorProgressCopy #ipRecords,
+  #yearlyReportPanel #yearlyProcedureTables,
+  #yearly-report-view #yearlyStudentRecordsPanel #instructorYearlyProcedureTables
+) table:is(.prc-procedure-table, .ip-clinical-table) tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
+  font-size: 10px !important;
+}
+
 html body :is(
   #deliveryAssistedWorkspace table.prc-procedure-table,
   #yearly-report-view #yearlyStudentRecordsPanel table,
