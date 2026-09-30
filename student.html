@@ -612,7 +612,7 @@
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
     <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260928-mobile-chat-height-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
-    <script async src="assets/js/prc-export.js?v=2"></script>
+    <script async src="assets/js/prc-export.js?v=3"></script>
   </head>
   <body>
     <div class="dashboard">
@@ -1026,8 +1026,8 @@
             <div class="stat-info">
               <div class="stat-name">Delivery Assisted</div>
               <div class="stat-num" id="stat-delivery-assisted">0</div>
-              <div class="stat-sub"><span>Total Cases</span><span class="stat-target" id="stat-target-delivery-assisted">0 / 20</span></div>
-              <div class="stat-progress" id="stat-progress-delivery-assisted" role="progressbar" aria-label="Delivery Assisted progress" aria-valuemin="0" aria-valuemax="20" aria-valuenow="0"><span></span></div>
+              <div class="stat-sub"><span>Total Cases</span><span class="stat-target" id="stat-target-delivery-assisted">0 / 10</span></div>
+              <div class="stat-progress" id="stat-progress-delivery-assisted" role="progressbar" aria-label="Delivery Assisted progress" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><span></span></div>
             </div>
           </div>
           <div
@@ -1528,7 +1528,7 @@
       </div>
     </div>
 
-<script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
+<script src="assets/js/record-quality.js?v=20260930-assisted-target-10"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20260923-records-refresh-1"></script>
@@ -4178,7 +4178,7 @@
           // Update dashboard totals and target progress for every procedure.
           const dashboardStats = {
             "delivery-handled": { numberId: "stat-normal-delivery", target: 20 },
-            "delivery-assisted": { numberId: "stat-delivery-assisted", target: 20 },
+            "delivery-assisted": { numberId: "stat-delivery-assisted", target: 10 },
             "internal-exam": { numberId: "stat-exams", target: 20 },
             suturing: { numberId: "stat-suturing", target: 5 },
             "iv-insertion": { numberId: "stat-iv", target: 5 },
@@ -4293,7 +4293,7 @@
       // Targets for each procedure
       const PROCEDURE_TARGETS = {
         "delivery-handled": 20,
-        "delivery-assisted": 20,
+        "delivery-assisted": 10,
         suturing: 5,
         "iv-insertion": 5,
         "internal-exam": 20,

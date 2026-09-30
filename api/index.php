@@ -1193,7 +1193,7 @@ try {
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$data['student_id']) respond(['ok' => false, 'message' => 'Access denied.'], 403);
             // Students may not add more records once the verified requirement is met.
             // Keep this server-side so the limit cannot be bypassed by calling the API directly.
-            $procedureTargets = ['delivery-handled' => 20, 'delivery-assisted' => 20, 'internal-exam' => 20, 'suturing' => 5, 'iv-insertion' => 5];
+            $procedureTargets = ['delivery-handled' => 20, 'delivery-assisted' => 10, 'internal-exam' => 20, 'suturing' => 5, 'iv-insertion' => 5];
             $procedureKey = trim((string)$data['procedure_key']);
             if ($user['role'] === 'student' && isset($procedureTargets[$procedureKey])) {
                 $verifiedStmt = $pdo->prepare("SELECT COUNT(*) FROM case_records WHERE student_id=? AND procedure_key=? AND record_status='verified' AND archived_at IS NULL");

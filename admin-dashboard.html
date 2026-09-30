@@ -58,7 +58,7 @@
     <link rel="stylesheet" href="assets/css/pages/admin-progress-tables.css?v=20260907-4" />
     <link rel="stylesheet" href="assets/css/components/clinical-grid-borders.css?v=20260907-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
-    <script async src="assets/js/prc-export.js?v=2"></script>
+    <script async src="assets/js/prc-export.js?v=3"></script>
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -1154,7 +1154,7 @@
       </div>
     </div>
 
-    <script src="assets/js/record-quality.js?v=20260906-message-box-7"></script>
+    <script src="assets/js/record-quality.js?v=20260930-assisted-target-10"></script>
     <script src="assets/js/student-loading.js?v=20260912-admin-scope-2"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20260912-block-identities-1"></script>
@@ -3520,7 +3520,7 @@
       function renderAdminProcedureSummary(cases) {
         const container = document.getElementById("adminProcedureSummary");
         if (!container) return;
-        const targets = { "delivery handled": 20, "delivery assisted": 20, suturing: 5, "iv insertion": 5, "internal exam": 20 };
+        const targets = { "delivery handled": 20, "delivery assisted": 10, suturing: 5, "iv insertion": 5, "internal exam": 20 };
         const procedureUi = {
           "delivery handled": { label: "Delivery Handled", icon: "fa-baby", tone: "#eef0ff", color: "#313a9a" },
           "delivery assisted": { label: "Delivery Assisted", icon: "fa-user-nurse", tone: "#e6f8f1", color: "#009a65" },
@@ -4606,7 +4606,7 @@
         if (!yearlyProcedureTables) return;
         const targets = {
           "delivery handled": 20,
-          "delivery assisted": 20,
+          "delivery assisted": 10,
           "internal exam": 20,
           suturing: 5,
           "iv insertion": 5,
@@ -5029,7 +5029,7 @@
       };
       const STUDENT_PRC_PROCEDURE_TARGETS = {
         "delivery-handled": 20,
-        "delivery-assisted": 20,
+        "delivery-assisted": 10,
         "internal-exam": 20,
         suturing: 5,
         "iv-insertion": 5,
@@ -5195,7 +5195,7 @@
         studentPrcExportInstructor({ student, button, records });
       const instructorProcedureTargets = {
         "delivery-handled": 20,
-        "delivery-assisted": 20,
+        "delivery-assisted": 10,
         suturing: 5,
         "iv-insertion": 5,
         "internal-exam": 20,
@@ -5421,7 +5421,7 @@
         const headers = ["No.", "Academic Year", "Student ID", "Student Name", "Procedure", "Patient Name", "Patient Address", "Case No.", "Complete Diagnosis", "Date & Time Performed", "Facility Name", "Facility Address", "Facility Contact Number", "Supervisor Printed Name", "Supervisor Contact Number", "Supervisor Position / Designation", "Supervisor License No.", "Supervisor License Expiry Date", "Checked By"];
         const procedureBlocks = [
           { key: "delivery-handled", rows: 20 },
-          { key: "delivery-assisted", rows: 20 },
+          { key: "delivery-assisted", rows: 10 },
           { key: "suturing", rows: 5 },
           { key: "iv-insertion", rows: 5 },
           { key: "internal-exam", rows: 20 },

@@ -21,7 +21,7 @@ window.PrcExport = {
       }
       const PROCEDURE_TARGETS = {
         "delivery-handled": 20,
-        "delivery-assisted": 20,
+        "delivery-assisted": 10,
         suturing: 5,
         "iv-insertion": 5,
         "internal-exam": 20,

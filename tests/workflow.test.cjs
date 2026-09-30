@@ -14,9 +14,9 @@ const complete = {
   supervisor_position_designation: 'Midwife', supervisor_license_no: '123456', supervisor_license_expiry_date: '2028-01-20',
   record_status: 'verified',
 };
-const required = { 'delivery-handled': 20, 'delivery-assisted': 20, suturing: 5, 'iv-insertion': 5, 'internal-exam': 20 };
+const required = { 'delivery-handled': 20, 'delivery-assisted': 10, suturing: 5, 'iv-insertion': 5, 'internal-exam': 20 };
 const records = Object.entries(required).flatMap(([procedure_key, count]) => Array.from({ length: count }, (_, index) => ({ ...complete, id: `${procedure_key}-${index}`, procedure_key, case_no: String(index + 1) })));
-assert.equal(quality.exportSelection(records, false).length, 70);
+assert.equal(quality.exportSelection(records, false).length, 60);
 assert.throws(() => quality.exportSelection(records.slice(1), false), /19 \/ 20/);
 assert.throws(() => quality.exportSelection(records.map((r, i) => i ? r : { ...r, record_status: 'needs_revision', checked_by: 'Teacher' }), false), /19 \/ 20/);
 assert.throws(() => quality.exportSelection(records.map((r, i) => i ? r : { ...r, patient_address: ' ' }), false), /19 \/ 20/);

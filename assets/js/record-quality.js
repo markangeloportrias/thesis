@@ -72,7 +72,7 @@
     panel.append(items);
     pages.before(panel);
   }
-  const targets = { 'delivery-handled': 20, 'delivery-assisted': 20, 'suturing': 5, 'iv-insertion': 5, 'internal-exam': 20 };
+  const targets = { 'delivery-handled': 20, 'delivery-assisted': 10, 'suturing': 5, 'iv-insertion': 5, 'internal-exam': 20 };
   function procedureKey(record) {
     const value = String(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName || '').toLowerCase().replace(/[_-]/g, ' ');
     if (value.includes('delivery') && value.includes('assisted')) return 'delivery-assisted';
