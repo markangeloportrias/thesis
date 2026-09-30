@@ -6473,6 +6473,11 @@
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+            if (index === 1) {
+              Array.from(paragraphProperties.children)
+                .filter((node) => node.namespaceURI === PRC_WORD_NS && ["ind", "rPr"].includes(node.localName))
+                .forEach((node) => node.remove());
+            }
           }
         });
         const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
