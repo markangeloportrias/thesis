@@ -6468,8 +6468,9 @@
           }
           if (index > 0) {
             const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
-            const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
-            pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+            Array.from(paragraphProperties.children)
+              .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
+              .forEach((node) => node.remove());
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
@@ -6478,6 +6479,13 @@
                 .filter((node) => node.namespaceURI === PRC_WORD_NS && ["ind", "rPr"].includes(node.localName))
                 .forEach((node) => node.remove());
             }
+            const pageBreakParagraph = xml.createElementNS(PRC_WORD_NS, "w:p");
+            const pageBreakProperties = xml.createElementNS(PRC_WORD_NS, "w:pPr");
+            const pageBreak = xml.createElementNS(PRC_WORD_NS, "w:pageBreakBefore");
+            pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+            pageBreakProperties.appendChild(pageBreak);
+            pageBreakParagraph.appendChild(pageBreakProperties);
+            body.insertBefore(pageBreakParagraph, paragraph);
           }
         });
         const tables = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "tbl"));
