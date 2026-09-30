@@ -74,6 +74,11 @@ html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables 
   font-size: 10px !important;
 }
 
+html body.role-admin #adminProcedureSummary .clinical-form-table.prc-replica-table tbody td,
+html body.role-admin #adminProcedureSummary .clinical-form-table.prc-replica-table tbody td :is(span, small, strong, div, button) {
+  color: #000 !important;
+}
+
 html body :is(
   #deliveryAssistedWorkspace table.prc-procedure-table,
   #yearly-report-view #yearlyStudentRecordsPanel table,
