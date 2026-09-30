@@ -2458,7 +2458,7 @@
                 const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
                 const statusLabels = { verified: "Verified", submitted: "Submitted", resubmitted: "Resubmitted", reviewed: "Under Review", under_review: "Under Review", needs_revision: "Changes Requested", changes_requested: "Changes Requested", invalid: "Invalid", draft: "Draft", unassigned: "Not assigned CI" };
                 const status = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
-                const compactStatus = statusKey === "unassigned";
+                const compactStatus = true;
                 const statusCell = document.createElement("td");
                 statusCell.style.setProperty("text-align", "center", "important");
                 statusCell.style.setProperty("vertical-align", "middle", "important");
@@ -2502,6 +2502,7 @@
                 showRecordDetail(record);
               });
               if (showStatus && !assignedToCurrentInstructor) {
+                actions.style.setProperty("flex-direction", "column", "important");
                 const assignmentBadge = document.createElement("span");
                 assignmentBadge.className = "record-assignment-badge";
                 assignmentBadge.textContent = "Not assigned CI";
