@@ -661,6 +661,21 @@
         background: #edf6ff;
       }
 
+      html body.role-student .case-assignment-btn span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      html body.role-student .case-assignment-btn.compact-assign {
+        gap: 2px;
+      }
+
+      html body.role-student .case-assignment-btn.compact-assign i {
+        display: none;
+      }
+
       html body.role-student .option-pane.instructor-picker-dialog {
         width: min(460px, calc(100vw - 32px));
         max-width: 460px;
@@ -2863,6 +2878,7 @@
           const button = document.createElement("button");
           button.type = "button";
           button.className = "case-assignment-btn";
+          button.classList.toggle("compact-assign", !selectedId);
           button.innerHTML = selectedId
             ? '<i class="fas fa-pen" aria-hidden="true"></i><span>Change</span>'
             : '<i class="fas fa-user-plus" aria-hidden="true"></i><span>Assign Instructor</span>';
