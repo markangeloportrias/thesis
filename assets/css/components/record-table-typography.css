@@ -44,23 +44,38 @@ html body:is(.role-student, .role-instructor, .role-admin) :is(
   font-size: 10px !important;
 }
 
-/* Instructor All Records table typography only. */
-html body.role-instructor #mainRecordsWrapper #active-table :is(th, td, span, small, strong, div, button) {
+/* Instructor Current Records table typography only. */
+html body.role-instructor #mainRecordsWrapper :is(
+  #active-table,
+  #instructorStudentProcedureTables table.procedure-records-table
+) :is(th, td, span, small, strong, div, button) {
   font-family: Cambria, "Times New Roman", serif !important;
   text-transform: uppercase !important;
   text-align: center !important;
 }
 
-html body.role-instructor #mainRecordsWrapper #active-table th {
+html body.role-instructor #mainRecordsWrapper :is(
+  #active-table,
+  #instructorStudentProcedureTables table.procedure-records-table
+) th {
   font-size: 12px !important;
 }
 
-html body.role-instructor #mainRecordsWrapper #active-table :is(td, td span, td small, td strong, td div, td button) {
+html body.role-instructor #mainRecordsWrapper :is(
+  #active-table,
+  #instructorStudentProcedureTables table.procedure-records-table
+) :is(td, td span, td small, td strong, td div, td button) {
   font-size: 11px !important;
 }
 
-html body.role-instructor #mainRecordsWrapper #active-table tbody td:nth-child(3):not([colspan]),
-html body.role-instructor #mainRecordsWrapper #active-table tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
+html body.role-instructor #mainRecordsWrapper :is(
+  #active-table,
+  #instructorStudentProcedureTables table.procedure-records-table
+) tbody td:nth-child(3):not([colspan]),
+html body.role-instructor #mainRecordsWrapper :is(
+  #active-table,
+  #instructorStudentProcedureTables table.procedure-records-table
+) tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
   font-size: 10px !important;
 }
 
