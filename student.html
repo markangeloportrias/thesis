@@ -6429,7 +6429,7 @@
         const section = xml.getElementsByTagNameNS(PRC_WORD_NS, "sectPr")[0];
         if (section) {
           const pageMargins = prcEnsureWordChild(xml, section, "pgMar");
-          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "360");
+          pageMargins.setAttributeNS(PRC_WORD_NS, "w:top", "120");
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:right", "864");
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:bottom", "864");
           pageMargins.setAttributeNS(PRC_WORD_NS, "w:left", "864");
@@ -6494,7 +6494,7 @@
         const cellMargins = prcEnsureWordChild(paragraph.ownerDocument, cellProperties, "tcMar");
         ["top", "bottom"].forEach((side) => {
           const margin = prcEnsureWordChild(paragraph.ownerDocument, cellMargins, side);
-          margin.setAttributeNS(PRC_WORD_NS, "w:w", "30");
+          margin.setAttributeNS(PRC_WORD_NS, "w:w", "0");
           margin.setAttributeNS(PRC_WORD_NS, "w:type", "dxa");
         });
         const paragraphProperties = prcEnsureWordChild(paragraph.ownerDocument, paragraph, "pPr");
@@ -6604,7 +6604,7 @@
           const rowProperties = prcEnsureWordChild(table.ownerDocument, row, "trPr");
           if (row.firstElementChild !== rowProperties) row.insertBefore(rowProperties, row.firstElementChild);
           const rowHeight = prcEnsureWordChild(table.ownerDocument, rowProperties, "trHeight");
-          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", records[index] ? "525" : "720");
+          rowHeight.setAttributeNS(PRC_WORD_NS, "w:val", records[index] ? "480" : "560");
           rowHeight.setAttributeNS(PRC_WORD_NS, "w:hRule", "atLeast");
           const cells = Array.from(row.children).filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "tc");
           const values = getPrcExportRecordValues(records[index] || null, startIndex + index + 1);
