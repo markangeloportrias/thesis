@@ -6488,8 +6488,21 @@
           const firstParagraph = firstCell?.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
           if (!firstParagraph) return;
           const paragraphProperties = prcEnsureWordChild(xml, firstParagraph, "pPr");
-          const pageBreak = prcEnsureWordChild(xml, paragraphProperties, "pageBreakBefore");
+          Array.from(paragraphProperties.children)
+            .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pageBreakBefore")
+            .forEach((node) => node.remove());
+          // Start the continuation page with a 3 mm spacer outside the table.
+          const spacer = xml.createElementNS(PRC_WORD_NS, "w:p");
+          const spacerProperties = prcEnsureWordChild(xml, spacer, "pPr");
+          const pageBreak = prcEnsureWordChild(xml, spacerProperties, "pageBreakBefore");
           pageBreak.setAttributeNS(PRC_WORD_NS, "w:val", "1");
+          prcEnsureWordChild(xml, spacerProperties, "keepNext");
+          const spacing = prcEnsureWordChild(xml, spacerProperties, "spacing");
+          spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+          spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+          spacing.setAttributeNS(PRC_WORD_NS, "w:line", "170");
+          spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+          table.parentNode.insertBefore(spacer, table);
         });
       }
 
