@@ -6570,9 +6570,12 @@
             const paragraphProperties = prcEnsureWordChild(xml, node, "pPr");
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             const text = prcWordText(node).trim();
+            Array.from(paragraphProperties.children)
+              .filter((child) => child.namespaceURI === PRC_WORD_NS && ["keepNext", "keepLines"].includes(child.localName))
+              .forEach((child) => child.remove());
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "240" : "180");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "210" : "150");
             spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
           }
           node = next;
