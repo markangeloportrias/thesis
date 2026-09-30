@@ -6574,8 +6574,8 @@
         prcEnsureWordChild(xml, assistedLogoProperties, "pageBreakBefore")
           .setAttributeNS(PRC_WORD_NS, "w:val", "1");
         const assistedHeaderSpacing = prcEnsureWordChild(xml, assistedLogoProperties, "spacing");
-        // Add 3 mm of breathing room above the Assisted header.
-        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "170");
+        // Add another 1 mm above the Assisted header (4 mm total).
+        assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:before", "227");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:line", "1");
         assistedHeaderSpacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
@@ -6595,7 +6595,8 @@
               .filter((child) => child.namespaceURI === PRC_WORD_NS && ["keepNext", "keepLines"].includes(child.localName))
               .forEach((child) => child.remove());
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+            // Give the applicant/school line clearance below the floating checkboxes.
+            spacing.setAttributeNS(PRC_WORD_NS, "w:after", /Graduate Midwife/i.test(text) ? "120" : "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "360" : "240");
             spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
           }
