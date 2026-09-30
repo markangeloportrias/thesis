@@ -865,6 +865,13 @@ window.PrcExport = {
 
       function synchronizePrcTemplateWithPreview(xml) {
         const paragraphs = Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "p"));
+        const clearPrcTemplateNumbering = (paragraph) => {
+          const paragraphProperties = Array.from(paragraph.children)
+            .find((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "pPr");
+          Array.from(paragraphProperties?.children || [])
+            .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "numPr")
+            .forEach((node) => node.remove());
+        };
         const procedureKeys = [...new Set(PRC_EXPORT_PAGE_LAYOUT.map((page) => page.procedureKey))];
         const titleParagraphs = paragraphs.filter((paragraph) => /Record of (Normal|Delivery Assisted|Actual Suturing|Actual Intravenous|Actual Internal)/.test(prcWordText(paragraph)));
         titleParagraphs.slice(0, procedureKeys.length).forEach((paragraph, index) => {
@@ -874,6 +881,7 @@ window.PrcExport = {
         paragraphs
           .filter((paragraph) => prcWordText(paragraph).includes("Clinical Instructor should ensure competence"))
           .forEach((paragraph) => {
+            clearPrcTemplateNumbering(paragraph);
             const textNodes = Array.from(paragraph.getElementsByTagNameNS(PRC_WORD_NS, "t"));
             if (textNodes.length >= 3) {
               textNodes[0].textContent = "Note: ";
@@ -887,7 +895,10 @@ window.PrcExport = {
           });
         paragraphs
           .filter((paragraph) => prcWordText(paragraph).includes("Registered Midwives/ Clinical Instructors"))
-          .forEach((paragraph) => setPrcTemplateText(paragraph, PRC_FOOTER_COPY.noteTwo));
+          .forEach((paragraph) => {
+            clearPrcTemplateNumbering(paragraph);
+            setPrcTemplateText(paragraph, PRC_FOOTER_COPY.noteTwo);
+          });
         paragraphs
           .filter((paragraph) => prcWordText(paragraph).includes("License Number:"))
           .forEach(setPrcTemplateFooterLicense);
