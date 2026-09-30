@@ -6437,7 +6437,10 @@
         const body = xml.getElementsByTagNameNS(PRC_WORD_NS, "body")[0];
         if (!body) return;
         const isEmptyParagraph = (node) => node?.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
-          !prcWordText(node).trim() && !node.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length;
+          !Array.from(node.getElementsByTagNameNS(PRC_WORD_NS, "t"))
+            .some((textNode) => String(textNode.textContent || "").replace(/[\s\u200B\uFEFF]/g, "")) &&
+          !node.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length;
+        while (isEmptyParagraph(body.firstElementChild)) body.firstElementChild.remove();
         const logoParagraphs = Array.from(body.children).filter((node) =>
           node.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
           Array.from(node.getElementsByTagNameNS(PRC_WORD_NS, "docPr")).some((drawing) => drawing.getAttribute("name") === "Picture 2"),
