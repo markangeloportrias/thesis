@@ -6561,6 +6561,10 @@
         );
         const assistedLogo = logoParagraphs[1];
         if (!assistedLogo) return;
+        const assistedLogoProperties = prcEnsureWordChild(xml, assistedLogo, "pPr");
+        Array.from(assistedLogoProperties.children)
+          .filter((child) => child.namespaceURI === PRC_WORD_NS && ["keepNext", "keepLines"].includes(child.localName))
+          .forEach((child) => child.remove());
         let node = assistedLogo.nextElementSibling;
         while (node && !(node.namespaceURI === PRC_WORD_NS && node.localName === "tbl")) {
           const next = node.nextElementSibling;
@@ -6575,7 +6579,7 @@
               .forEach((child) => child.remove());
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
             spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
-            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "210" : "150");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "180" : "135");
             spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
           }
           node = next;
