@@ -46,31 +46,31 @@ html body:is(.role-student, .role-instructor, .role-admin) :is(
 
 /* Instructor Current Records table typography only. */
 html body.role-instructor #mainRecordsWrapper #active-table :is(th, td, span, small, strong, div, button),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:first-child > th:not(:nth-last-child(-n + 2)),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:nth-child(2) > th,
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)) :is(span, small, strong, div, button) {
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:first-child > th:not(:nth-last-child(-n + 2)),
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:nth-child(2) > th,
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)),
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)) :is(span, small, strong, div, button) {
   font-family: Cambria, "Times New Roman", serif !important;
   text-transform: uppercase !important;
   text-align: center !important;
 }
 
 html body.role-instructor #mainRecordsWrapper #active-table th,
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:first-child > th:not(:nth-last-child(-n + 2)),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:nth-child(2) > th {
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:first-child > th:not(:nth-last-child(-n + 2)),
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table thead tr:nth-child(2) > th {
   font-size: 12px !important;
 }
 
 html body.role-instructor #mainRecordsWrapper #active-table :is(td, td span, td small, td strong, td div, td button),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)) :is(span, small, strong, div, button) {
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)),
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody > tr > td:not(:nth-last-child(-n + 2)) :is(span, small, strong, div, button) {
   font-size: 11px !important;
 }
 
 html body.role-instructor #mainRecordsWrapper #active-table tbody td:nth-child(3):not([colspan]),
 html body.role-instructor #mainRecordsWrapper #active-table tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody td:nth-child(3):not([colspan]),
-html body.role-instructor #instructorStudentProcedureTables table.instructor-current-procedure-table tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody td:nth-child(3):not([colspan]),
+html body.role-instructor #mainRecordsWrapper #instructorStudentProcedureTables table.instructor-current-procedure-table tbody td:nth-child(3):not([colspan]) :is(span, small, strong, div) {
   font-size: 10px !important;
 }
 
