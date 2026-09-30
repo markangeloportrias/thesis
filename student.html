@@ -6867,6 +6867,12 @@
         const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
         Array.from(xml.getElementsByTagNameNS(PRC_WORD_NS, "p")).forEach((paragraph) => {
           if (!prcWordText(paragraph).includes("Name of Applicant:")) return;
+          // Leave 1 mm between the applicant/school line and the case table.
+          const applicantProperties = prcEnsureWordChild(xml, paragraph, "pPr");
+          const applicantSpacing = prcEnsureWordChild(xml, applicantProperties, "spacing");
+          applicantSpacing.setAttributeNS(PRC_WORD_NS, "w:after", "57");
+          applicantSpacing.removeAttributeNS(PRC_WORD_NS, "afterLines");
+          applicantSpacing.setAttributeNS(PRC_WORD_NS, "w:afterAutospacing", "0");
           const textNodes = Array.from(paragraph.getElementsByTagNameNS(PRC_WORD_NS, "t"));
           const applicantNode = textNodes.find((node) => /_{10,}/.test(node.textContent || ""));
           const schoolNode = textNodes.find((node) => (node.textContent || "").includes("BOHOL ISLAND STATE UNIVERSITY CALAPE"));
