@@ -59,46 +59,59 @@
       }
 
       html body.role-instructor .instructor-to-review-card {
+        position: relative;
         overflow: hidden;
-        border: 1px solid #d7e5f2;
-        border-radius: 16px;
+        border: 1px solid #cfdeec !important;
+        border-radius: 18px !important;
         background: #ffffff;
-        box-shadow: 0 12px 28px rgba(20, 66, 112, 0.08);
+        box-shadow: 0 14px 34px rgba(16, 57, 99, 0.09) !important;
       }
 
       html body.role-instructor .instructor-to-review-card-header {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
-        padding: 18px 20px;
-        border-bottom: 1px solid #e5edf5;
-        background: linear-gradient(135deg, #f7fbff, #eef6fd);
+        padding: 19px 22px 19px 25px !important;
+        border-bottom: 1px solid #dbe7f1 !important;
+        background: linear-gradient(135deg, #ffffff 0%, #f1f7fc 100%) !important;
+      }
+
+      html body.role-instructor .instructor-to-review-card-header::before {
+        position: absolute;
+        top: 18px;
+        bottom: 18px;
+        left: 0;
+        width: 4px;
+        border-radius: 0 4px 4px 0;
+        background: #0b63b6;
+        content: "";
       }
 
       html body.role-instructor .instructor-to-review-card-header h3 {
-        margin: 0;
-        color: #123b70;
-        font-size: 16px;
-        font-weight: 800;
+        margin: 0 !important;
+        color: #123b70 !important;
+        font: 800 18px/1.2 "Inter", Arial, sans-serif !important;
+        letter-spacing: -0.02em;
       }
 
       html body.role-instructor .instructor-to-review-card-header p {
-        margin: 4px 0 0;
-        color: #6c819b;
-        font-size: 12px;
+        margin: 5px 0 0 !important;
+        color: #68809a !important;
+        font: 500 12.5px/1.4 "Inter", Arial, sans-serif !important;
       }
 
       html body.role-instructor .instructor-to-review-count {
         flex: 0 0 auto;
-        padding: 7px 11px;
-        border: 1px solid #c8dced;
+        padding: 7px 12px !important;
+        border: 1px solid #bcd5ea !important;
         border-radius: 999px;
-        background: #ffffff;
-        color: #0c579c;
-        font-size: 11px;
-        font-weight: 800;
+        background: #ffffff !important;
+        color: #0b5ca8 !important;
+        font: 800 11px/1.2 "Inter", Arial, sans-serif !important;
         white-space: nowrap;
+        box-shadow: 0 3px 8px rgba(17, 74, 129, 0.07);
       }
 
       html body.role-instructor .instructor-to-review-table-wrap {
@@ -106,56 +119,103 @@
       }
 
       html body.role-instructor .instructor-to-review-table {
-        width: 100%;
-        min-width: 1060px;
-        border-collapse: separate;
-        border-spacing: 0;
-        color: #183c66;
-        font-size: 12px;
-        table-layout: fixed;
+        width: 100% !important;
+        min-width: 1180px !important;
+        margin: 0 !important;
+        border: 0 !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        background: #ffffff !important;
+        color: #233f5e !important;
+        font: 500 12px/1.45 "Inter", Arial, sans-serif !important;
+        table-layout: fixed !important;
       }
 
       html body.role-instructor .instructor-to-review-table th {
-        padding: 13px 12px;
-        border-bottom: 1px solid #cadbea;
-        background: #eaf4fc;
-        color: #174a80;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-        text-align: left;
-        text-transform: uppercase;
-        white-space: nowrap;
+        height: 44px !important;
+        padding: 10px 12px !important;
+        border: 0 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-bottom: 1px solid #073c72 !important;
+        background: linear-gradient(180deg, #0d5da7 0%, #094c8c 100%) !important;
+        color: #ffffff !important;
+        font: 800 10px/1.25 "Inter", Arial, sans-serif !important;
+        letter-spacing: 0.055em !important;
+        text-align: left !important;
+        text-transform: uppercase !important;
+        vertical-align: middle !important;
+        white-space: normal !important;
       }
 
       html body.role-instructor .instructor-to-review-table td {
-        padding: 13px 12px;
-        border-bottom: 1px solid #e9f0f6;
-        background: #ffffff;
-        vertical-align: middle;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 14px 12px !important;
+        border: 0 !important;
+        border-right: 1px solid #e5edf5 !important;
+        border-bottom: 1px solid #e3ebf3 !important;
+        background: #ffffff !important;
+        color: #294764 !important;
+        font: 500 12px/1.45 "Inter", Arial, sans-serif !important;
+        text-align: left !important;
+        vertical-align: middle !important;
+        overflow-wrap: anywhere;
+      }
+
+      html body.role-instructor .instructor-to-review-table :is(th, td):last-child {
+        border-right: 0 !important;
+      }
+
+      html body.role-instructor .instructor-to-review-table :is(th, td):nth-child(3),
+      html body.role-instructor .instructor-to-review-table :is(th, td):nth-child(5),
+      html body.role-instructor .instructor-to-review-table :is(th, td):nth-child(8),
+      html body.role-instructor .instructor-to-review-table :is(th, td):nth-child(9) {
+        text-align: center !important;
       }
 
       html body.role-instructor .instructor-to-review-table tbody tr:last-child td {
-        border-bottom: 0;
+        border-bottom: 0 !important;
+      }
+
+      html body.role-instructor .instructor-to-review-table tbody tr:nth-child(even) td {
+        background: #fbfdff !important;
       }
 
       html body.role-instructor .instructor-to-review-table tbody tr:hover td {
-        background: #f8fbff;
+        background: #eef7ff !important;
       }
 
       html body.role-instructor .instructor-to-review-student strong,
-      html body.role-instructor .instructor-to-review-facility strong {
+      html body.role-instructor .instructor-to-review-facility strong,
+      html body.role-instructor .instructor-to-review-supervisor strong {
         display: block;
-        color: #163e6c;
-        font-weight: 800;
+        color: #163e6c !important;
+        font: 750 12px/1.35 "Inter", Arial, sans-serif !important;
+      }
+
+      html body.role-instructor .instructor-to-review-student strong {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      html body.role-instructor .instructor-to-review-student strong::before {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 8px;
+        border-radius: 50%;
+        background: #0b63b6;
+        box-shadow: 0 0 0 3px #e3f1fc;
+        content: "";
       }
 
       html body.role-instructor .instructor-to-review-student small,
-      html body.role-instructor .instructor-to-review-facility small {
+      html body.role-instructor .instructor-to-review-facility small,
+      html body.role-instructor .instructor-to-review-supervisor small {
         display: block;
-        margin-top: 3px;
-        color: #7890a8;
-        font-size: 10px;
+        margin-top: 4px;
+        color: #7189a2 !important;
+        font: 500 10.5px/1.4 "Inter", Arial, sans-serif !important;
       }
 
       html body.role-instructor .instructor-to-review-diagnosis,
@@ -164,20 +224,95 @@
         white-space: pre-line;
       }
 
+      html body.role-instructor .instructor-to-review-procedure-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 25px;
+        padding: 3px 8px;
+        border: 1px solid #c8ddf0;
+        border-radius: 999px;
+        background: #edf6fd;
+        color: #0b579e;
+        font: 750 10.5px/1.25 "Inter", Arial, sans-serif;
+        text-align: center;
+      }
+
+      html body.role-instructor .instructor-to-review-case-code {
+        display: inline-block;
+        padding: 4px 7px;
+        border: 1px solid #d8e5f0;
+        border-radius: 6px;
+        background: #f7fafc;
+        color: #244a70;
+        font: 700 10.5px/1.2 "Inter", Arial, sans-serif;
+        white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-date strong {
+        display: block;
+        color: #234769 !important;
+        font: 700 11px/1.3 "Inter", Arial, sans-serif !important;
+      }
+
+      html body.role-instructor .instructor-to-review-date small {
+        display: block;
+        margin-top: 3px;
+        color: #7189a2 !important;
+        font: 500 10.5px/1.3 "Inter", Arial, sans-serif !important;
+      }
+
       html body.role-instructor .instructor-to-review-status {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 82px;
-        padding: 5px 8px;
-        border: 1px solid #c8dced;
+        min-width: 78px;
+        padding: 5px 9px !important;
+        border: 1px solid #bed5e8 !important;
         border-radius: 999px;
-        background: #f2f7fb;
-        color: #315b82;
-        font-size: 10px;
-        font-weight: 800;
+        background: #f2f7fb !important;
+        color: #315b82 !important;
+        font: 800 10px/1.2 "Inter", Arial, sans-serif !important;
         text-align: center;
         white-space: nowrap;
+      }
+
+      html body.role-instructor .instructor-to-review-status[data-status="verified"] {
+        border-color: #9bd8bd !important;
+        background: #e7f8f0 !important;
+        color: #08724f !important;
+      }
+
+      html body.role-instructor .instructor-to-review-status:is(
+        [data-status="submitted"],
+        [data-status="resubmitted"]
+      ) {
+        border-color: #a9caec !important;
+        background: #eaf4ff !important;
+        color: #145a9e !important;
+      }
+
+      html body.role-instructor .instructor-to-review-status:is(
+        [data-status="reviewed"],
+        [data-status="under_review"]
+      ) {
+        border-color: #ead58e !important;
+        background: #fff8dc !important;
+        color: #8a6500 !important;
+      }
+
+      html body.role-instructor .instructor-to-review-status:is(
+        [data-status="needs_revision"],
+        [data-status="changes_requested"]
+      ) {
+        border-color: #f1bf91 !important;
+        background: #fff1e5 !important;
+        color: #a64b0d !important;
+      }
+
+      html body.role-instructor .instructor-to-review-status[data-status="invalid"] {
+        border-color: #edb0b7 !important;
+        background: #fff0f2 !important;
+        color: #b42336 !important;
       }
 
       html body.role-instructor .instructor-to-review-details {
@@ -185,22 +320,29 @@
         align-items: center;
         justify-content: center;
         gap: 6px;
-        min-height: 32px;
-        padding: 0 11px;
-        border: 1px solid #0b63b6;
-        border-radius: 8px;
-        background: #0b63b6;
-        color: #ffffff;
-        font: inherit;
-        font-size: 11px;
-        font-weight: 800;
+        min-height: 34px !important;
+        padding: 0 12px !important;
+        border: 1px solid #0b63b6 !important;
+        border-radius: 9px !important;
+        background: linear-gradient(135deg, #0c69bf, #07549a) !important;
+        color: #ffffff !important;
+        font: 800 11px/1 "Inter", Arial, sans-serif !important;
         cursor: pointer;
         white-space: nowrap;
+        box-shadow: 0 4px 10px rgba(8, 87, 158, 0.17);
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
       }
 
       html body.role-instructor .instructor-to-review-details:hover {
-        border-color: #084e8f;
-        background: #084e8f;
+        border-color: #084e8f !important;
+        background: linear-gradient(135deg, #095ca8, #073f76) !important;
+        box-shadow: 0 6px 14px rgba(8, 72, 132, 0.23);
+        transform: translateY(-1px);
+      }
+
+      html body.role-instructor .instructor-to-review-details:focus-visible {
+        outline: 3px solid rgba(11, 99, 182, 0.24);
+        outline-offset: 2px;
       }
 
       html body.role-instructor .instructor-to-review-empty {
@@ -2791,10 +2933,13 @@
               record.procedure_name || record.procedure_key,
             );
             const procedureCell = document.createElement("td");
-            procedureCell.textContent =
+            const procedureBadge = document.createElement("span");
+            procedureBadge.className = "instructor-to-review-procedure-badge";
+            procedureBadge.textContent =
               instructorProcedureProgressLabels[procedureKey] ||
               record.procedure_name ||
               "Clinical Record";
+            procedureCell.appendChild(procedureBadge);
 
             const studentCell = document.createElement("td");
             studentCell.className = "instructor-to-review-student";
@@ -2807,15 +2952,38 @@
             studentCell.append(studentName, studentId);
 
             const caseCell = document.createElement("td");
-            caseCell.textContent = record.case_no || "-";
+            const caseCode = document.createElement("span");
+            caseCode.className = "instructor-to-review-case-code";
+            caseCode.textContent = record.case_no || "-";
+            caseCell.appendChild(caseCode);
 
             const diagnosisCell = document.createElement("td");
             diagnosisCell.className = "instructor-to-review-diagnosis";
             diagnosisCell.textContent = record.complete_diagnosis || "-";
 
             const dateCell = document.createElement("td");
-            dateCell.textContent = record.date_time_performed || "-";
-            dateCell.style.whiteSpace = "pre-line";
+            dateCell.className = "instructor-to-review-date";
+            const rawDate = String(record.date_time_performed || "").trim();
+            const parsedDate = PhilippineTime.parse(rawDate, true);
+            const datePrimary = document.createElement("strong");
+            if (rawDate && !Number.isNaN(parsedDate.getTime())) {
+              datePrimary.textContent = parsedDate.toLocaleDateString("en-PH", {
+                timeZone: "Asia/Manila",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              });
+              const dateMeta = document.createElement("small");
+              dateMeta.textContent = parsedDate.toLocaleTimeString("en-PH", {
+                timeZone: "Asia/Manila",
+                hour: "numeric",
+                minute: "2-digit",
+              });
+              dateCell.append(datePrimary, dateMeta);
+            } else {
+              datePrimary.textContent = rawDate || "-";
+              dateCell.appendChild(datePrimary);
+            }
 
             const facilityCell = document.createElement("td");
             facilityCell.className = "instructor-to-review-facility";
