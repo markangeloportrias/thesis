@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="assets/css/pages/admin-palette.css?v=20260915-annual-record-body-black-1" />
     <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20260827-1" />
     <link rel="stylesheet" href="assets/css/pages/instructor-annual-records-table.css?v=20260831-9" />
-    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260906-internal-header-1" />
+    <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260930-shared-export" />
     <link rel="stylesheet" href="assets/css/components/mobile-access-block.css?v=20260908-1" />
     <style id="admin-notifications-single-search-field">
       html body.role-admin #notificationsCard .notifications-search {
@@ -58,6 +58,7 @@
     <link rel="stylesheet" href="assets/css/pages/admin-progress-tables.css?v=20260907-4" />
     <link rel="stylesheet" href="assets/css/components/clinical-grid-borders.css?v=20260907-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
+    <script src="assets/js/prc-export.js?v=1"></script>
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -1148,8 +1149,7 @@
         <div class="prc-preview-pages" id="prcPreviewPages"></div>
         <div class="prc-preview-actions">
           <button type="button" class="btn-secondary" id="prcPreviewCancelBtn">Back</button>
-          <button type="button" class="btn-secondary" id="prcPreviewDraftBtn">Download Draft</button>
-          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download Verified Form</button>
+          <button type="button" class="btn-primary" id="prcPreviewDownloadBtn">Download PRC Form</button>
         </div>
       </div>
     </div>
@@ -5062,622 +5062,14 @@
 
       let studentPrcExportStudent = null;
 
-      function studentPrcFormatExportDateTime(value) {
-        if (!value) return "";
-        const date = PhilippineTime.parse(value, true);
-        if (Number.isNaN(date.getTime())) return escapeHtml(String(value));
-        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}<br>${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
-      }
-
-      function studentPrcFormatExportDate(value) {
-        if (!value || /^0{4}-0{2}-0{2}$/.test(String(value))) return "";
-        const date = PhilippineTime.parse(String(value).slice(0, 10), true);
-        if (Number.isNaN(date.getTime())) return String(value);
-        return date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" });
-      }
-
-      function studentPrcExportCell(...values) {
-        const lines = values
-          .filter((value) => value !== undefined && value !== null && String(value).trim() !== "")
-          .map((value) => escapeHtml(value));
-        return lines.length ? lines.join("<br>") : "&nbsp;";
-      }
-
-      function studentPrcBuildExportTable(procedureKey, records, startIndex = 0, rowCount = STUDENT_PRC_PROCEDURE_TARGETS[procedureKey] || 5) {
-        const geometry = {
-          "delivery-handled": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          "delivery-assisted": { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] },
-          suturing: { width: 99.45, columns: [15.21, 4.79, 15.25, 6.92, 17.56, 11.94, 9.62, 8.66, 10.05] },
-          "iv-insertion": { width: 99.03, columns: [15.30, 4.81, 15.31, 6.95, 17.74, 10.61, 9.66, 9.66, 9.96] },
-          "internal-exam": { width: 99.03, columns: [15.29, 4.82, 19.09, 9.98, 13.69, 11.04, 9.77, 7.96, 8.39] },
-        }[procedureKey] || { width: 95.97, columns: [15.87, 4.97, 15.69, 7.17, 16.56, 12.69, 8.83, 9.38, 8.83] };
-        const pageRecords = records.slice(startIndex, startIndex + rowCount);
-        const rows = pageRecords.map((record, rowIndex) => `<tr>
-          <td>${startIndex + rowIndex + 1}. ${studentPrcExportCell(record.patient_name, record.patient_address)}</td>
-          <td>${studentPrcExportCell(record.case_no)}</td>
-          <td>${studentPrcExportCell(record.complete_diagnosis)}</td>
-          <td>${studentPrcFormatExportDateTime(record.date_time_performed) || "&nbsp;"}</td>
-          <td>${studentPrcExportCell(record.facility_name, record.facility_address, record.facility_contact_number)}</td>
-          <td>${studentPrcExportCell(record.supervisor_printed_name, record.supervisor_contact_number)}</td>
-          <td>${studentPrcExportCell(record.supervisor_position_designation)}</td>
-          <td>&nbsp;</td>
-          <td>${studentPrcExportCell(record.supervisor_license_no, studentPrcFormatExportDate(record.supervisor_license_expiry_date))}</td>
-        </tr>`).join("");
-        const blankRows = Math.max(0, rowCount - pageRecords.length);
-        const emptyRows = Array.from({ length: blankRows }, (_, rowIndex) => `<tr><td>${startIndex + pageRecords.length + rowIndex + 1}</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>`).join("");
-        return `<table class="prc-export-table" style="width:${geometry.width}%">
-          <colgroup>${geometry.columns.map((width) => `<col style="width:${width}%">`).join("")}</colgroup>
-          <thead><tr><th rowspan="2">Name and Address of Patient</th><th rowspan="2">Case<br>No.</th><th rowspan="2">${studentPrcGetDiagnosisHeader(procedureKey)}</th><th rowspan="2">Date &amp; Time<br>Performed</th><th rowspan="2">Full Name, Address of<br>Facility &amp; Contact Number</th><th colspan="4">Supervised by</th></tr><tr><th>Printed Name and<br>Contact No.</th><th>Position/<br>Designation</th><th>Signature</th><th>License No /<br>Expiry Date</th></tr></thead>
-          <tbody>${rows}${emptyRows}</tbody>
-        </table>`;
-      }
-
       let studentPrcPreviewRecords = [];
-      let studentPrcLogoDataUrl = "";
-
-      async function studentPrcGetLogoDataUrl() {
-        if (studentPrcLogoDataUrl) return studentPrcLogoDataUrl;
-        const logoPath = "assets/images/prc-form-image1.jpeg";
-        try {
-          const response = await fetch(logoPath);
-          if (!response.ok) throw new Error("PRC logo could not be loaded.");
-          const logoBlob = await response.blob();
-          studentPrcLogoDataUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(logoBlob);
-          });
-        } catch (error) {
-          studentPrcLogoDataUrl = logoPath;
-        }
-        return studentPrcLogoDataUrl;
-      }
-
-      function studentPrcBuildExportFooter() {
-        return `<div class="prc-export-footer">
-          <div class="prc-export-notes">
-            <strong class="prc-export-note-label">Note:</strong>
-            <div class="prc-export-note-copy">
-              <p><strong>${STUDENT_PRC_FOOTER_COPY.noteOne}</strong></p>
-              <p><strong>${STUDENT_PRC_FOOTER_COPY.noteTwo}</strong></p>
-            </div>
-          </div>
-          <div class="prc-export-affidavit">
-            <p><strong>SUBSCRIBED AND SWORN TO</strong> before me this <span class="prc-export-fill-line prc-export-affidavit-line"></span> at <span class="prc-export-fill-line prc-export-affidavit-line"></span>. Affiant exhibiting to me his/her</p>
-            <p class="prc-export-residence">Residence Certificate No. <span class="prc-export-fill-line prc-export-residence-number"></span> issued at <span class="prc-export-fill-line prc-export-residence-place"></span> on <span class="prc-export-fill-line prc-export-residence-date"></span>.</p>
-          </div>
-          <div class="prc-export-certification-title"><strong>CERTIFIED CORRECT:</strong></div>
-          <div class="prc-export-footer-grid">
-            <div class="prc-export-notary">
-              <span class="prc-export-notary-line"></span>
-              <strong>Administering Officer/Notary Public</strong>
-            </div>
-            <div class="prc-export-stamp">
-              <span>Affix</span>
-              <span>Documentary Stamp</span>
-              <small>To be posted on the last page</small>
-            </div>
-            <div class="prc-export-certified-details">
-              <div class="prc-export-cert-row"><span>Signature:</span><span class="prc-export-fill-line"></span><span>Date:</span><span class="prc-export-fill-line prc-export-date-line"></span></div>
-              <div class="prc-export-cert-row prc-export-cert-row-simple"><span>Printed Name:</span><span class="prc-export-fill-line"></span></div>
-              <div class="prc-export-cert-row prc-export-cert-row-simple"><span>Designation:</span><span class="prc-export-fill-line"></span></div>
-              <div class="prc-export-license-row">License Number: <strong>${STUDENT_PRC_FOOTER_COPY.licenseNumber}</strong> Expiry Date: <span class="prc-export-fill-line prc-export-expiry-line"></span></div>
-            </div>
-          </div>
-        </div>`;
-      }
-
-      function studentPrcBuildExportForms(records, logoSource, exportStudent = studentPrcExportStudent) {
-        const studentName = exportStudent.student_name || exportStudent.name || "";
-        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
-        const recordsByProcedure = STUDENT_PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
-          groupedRecords[procedureKey] = records
-            .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
-            .slice(0, STUDENT_PRC_PROCEDURE_TARGETS[procedureKey] || 0);
-          return groupedRecords;
-        }, {});
-        return STUDENT_PRC_EXPORT_PAGE_LAYOUT.map(({ procedureKey, pageIndex, startIndex, rowCount, isFinalPage }) => {
-          const isContinuation = pageIndex > 0;
-          return `<section class="prc-export-form${isContinuation ? " prc-export-continuation" : ""}">
-            ${isContinuation ? "" : `
-            <div class="prc-export-heading">
-              <img class="prc-export-logo" src="${logoSource}" alt="Professional Regulation Commission seal">
-              <div class="prc-export-heading-text">
-                <div class="prc-export-agency">PROFESSIONAL REGULATION COMMISSION</div>
-                <div class="prc-export-city">Cebu City</div>
-                <div class="prc-export-board">BOARD OF MIDWIFERY</div>
-              </div>
-            </div>
-            <h1>${STUDENT_PRC_FORM_TITLES[procedureKey] || studentPrcProcedureNames[procedureKey]}</h1>
-            <p class="prc-export-check-label">Please check if applicant is:</p>
-            <p class="prc-export-check-options"><span class="prc-check-box is-checked">&#10003;</span> Graduate Midwife <span class="prc-check-box"></span> Registered Nurse</p>
-            <p class="prc-export-applicant"><span>Name of Applicant:</span><span class="prc-export-line">${escapeHtml(studentName)}</span><span class="prc-export-school-label">School:</span><span class="prc-export-line prc-export-school">${escapeHtml(school)}</span></p>`}
-            ${studentPrcBuildExportTable(procedureKey, recordsByProcedure[procedureKey] || [], startIndex, rowCount)}
-            ${isFinalPage ? studentPrcBuildExportFooter() : `<div class="prc-export-continued">(continued next page)</div>`}
-          </section>`;
-        }).join("");
-      }
-
-      function studentPrcBuildWordDocument(forms) {
-        return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
-          @page Section1 { size: 936pt 612pt; mso-page-orientation: landscape; margin: 25.2pt 25.2pt 25.2pt 25.2pt; }
-          div.Section1 { page: Section1; }
-          body { margin: 0; color: #000; background: #fff; font-family: Cambria, "Times New Roman", serif; font-size: 10pt; }
-          .prc-export-form { padding-top: 57pt; page-break-after: always; }
-          .prc-export-form:last-child { page-break-after: auto; }
-          .prc-export-heading { position: relative; min-height: 44pt; margin: 0; }
-          .prc-export-logo { position: absolute; left: 150pt; top: 0; width: 58pt; height: 58pt; object-fit: contain; }
-          .prc-export-heading-text { padding-top: 7pt; text-align: center; }
-          .prc-export-agency, .prc-export-city, .prc-export-board, .prc-export-form h1 { text-align: center; margin: 0; }
-          .prc-export-agency { font-size: 10pt; font-weight: 400; }
-          .prc-export-city, .prc-export-board { font-size: 9pt; font-weight: 400; }
-          .prc-export-board { font-weight: 700; }
-          .prc-export-form h1 { margin: 2pt 0 0; font-size: 14pt; font-weight: 700; }
-          .prc-export-check { margin: 0 0 13pt; text-align: right; font-size: 10pt; }
-          .prc-check-box { display: inline-block; width: 21pt; height: 16pt; margin: 0 5pt 0 11pt; border: 1px solid #000; text-align: center; line-height: 15pt; vertical-align: middle; }
-          .prc-export-applicant { margin: 0 0 10pt; font-size: 10pt; }
-          .prc-export-line { display: inline-block; min-width: 255pt; border-bottom: 1px solid #000; font-weight: 700; }
-          .prc-export-school-label { margin-left: 72pt; }
-          .prc-export-school { min-width: 205pt; }
-          .prc-export-table { width: 92%; border: 1px solid #000; border-collapse: collapse; border-spacing: 0; table-layout: fixed; color: #000; background: #fff; }
-          .prc-export-table th, .prc-export-table td { border: 1px solid #000; padding: 2pt 3pt; color: #000; background: #fff; text-align: center; vertical-align: middle; overflow-wrap: anywhere; word-break: break-word; }
-          .prc-export-table th { font-size: 8pt; font-weight: 700; line-height: 1.1; }
-          .prc-export-table td { height: 22pt; font-size: 8pt; font-weight: 400; line-height: 1.1; text-align: left; }
-        </style></head><body><div class="Section1">${forms}</div></body></html>`;
-      }
-
-      const STUDENT_PRC_TEMPLATE_URL = "assets/templates/prc-forms-template.docx";
-      const STUDENT_PRC_WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
-      const STUDENT_PRC_XML_NS = "http://www.w3.org/XML/1998/namespace";
-      const STUDENT_PRC_CRC_TABLE = (() => {
-        const table = new Uint32Array(256);
-        for (let index = 0; index < 256; index += 1) {
-          let value = index;
-          for (let bit = 0; bit < 8; bit += 1) value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
-          table[index] = value >>> 0;
-        }
-        return table;
-      })();
-
-      function prcCrc32(bytes) {
-        let crc = 0xffffffff;
-        for (let index = 0; index < bytes.length; index += 1) crc = STUDENT_PRC_CRC_TABLE[(crc ^ bytes[index]) & 0xff] ^ (crc >>> 8);
-        return (crc ^ 0xffffffff) >>> 0;
-      }
-
-      function prcZipU16(view, offset) { return view.getUint16(offset, true); }
-      function prcZipU32(view, offset) { return view.getUint32(offset, true); }
-
-      async function studentPrcInflate(bytes, compression) {
-        if (compression === 0) return bytes;
-        if (compression !== 8 || typeof DecompressionStream === "undefined") throw new Error("This browser cannot read the PRC document template.");
-        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
-        return new Uint8Array(await new Response(stream).arrayBuffer());
-      }
-
-      async function studentPrcReadTemplateZip(arrayBuffer) {
-        const source = new Uint8Array(arrayBuffer);
-        const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
-        let endOffset = -1;
-        for (let offset = Math.max(0, source.length - 65557); offset <= source.length - 22; offset += 1) {
-          if (prcZipU32(view, offset) === 0x06054b50) endOffset = offset;
-        }
-        if (endOffset < 0) throw new Error("The PRC template is not a valid DOCX file.");
-        const count = prcZipU16(view, endOffset + 10);
-        let offset = prcZipU32(view, endOffset + 16);
-        const decoder = new TextDecoder();
-        const entries = [];
-        for (let index = 0; index < count; index += 1) {
-          if (prcZipU32(view, offset) !== 0x02014b50) throw new Error("The PRC template directory is invalid.");
-          const compression = prcZipU16(view, offset + 10);
-          const compressedSize = prcZipU32(view, offset + 20);
-          const nameLength = prcZipU16(view, offset + 28);
-          const extraLength = prcZipU16(view, offset + 30);
-          const commentLength = prcZipU16(view, offset + 32);
-          const localOffset = prcZipU32(view, offset + 42);
-          const name = decoder.decode(source.slice(offset + 46, offset + 46 + nameLength));
-          const localNameLength = prcZipU16(view, localOffset + 26);
-          const localExtraLength = prcZipU16(view, localOffset + 28);
-          const compressed = source.slice(localOffset + 30 + localNameLength + localExtraLength, localOffset + 30 + localNameLength + localExtraLength + compressedSize);
-          entries.push({ name, data: await studentPrcInflate(compressed, compression) });
-          offset += 46 + nameLength + extraLength + commentLength;
-        }
-        return entries;
-      }
-
-      function studentPrcCreateDocxZip(entries) {
-        const encoder = new TextEncoder();
-        const chunks = [];
-        const central = [];
-        let offset = 0;
-        entries.forEach((entry) => {
-          const name = encoder.encode(entry.name);
-          const data = entry.data;
-          const crc = prcCrc32(data);
-          const local = new Uint8Array(30 + name.length);
-          const localView = new DataView(local.buffer);
-          localView.setUint32(0, 0x04034b50, true);
-          localView.setUint16(4, 20, true);
-          localView.setUint16(6, 0x0800, true);
-          localView.setUint16(8, 0, true);
-          localView.setUint32(14, crc, true);
-          localView.setUint32(18, data.length, true);
-          localView.setUint32(22, data.length, true);
-          localView.setUint16(26, name.length, true);
-          local.set(name, 30);
-          chunks.push(local, data);
-          const directory = new Uint8Array(46 + name.length);
-          const directoryView = new DataView(directory.buffer);
-          directoryView.setUint32(0, 0x02014b50, true);
-          directoryView.setUint16(4, 20, true);
-          directoryView.setUint16(6, 20, true);
-          directoryView.setUint16(8, 0x0800, true);
-          directoryView.setUint16(10, 0, true);
-          directoryView.setUint32(16, crc, true);
-          directoryView.setUint32(20, data.length, true);
-          directoryView.setUint32(24, data.length, true);
-          directoryView.setUint16(28, name.length, true);
-          directoryView.setUint32(42, offset, true);
-          directory.set(name, 46);
-          central.push(directory);
-          offset += local.length + data.length;
-        });
-        const centralSize = central.reduce((total, chunk) => total + chunk.length, 0);
-        const end = new Uint8Array(22);
-        const endView = new DataView(end.buffer);
-        endView.setUint32(0, 0x06054b50, true);
-        endView.setUint16(8, entries.length, true);
-        endView.setUint16(10, entries.length, true);
-        endView.setUint32(12, centralSize, true);
-        endView.setUint32(16, offset, true);
-        const result = new Uint8Array(offset + centralSize + end.length);
-        let cursor = 0;
-        [...chunks, ...central, end].forEach((chunk) => { result.set(chunk, cursor); cursor += chunk.length; });
-        return result;
-      }
-
-      function studentPrcWordText(node) {
-        return Array.from(node.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t")).map((item) => item.textContent || "").join("");
-      }
-
-      function studentPrcEnsureWordChild(documentNode, parent, localName) {
-        let child = Array.from(parent.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === localName);
-        if (!child) {
-          child = documentNode.createElementNS(STUDENT_PRC_WORD_NS, `w:${localName}`);
-          parent.appendChild(child);
-        }
-        return child;
-      }
-
-      function studentPrcSetTemplateLegalTableMargins(xml) {
-        const section = xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "sectPr")[0];
-        if (section) {
-          const pageMargins = studentPrcEnsureWordChild(xml, section, "pgMar");
-          pageMargins.setAttributeNS(STUDENT_PRC_WORD_NS, "w:left", "720");
-          pageMargins.setAttributeNS(STUDENT_PRC_WORD_NS, "w:right", "720");
-        }
-        const tableWidth = 17280; // 13in legal width minus 0.5in left and right margins.
-        Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "tbl")).forEach((table) => {
-          const tableProperties = studentPrcEnsureWordChild(xml, table, "tblPr");
-          const width = studentPrcEnsureWordChild(xml, tableProperties, "tblW");
-          width.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(tableWidth));
-          width.setAttributeNS(STUDENT_PRC_WORD_NS, "w:type", "dxa");
-          const layout = studentPrcEnsureWordChild(xml, tableProperties, "tblLayout");
-          layout.setAttributeNS(STUDENT_PRC_WORD_NS, "w:type", "fixed");
-          const gridColumns = Array.from(table.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "gridCol"));
-          const originalWidths = gridColumns.map((column) => Number(column.getAttributeNS(STUDENT_PRC_WORD_NS, "w")) || 0);
-          const originalTotal = originalWidths.reduce((sum, value) => sum + value, 0);
-          let usedWidth = 0;
-          const scaledWidths = [];
-          gridColumns.forEach((column, index) => {
-            const nextWidth = index === gridColumns.length - 1
-              ? tableWidth - usedWidth
-              : Math.round((originalWidths[index] / originalTotal) * tableWidth);
-            column.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(nextWidth));
-            usedWidth += nextWidth;
-            scaledWidths.push(nextWidth);
-          });
-          Array.from(table.children)
-            .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tr")
-            .forEach((row) => {
-              let columnIndex = 0;
-              Array.from(row.children)
-                .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tc")
-                .forEach((cell) => {
-                  const cellProperties = studentPrcEnsureWordChild(xml, cell, "tcPr");
-                  const spanNode = Array.from(cellProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "gridSpan");
-                  const span = Math.max(1, Number(spanNode?.getAttributeNS(STUDENT_PRC_WORD_NS, "val")) || 1);
-                  const cellWidth = studentPrcEnsureWordChild(xml, cellProperties, "tcW");
-                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(scaledWidths.slice(columnIndex, columnIndex + span).reduce((sum, value) => sum + value, 0)));
-                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:type", "dxa");
-                  columnIndex += span;
-                });
-            });
-        });
-      }
-
-      function studentPrcAddDeliveryAssistedSheet(xml) {
-        const body = xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "body")[0];
-        if (!body) return;
-        const bodyChildren = Array.from(body.children);
-        const normalTitle = bodyChildren.find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "p" && studentPrcWordText(node).includes("Record of Normal"));
-        const suturingTitle = bodyChildren.find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "p" && studentPrcWordText(node).includes("Record of Actual Suturing"));
-        if (!normalTitle || !suturingTitle) return;
-        const normalTitleIndex = bodyChildren.indexOf(normalTitle);
-        const suturingTitleIndex = bodyChildren.indexOf(suturingTitle);
-        const findSheetStart = (titleIndex) => {
-          for (let index = titleIndex; index >= 0; index -= 1) {
-            const node = bodyChildren[index];
-            if (node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "p" && node.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "drawing").length) return index;
-          }
-          return titleIndex;
-        };
-        const startIndex = findSheetStart(normalTitleIndex);
-        const endIndex = findSheetStart(suturingTitleIndex);
-        if (endIndex <= startIndex) return;
-        const copiedNodes = bodyChildren.slice(startIndex, endIndex).map((node) => node.cloneNode(true));
-        const copiedTitle = copiedNodes.find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "p" && studentPrcWordText(node).includes("Record of Normal"));
-        if (copiedTitle) {
-          const titleParts = Array.from(copiedTitle.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
-          if (titleParts.length) titleParts[0].textContent = "Record of Delivery Assisted";
-          titleParts.slice(1).forEach((part) => { part.textContent = ""; });
-        }
-        copiedNodes.forEach((node) => body.insertBefore(node, bodyChildren[endIndex]));
-      }
-
-      function studentPrcSetTemplateColumnWidths(xml) {
-        const columnShift = 520;
-        Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "tbl")).forEach((table) => {
-          const gridColumns = Array.from(table.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "gridCol"));
-          const widths = gridColumns.map((column) => Number(column.getAttributeNS(STUDENT_PRC_WORD_NS, "w")) || 0);
-          if (widths.length < 3 || widths.some((width) => width <= 0)) return;
-          const shift = Math.min(columnShift, Math.max(0, widths[0] - 1));
-          widths[0] -= shift;
-          widths[2] += shift;
-          gridColumns.forEach((column, index) => column.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(widths[index])));
-          Array.from(table.children)
-            .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tr")
-            .forEach((row) => {
-              let columnIndex = 0;
-              Array.from(row.children)
-                .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tc")
-                .forEach((cell) => {
-                  const cellProperties = studentPrcEnsureWordChild(xml, cell, "tcPr");
-                  const spanNode = Array.from(cellProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "gridSpan");
-                  const span = Math.max(1, Number(spanNode?.getAttributeNS(STUDENT_PRC_WORD_NS, "val")) || 1);
-                  const cellWidth = studentPrcEnsureWordChild(xml, cellProperties, "tcW");
-                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:w", String(widths.slice(columnIndex, columnIndex + span).reduce((sum, value) => sum + value, 0)));
-                  cellWidth.setAttributeNS(STUDENT_PRC_WORD_NS, "w:type", "dxa");
-                  columnIndex += span;
-                });
-            });
-        });
-      }
-
-      function studentPrcSetTemplateCell(cell, value, preserveNumbering = false) {
-        const paragraph = cell.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p")[0];
-        if (!paragraph) return;
-        const cellProperties = studentPrcEnsureWordChild(paragraph.ownerDocument, cell, "tcPr");
-        const verticalAlignment = studentPrcEnsureWordChild(paragraph.ownerDocument, cellProperties, "vAlign");
-        verticalAlignment.setAttributeNS(STUDENT_PRC_WORD_NS, "w:val", "center");
-        const paragraphProperties = studentPrcEnsureWordChild(paragraph.ownerDocument, paragraph, "pPr");
-        if (!preserveNumbering) {
-          Array.from(paragraphProperties.children)
-            .filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "numPr")
-            .forEach((node) => node.remove());
-        }
-        let alignment = Array.from(paragraphProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "jc");
-        if (!alignment) {
-          alignment = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:jc");
-          const characterProperties = Array.from(paragraphProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "rPr");
-          paragraphProperties.insertBefore(alignment, characterProperties || null);
-        }
-        alignment.setAttributeNS(STUDENT_PRC_WORD_NS, "w:val", "left");
-        const firstRun = paragraph.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "r")[0];
-        const runProperties = firstRun?.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "rPr")[0]?.cloneNode(true) || paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:rPr");
-        let fonts = Array.from(runProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "rFonts");
-        if (!fonts) {
-          fonts = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:rFonts");
-          runProperties.insertBefore(fonts, runProperties.firstChild);
-        }
-        ["ascii", "hAnsi", "cs"].forEach((script) => fonts.setAttributeNS(STUDENT_PRC_WORD_NS, `w:${script}`, "Arial"));
-        ["sz", "szCs"].forEach((property) => {
-          let size = Array.from(runProperties.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === property);
-          if (!size) {
-            size = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, `w:${property}`);
-            runProperties.appendChild(size);
-          }
-          size.setAttributeNS(STUDENT_PRC_WORD_NS, "w:val", "16");
-        });
-        Array.from(paragraph.childNodes).forEach((node) => {
-          if (!(node.nodeType === 1 && node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "pPr")) paragraph.removeChild(node);
-        });
-        const lines = String(value || "").split("\n");
-        lines.forEach((line, index) => {
-          const run = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:r");
-          run.appendChild(runProperties.cloneNode(true));
-          const text = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:t");
-          text.setAttributeNS(STUDENT_PRC_XML_NS, "xml:space", "preserve");
-          text.textContent = line;
-          run.appendChild(text);
-          paragraph.appendChild(run);
-          if (index < lines.length - 1) {
-            const breakRun = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:r");
-            breakRun.appendChild(paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:br"));
-            paragraph.appendChild(breakRun);
-          }
-        });
-      }
-
-      function studentPrcFormatDocxDateTime(value) {
-        if (!value) return "";
-        const date = PhilippineTime.parse(value, true);
-        if (Number.isNaN(date.getTime())) return String(value);
-        return `${date.toLocaleDateString("en-US", { timeZone: "Asia/Manila", month: "short", day: "2-digit", year: "numeric" })}\n${date.toLocaleTimeString("en-US", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" })}`;
-      }
-
-      function studentPrcFormatDocxDate(value) { return studentPrcFormatExportDate(value).replace(/<[^>]+>/g, ""); }
-
-      function studentPrcFillTemplateTable(table, records) {
-        const rows = Array.from(table.children).filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tr").slice(2);
-        rows.forEach((row, index) => {
-          const record = records[index] || {};
-          const cells = Array.from(row.children).filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tc");
-          const values = [
-            [record.patient_name, record.patient_address].filter(Boolean).join("\n"),
-            record.case_no,
-            record.complete_diagnosis,
-            studentPrcFormatDocxDateTime(record.date_time_performed),
-            [record.facility_name, record.facility_address, record.facility_contact_number].filter(Boolean).join("\n"),
-            [record.supervisor_printed_name, record.supervisor_contact_number].filter(Boolean).join("\n"),
-            record.supervisor_position_designation,
-            "",
-            [record.supervisor_license_no, studentPrcFormatDocxDate(record.supervisor_license_expiry_date)].filter(Boolean).join("\n"),
-          ];
-          cells.forEach((cell, cellIndex) => studentPrcSetTemplateCell(cell, values[cellIndex] || "", cellIndex === 0));
-        });
-      }
-
-      function studentPrcSetTemplateText(node, value) {
-        const textNodes = Array.from(node.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
-        if (!textNodes.length) return;
-        textNodes[0].textContent = value;
-        textNodes[0].setAttributeNS(STUDENT_PRC_XML_NS, "xml:space", "preserve");
-        textNodes.slice(1).forEach((textNode) => { textNode.textContent = ""; });
-      }
-
-      function studentPrcSetTemplateDiagnosisHeader(table, procedureKey) {
-        const headerRow = Array.from(table.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tr");
-        const headerCells = headerRow ? Array.from(headerRow.children).filter((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "tc") : [];
-        const diagnosisCell = headerCells[2];
-        if (!diagnosisCell) return;
-        studentPrcSetTemplateText(diagnosisCell, studentPrcGetDiagnosisHeader(procedureKey));
-      }
-
-      function studentPrcSetTemplateFooterLicense(paragraph) {
-        const textNodes = Array.from(paragraph.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
-        const licenseIndex = textNodes.findIndex((node) => (node.textContent || "").includes("License Number:"));
-        const expiryIndex = textNodes.findIndex((node) => (node.textContent || "").includes("Expiry Date:"));
-        if (licenseIndex < 0 || expiryIndex < 0 || expiryIndex <= licenseIndex) return;
-        const licenseValueNode = textNodes
-          .slice(licenseIndex + 1, expiryIndex)
-          .find((node) => /[_A-Za-z0-9]/.test(node.textContent || ""));
-        const expiryValueNode = textNodes
-          .slice(expiryIndex + 1)
-          .find((node) => /[_A-Za-z0-9]/.test(node.textContent || ""));
-        textNodes[licenseIndex].textContent = "License Number: ";
-        textNodes[expiryIndex].textContent = "Expiry Date: ";
-        if (licenseValueNode) {
-          licenseValueNode.textContent = STUDENT_PRC_FOOTER_COPY.licenseNumber;
-          const run = licenseValueNode.parentElement;
-          if (run?.namespaceURI === STUDENT_PRC_WORD_NS && run.localName === "r") {
-            let runProperties = Array.from(run.children).find((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "rPr");
-            if (!runProperties) {
-              runProperties = paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:rPr");
-              run.insertBefore(runProperties, run.firstChild);
-            }
-            if (!Array.from(runProperties.children).some((node) => node.namespaceURI === STUDENT_PRC_WORD_NS && node.localName === "b")) {
-              runProperties.appendChild(paragraph.ownerDocument.createElementNS(STUDENT_PRC_WORD_NS, "w:b"));
-            }
-          }
-        }
-        if (expiryValueNode) expiryValueNode.textContent = STUDENT_PRC_FOOTER_COPY.expiryLine;
-      }
-
-      function studentPrcSynchronizeTemplateWithPreview(xml) {
-        const paragraphs = Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p"));
-        const procedureKeys = [...new Set(STUDENT_PRC_EXPORT_PAGE_LAYOUT.map((page) => page.procedureKey))];
-        const titleParagraphs = paragraphs.filter((paragraph) => /Record of (Normal|Delivery Assisted|Actual Suturing|Actual Intravenous|Actual Internal)/.test(studentPrcWordText(paragraph)));
-        titleParagraphs.slice(0, procedureKeys.length).forEach((paragraph, index) => {
-          studentPrcSetTemplateText(paragraph, STUDENT_PRC_FORM_TITLES[procedureKeys[index]] || "");
-        });
-
-        paragraphs
-          .filter((paragraph) => studentPrcWordText(paragraph).includes("Clinical Instructor should ensure competence"))
-          .forEach((paragraph) => {
-            const textNodes = Array.from(paragraph.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
-            if (textNodes.length >= 3) {
-              textNodes[0].textContent = "Note: ";
-              textNodes[0].setAttributeNS(STUDENT_PRC_XML_NS, "xml:space", "preserve");
-              textNodes[1].textContent = "(1)";
-              textNodes[2].textContent = STUDENT_PRC_FOOTER_COPY.noteOne.replace(/^\(1\)/, "");
-              textNodes.slice(3).forEach((textNode) => { textNode.textContent = ""; });
-            } else {
-              studentPrcSetTemplateText(paragraph, `Note: ${STUDENT_PRC_FOOTER_COPY.noteOne}`);
-            }
-          });
-        paragraphs
-          .filter((paragraph) => studentPrcWordText(paragraph).includes("Registered Midwives/ Clinical Instructors"))
-          .forEach((paragraph) => studentPrcSetTemplateText(paragraph, STUDENT_PRC_FOOTER_COPY.noteTwo));
-        paragraphs
-          .filter((paragraph) => studentPrcWordText(paragraph).includes("License Number:"))
-          .forEach(studentPrcSetTemplateFooterLicense);
-      }
-
-      function studentPrcEnsureTemplateUniqueDrawingIds(xml) {
-        const drawingNamespace = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing";
-        const drawingProperties = Array.from(xml.getElementsByTagNameNS(drawingNamespace, "docPr"));
-        const assignedIds = new Set();
-        let nextId = Math.max(0, ...drawingProperties.map((property) => Number(property.getAttribute("id")) || 0)) + 1;
-        drawingProperties.forEach((property) => {
-          const id = Number(property.getAttribute("id"));
-          if (Number.isInteger(id) && id > 0 && !assignedIds.has(id)) {
-            assignedIds.add(id);
-            return;
-          }
-          while (assignedIds.has(nextId)) nextId += 1;
-          property.setAttribute("id", String(nextId));
-          assignedIds.add(nextId);
-          nextId += 1;
-        });
-      }
-
-      async function studentPrcBuildTemplateDocx(records, options = {}) {
-        const exportStudent = options.student || studentPrcExportStudent;
-        const response = await fetch(STUDENT_PRC_TEMPLATE_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("The PRC Word template could not be loaded.");
-        const entries = await studentPrcReadTemplateZip(await response.arrayBuffer());
-        const documentEntry = entries.find((entry) => entry.name === "word/document.xml");
-        if (!documentEntry) throw new Error("The PRC Word template is missing its document layout.");
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(new TextDecoder().decode(documentEntry.data), "application/xml");
-        if (xml.querySelector("parsererror")) throw new Error("The PRC Word template could not be read.");
-        studentPrcAddDeliveryAssistedSheet(xml);
-        studentPrcSynchronizeTemplateWithPreview(xml);
-        studentPrcEnsureTemplateUniqueDrawingIds(xml);
-        studentPrcSetTemplateColumnWidths(xml);
-        const studentName = exportStudent.student_name || exportStudent.name || "";
-        const school = exportStudent.school_name || exportStudent.school || "BOHOL ISLAND STATE UNIVERSITY CALAPE";
-        Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "p")).forEach((paragraph) => {
-          if (!studentPrcWordText(paragraph).includes("Name of Applicant:")) return;
-          const textNodes = Array.from(paragraph.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "t"));
-          const applicantNode = textNodes.find((node) => /_{10,}/.test(node.textContent || ""));
-          const schoolNode = textNodes.find((node) => (node.textContent || "").includes("BOHOL ISLAND STATE UNIVERSITY CALAPE"));
-          if (studentName && applicantNode) {
-            const originalLength = (applicantNode.textContent || "").length;
-            applicantNode.textContent = `${studentName}${"_".repeat(Math.max(3, originalLength - studentName.length))}`;
-          }
-          if (school && schoolNode) schoolNode.textContent = school;
-        });
-        const recordsByProcedure = { "delivery-handled": [], "delivery-assisted": [], suturing: [], "iv-insertion": [], "internal-exam": [] };
-        records.forEach((record) => {
-          const key = normalizeProcedureKey(record.procedure_key || record.procedure_name);
-          if (recordsByProcedure[key]) recordsByProcedure[key].push(record);
-        });
-        const tables = Array.from(xml.getElementsByTagNameNS(STUDENT_PRC_WORD_NS, "tbl"));
-        if (tables.length < STUDENT_PRC_EXPORT_PAGE_LAYOUT.length) {
-          throw new Error("The PRC Word template is missing one or more form pages.");
-        }
-        STUDENT_PRC_EXPORT_PAGE_LAYOUT.forEach(({ procedureKey, startIndex, rowCount }, tableIndex) => {
-          const table = tables[tableIndex];
-          studentPrcSetTemplateDiagnosisHeader(table, procedureKey);
-          studentPrcFillTemplateTable(table, recordsByProcedure[procedureKey].slice(startIndex, startIndex + rowCount));
-        });
-        if (options.draft) RecordQuality.markDraftDocument(xml, STUDENT_PRC_WORD_NS);
-        documentEntry.data = new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${new XMLSerializer().serializeToString(xml.documentElement)}`);
-        return new Blob([studentPrcCreateDocxZip(entries)], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-      }
+      const {
+        buildPrcExportForms: studentPrcBuildExportForms,
+        buildPrcTemplateDocx: studentPrcBuildTemplateDocx,
+        getPrcLogoDataUrl: studentPrcGetLogoDataUrl,
+      } = PrcExport.create({
+        escapeHtml, normalizeProcedureKey, PhilippineTime, getStudent: () => studentPrcExportStudent,
+      });
 
       function studentPrcSetPreviewZoom(percent) {
         const nextPercent = Math.min(200, Math.max(50, Math.round((Number(percent) || 100) / 10) * 10));
@@ -5732,7 +5124,6 @@
           if (!pages || !overlay) throw new Error("The PRC preview dialog is unavailable.");
           pages.innerHTML = forms;
           RecordQuality.showPreflight(records, studentPrcExportStudent);
-          RecordQuality.markDraftPreview(pages, true);
           pages.scrollTop = 0;
           pages.scrollLeft = 0;
           overlay.classList.add("is-open");
@@ -5758,29 +5149,30 @@
       document.getElementById("prcPreviewOverlay")?.addEventListener("click", (event) => {
         if (event.target === event.currentTarget) studentPrcClosePreview();
       });
-      document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn').forEach((button) => {
+      document.querySelectorAll('#prcPreviewDownloadBtn').forEach((button) => {
         button.addEventListener('click', async () => {
           const studentId = studentPrcExportStudent?.student_id;
           if (!studentId || !document.getElementById('prcPreviewPages')?.children.length) {
             RecordQuality.notify('Open a student PRC preview before downloading.', 'Select a Preview');
             return;
           }
-          const draft = button.id === 'prcPreviewDraftBtn';
-          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn, #prcPreviewDraftBtn');
+          const buttons = document.querySelectorAll('#prcPreviewDownloadBtn');
           buttons.forEach((item) => { item.disabled = true; });
           try {
-            const snapshot = await RecordQuality.prepareExport(studentId, draft);
+            const snapshot = {
+              records: studentPrcPreviewRecords.slice(),
+              student: studentPrcExportStudent,
+            };
             const blob = await studentPrcBuildTemplateDocx(snapshot.records, snapshot);
             if (String(studentPrcExportStudent?.student_id) === String(studentId)) {
               const pages = document.getElementById('prcPreviewPages');
               pages.innerHTML = studentPrcBuildExportForms(snapshot.records, await studentPrcGetLogoDataUrl(), snapshot.student);
               RecordQuality.showPreflight(snapshot.records, snapshot.student);
-              RecordQuality.markDraftPreview(pages, draft);
             }
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `PRC-${draft ? 'DRAFT' : 'VERIFIED'}-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
+            link.download = `PRC-FORM-${String(studentId).replace(/[^a-z0-9_-]/gi, '_')}-${PhilippineTime.today()}.docx`;
             document.body.appendChild(link);
             link.click();
             link.remove();
