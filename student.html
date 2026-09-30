@@ -6550,6 +6550,35 @@
           });
       }
 
+      function compactAssistedPrcHeader(xml) {
+        const body = xml.getElementsByTagNameNS(PRC_WORD_NS, "body")[0];
+        if (!body) return;
+        const isEmptyParagraph = (node) => node?.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
+          !prcWordText(node).trim() && !node.getElementsByTagNameNS(PRC_WORD_NS, "drawing").length;
+        const logoParagraphs = Array.from(body.children).filter((node) =>
+          node.namespaceURI === PRC_WORD_NS && node.localName === "p" &&
+          Array.from(node.getElementsByTagNameNS(PRC_WORD_NS, "docPr")).some((drawing) => drawing.getAttribute("name") === "Picture 2"),
+        );
+        const assistedLogo = logoParagraphs[1];
+        if (!assistedLogo) return;
+        let node = assistedLogo.nextElementSibling;
+        while (node && !(node.namespaceURI === PRC_WORD_NS && node.localName === "tbl")) {
+          const next = node.nextElementSibling;
+          if (isEmptyParagraph(node)) {
+            node.remove();
+          } else if (node.namespaceURI === PRC_WORD_NS && node.localName === "p") {
+            const paragraphProperties = prcEnsureWordChild(xml, node, "pPr");
+            const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
+            const text = prcWordText(node).trim();
+            spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:after", "0");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:line", /Record of Delivery Assisted/i.test(text) ? "240" : "180");
+            spacing.setAttributeNS(PRC_WORD_NS, "w:lineRule", "exact");
+          }
+          node = next;
+        }
+      }
+
       function setPrcTemplateCell(cell, value, preserveNumbering = false, fontSizeHalfPoints = 16) {
         const paragraph = cell.getElementsByTagNameNS(PRC_WORD_NS, "p")[0];
         if (!paragraph) return;
@@ -6792,6 +6821,7 @@
         setPrcTemplatePageLayout(xml);
         synchronizePrcTemplateWithPreview(xml);
         compactPrcTemplateHeaderSpacing(xml);
+        compactAssistedPrcHeader(xml);
         ensurePrcTemplateUniqueDrawingIds(xml);
         compactAndUppercasePrcTemplateHeaders(xml);
         setPrcTemplateColumnWidths(xml);
