@@ -6478,7 +6478,7 @@
           .filter((node) => node.namespaceURI === PRC_WORD_NS && node.localName === "p")
           .forEach((paragraph) => {
             const text = prcWordText(paragraph).trim();
-            if (!/^(?:PROFESSIONAL REGULATION COMMISSION|Cebu City|BOARD OF MIDWIFERY|Record of |Please check if applicant is:|Graduate Midwife|Name of Applicant:)/i.test(text)) return;
+            if (!/^(?:PROFESSIONAL REGULATION COMMISSION|Cebu City|BOARD OF MIDWIFERY|Record of |Please check if applicant is:|Graduate Midwife|Name of Applicant:|\(continued next page\))/i.test(text)) return;
             const paragraphProperties = prcEnsureWordChild(xml, paragraph, "pPr");
             const spacing = prcEnsureWordChild(xml, paragraphProperties, "spacing");
             spacing.setAttributeNS(PRC_WORD_NS, "w:before", "0");
