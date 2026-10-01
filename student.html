@@ -615,6 +615,14 @@
     <style id="student-instructor-assignment-styles">
       html body.role-student .record-assignment-cell {
         vertical-align: middle;
+        width: 10% !important;
+        min-width: 108px;
+        padding: 6px 4px !important;
+      }
+
+      html body.role-student #recordProcedureTables .procedure-records-table col:nth-child(9) {
+        width: 10% !important;
+        min-width: 108px;
       }
 
       html body.role-student .case-assignment-control {
@@ -670,10 +678,34 @@
 
       html body.role-student .case-assignment-btn.compact-assign {
         gap: 2px;
+        min-height: 28px;
+        white-space: normal;
       }
 
       html body.role-student .case-assignment-btn.compact-assign i {
         display: none;
+      }
+
+      html body.role-student .case-assignment-btn.compact-assign span {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.05;
+      }
+
+      @media (max-width: 900px) {
+        html body.role-student .record-assignment-cell {
+          min-width: 100px;
+        }
+
+        html body.role-student #recordProcedureTables .procedure-records-table col:nth-child(9) {
+          min-width: 100px;
+        }
+
+        html body.role-student .case-assignment-btn {
+          font-size: 8px;
+        }
       }
 
       html body.role-student .option-pane.instructor-picker-dialog {
