@@ -755,7 +755,8 @@
       }
 
       html body.role-student .student-instructor-picker-option:hover,
-      html body.role-student .student-instructor-picker-option.current {
+      html body.role-student .student-instructor-picker-option.current,
+      html body.role-student .student-instructor-picker-option.selected {
         border-color: #5da3df;
         background: #eff7ff;
       }
@@ -2810,11 +2811,46 @@
 
       async function openStudentCaseInstructorPicker(record, refreshCell) {
         const currentInstructorId = String(record.instructorId || "");
+        let selectedInstructorId = "";
         showOptionPane({
           title: currentInstructorId ? "Change Instructor" : "Assign Instructor",
           message: "",
-          buttons: [{ label: "Cancel", variant: "secondary" }],
+          buttons: [
+            { label: "Done", variant: "primary", onClick: async () => {
+              const instructor = instructors.find((item) => item.id === selectedInstructorId);
+              if (!instructor) return;
+              if (instructor.id === currentInstructorId) return;
+              const assignInstructor = async () => {
+                const result = await ApiClient.assignCaseInstructor(record.id, instructor.id, record.recordIdentity || {});
+                if (!result?.ok) {
+                  showOptionPane({ title: "Assignment Failed", message: result?.message || "Unable to assign the instructor." });
+                  return;
+                }
+                record.instructorId = instructor.id;
+                record.instructorName = result.instructor_name || instructor.name;
+                refreshCell();
+                showOptionPane({
+                  title: "Instructor Assigned",
+                  message: `${record.instructorName} can now access this clinical record.`,
+                });
+              };
+              if (currentInstructorId) {
+                showOptionPane({
+                  title: "Change Clinical Instructor?",
+                  message: `Are you sure you want to change the CI for this record to ${instructor.name}?`,
+                  buttons: [
+                    { label: "Cancel", variant: "secondary" },
+                    { label: "Change CI", variant: "primary", onClick: assignInstructor },
+                  ],
+                });
+              } else {
+                await assignInstructor();
+              }
+            } },
+          ],
         });
+        const doneButton = optionPaneActions.querySelector(".option-pane-btn.primary");
+        if (doneButton) doneButton.disabled = true;
         optionPane?.classList.add("instructor-picker-dialog");
 
         const intro = document.createElement("p");
@@ -2860,29 +2896,16 @@
             }
 
             choice.addEventListener("click", async () => {
-              if (isCurrent) {
-                closeOptionPane();
-                return;
-              }
-              list.querySelectorAll("button").forEach((button) => { button.disabled = true; });
-              const result = await ApiClient.assignCaseInstructor(record.id, instructor.id, record.recordIdentity || {});
-              if (!result?.ok) {
-                closeOptionPane();
-                showOptionPane({
-                  title: "Assignment Failed",
-                  message: result?.message || "Unable to assign the instructor.",
-                });
-                return;
-              }
-              record.instructorId = instructor.id;
-              record.instructorName = result.instructor_name || instructor.name;
-              refreshCell();
-              closeOptionPane();
-              showOptionPane({
-                title: "Instructor Assigned",
-                message: `${record.instructorName} can now access this clinical record.`,
+              selectedInstructorId = instructor.id;
+              if (doneButton) doneButton.disabled = false;
+              list.querySelectorAll("button").forEach((button) => {
+                button.classList.remove("selected");
+                button.setAttribute("aria-pressed", "false");
               });
+              choice.classList.add("selected");
+              choice.setAttribute("aria-pressed", "true");
             });
+            choice.setAttribute("aria-pressed", "false");
             list.appendChild(choice);
           });
         }
