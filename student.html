@@ -625,7 +625,32 @@
 
       @media (min-width: 901px) {
         html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table {
-          min-width: 1480px !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          table-layout: fixed !important;
+          box-sizing: border-box;
+        }
+
+        /* Let the colgroup size the grid instead of legacy cell minimums. */
+        html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table :is(th, td) {
+          width: auto !important;
+          min-width: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table col {
+          min-width: 0 !important;
+        }
+
+        html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table .case-actions {
+          flex-wrap: wrap !important;
+          gap: 3px !important;
+          max-width: 100%;
+        }
+
+        html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table tbody td:last-child {
+          padding: 6px 3px !important;
         }
       }
 
