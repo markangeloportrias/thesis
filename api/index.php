@@ -996,7 +996,7 @@ try {
                  WHERE a.student_id=c.student_id AND a.archived_at IS NULL
                  ORDER BY (y.label=c.academic_year) DESC,(y.status='active') DESC,y.start_year DESC
                  LIMIT 1) AS assigned_school_year
-                FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.date_time_performed DESC, c.id DESC');
+                FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
             $stmt->execute($params); respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'assign') {

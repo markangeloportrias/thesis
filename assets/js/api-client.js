@@ -2345,6 +2345,15 @@
     };
   }
 
+  function compareCaseEntryOrder(a, b) {
+    function addedAt(record) {
+      var value = record.created_at || record.submitted_at || 0;
+      var date = window.PhilippineTime ? window.PhilippineTime.parse(value) : new Date(value);
+      return date.getTime() || 0;
+    }
+    return addedAt(a) - addedAt(b) || Number(a.id || 0) - Number(b.id || 0);
+  }
+
   function filterApiCases(rows, procedureName, searchTerm) {
     var procedure = canonicalProcedureName(procedureName);
     var term = normalize(searchTerm).toLowerCase();
@@ -2357,7 +2366,7 @@
         if (!term) return true;
         return createSearchBlob(record).indexOf(term) !== -1;
       })
-      .sort(function (a, b) { return Number(b.id) - Number(a.id); });
+      .sort(compareCaseEntryOrder);
   }
 
   async function syncLegacyCasesToApi(studentId) {
@@ -2518,6 +2527,7 @@
   ApiClient.apiUrl = location.protocol === 'file:' ? 'http://localhost/THESIS6/api' : 'api';
   ApiClient.storageMode = 'mysql-only';
   ApiClient.request = mysqlRequest;
+  ApiClient.compareCaseEntryOrder = compareCaseEntryOrder;
   ApiClient.ensureSchema = async function () { return mysqlRequest('health'); };
   ApiClient.authenticateStudent = async function (studentId, password) {
     var result = await mysqlLogin('student', { student_id: normalize(studentId), password: normalize(password) });

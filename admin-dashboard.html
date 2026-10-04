@@ -3494,7 +3494,7 @@
             if (!selectedYear) return true;
             return recordMatchesSchoolYear(c, selectedYear);
           })
-          .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+          .sort(ApiClient.compareCaseEntryOrder);
       }
 
       function updateCasesNavigationInfo() {
@@ -4546,11 +4546,7 @@
             await window.openInstructorProgressStudent(progressStudent, {
               mount: yearlyProgressLegacyMount,
               // Preserve entry order within each procedure; new records go last.
-              records: [...yearlyStudentYearRecords].sort((a, b) => {
-                const addedA = PhilippineTime.parse(a.created_at || a.submitted_at || 0).getTime() || 0;
-                const addedB = PhilippineTime.parse(b.created_at || b.submitted_at || 0).getTime() || 0;
-                return addedA - addedB || Number(a.id || 0) - Number(b.id || 0);
-              }),
+              records: [...yearlyStudentYearRecords].sort(ApiClient.compareCaseEntryOrder),
             });
           } else {
             yearlyProgressLegacyMount.textContent = "Unable to load the annual records layout.";
