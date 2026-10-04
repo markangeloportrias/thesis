@@ -19,8 +19,9 @@ html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-p
   border-radius: 0 !important;
   outline: 0 !important;
   background: #fff !important;
-  color: #00296b !important;
-  font-family: Arial, Helvetica, sans-serif !important;
+  color: #000 !important;
+  font-family: Cambria, "Times New Roman", serif !important;
+  text-transform: uppercase !important;
 }
 
 html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table :is(thead, thead tr, thead th) {
@@ -33,7 +34,7 @@ html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-p
   font: 700 12px/1.1 Cambria, "Times New Roman", serif !important;
   letter-spacing: normal !important;
   text-align: center !important;
-  text-transform: none !important;
+  text-transform: uppercase !important;
   vertical-align: middle !important;
   white-space: normal !important;
   overflow-wrap: anywhere !important;
@@ -60,8 +61,9 @@ html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-p
   border: 1px solid #000 !important;
   border-radius: 0 !important;
   background: #fff !important;
-  color: #00296b !important;
-  font: 500 11px/1.25 Arial, Helvetica, sans-serif !important;
+  color: #000 !important;
+  font: 500 11px/1.25 Cambria, "Times New Roman", serif !important;
+  text-transform: uppercase !important;
   text-align: left !important;
   vertical-align: middle !important;
   overflow-wrap: anywhere !important;
@@ -71,6 +73,7 @@ html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-p
 html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody td :is(span, small, div) {
   color: inherit !important;
   font: inherit !important;
+  text-transform: uppercase !important;
 }
 
 html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table.clinical-form-table tbody tr:hover td {
