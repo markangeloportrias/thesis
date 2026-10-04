@@ -3002,20 +3002,7 @@
             detailsButton.className = "instructor-to-review-details";
             detailsButton.innerHTML = '<i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Details</span>';
             detailsButton.addEventListener("click", () => {
-              selectedCurrentRecordsBlock = {
-                id: record.block_id || record.block_label || "",
-                label: record.block_label || "Registered block",
-                schoolYear: record.registered_school_year || record.academic_year || "",
-              };
-              selectedCurrentRecordsStudent = {
-                student_id: record.student_id,
-                student_name: record.student_name || "Student",
-                block_label: record.block_label || "Registered block",
-              };
-              setActiveSection("my-records", {
-                preserveCurrentRecordsBlock: true,
-                preserveSelectedStudent: true,
-              });
+              showRecordDetail(record);
             });
             detailsCell.appendChild(detailsButton);
 
