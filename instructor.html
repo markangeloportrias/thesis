@@ -363,6 +363,22 @@
         }
       }
     </style>
+    <style id="instructor-review-nested-cards">
+      .role-instructor .review-student-cards { display: grid; gap: 20px; padding: 20px; }
+      .role-instructor .review-student-card { min-width: 0; border: 1px solid #cbddee; border-radius: 14px; background: #f3f8fd; overflow: hidden; }
+      .role-instructor .review-student-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #dbe7f1; }
+      .role-instructor .review-case-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 14px; padding: 16px; }
+      .role-instructor .review-case-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 16px; min-width: 0; padding: 18px; border: 1px solid #d4e2ef; border-radius: 12px; background: #fff; box-shadow: 0 3px 10px rgba(0, 41, 107, .04); color: #21466f; font-size: 12px; }
+      .role-instructor .review-case-card > div { min-width: 0; overflow-wrap: anywhere; }
+      .role-instructor .review-case-card .instructor-to-review-diagnosis { grid-column: 1 / -1; line-height: 1.5; }
+      .role-instructor .review-field-label { display: block; margin-bottom: 6px; color: #647d98; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+      .role-instructor .review-case-actions { display: flex; justify-content: flex-end; align-items: flex-end; }
+      @media (max-width: 600px) {
+        .role-instructor .review-student-cards { padding: 10px; }
+        .role-instructor .review-case-grid { padding: 10px; }
+        .role-instructor .review-case-card { padding: 14px; }
+      }
+    </style>
     <style id="instructor-settings-minimal-styles">
       html body.role-instructor #settingsView.settings-minimal .settings-card.settings-minimal-shell {
         padding: 28px !important;
@@ -2890,54 +2906,23 @@
         count.textContent = `${safeRecords.length} ${safeRecords.length === 1 ? "case" : "cases"}`;
         cardHeader.append(heading, count);
 
-        const tableWrap = document.createElement("div");
-        tableWrap.className = "instructor-to-review-table-wrap";
-        const table = document.createElement("table");
-        table.className = "instructor-to-review-table";
-        table.setAttribute("aria-label", "Cases assigned to this instructor for review");
-        table.innerHTML = `
-          <colgroup>
-            <col style="width: 12%">
-            <col style="width: 10%">
-            <col style="width: 7%">
-            <col style="width: 20%">
-            <col style="width: 9%">
-            <col style="width: 15%">
-            <col style="width: 12%">
-            <col style="width: 7%">
-            <col style="width: 8%">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Procedure Type</th>
-              <th>Case No.</th>
-              <th>Complete Diagnosis</th>
-              <th>Date &amp; Time</th>
-              <th>Facility</th>
-              <th>Supervised By</th>
-              <th>Status</th>
-              <th>Details</th>
-            </tr>
-          </thead>
-        `;
-        const body = document.createElement("tbody");
+        const body = document.createElement("div");
+        body.className = "review-student-cards";
+        const studentGroups = new Map();
 
         if (!safeRecords.length) {
-          const emptyRow = document.createElement("tr");
-          const emptyCell = document.createElement("td");
+          const emptyCell = document.createElement("p");
           emptyCell.className = "instructor-to-review-empty";
-          emptyCell.colSpan = 9;
           emptyCell.textContent = "No cases are currently assigned to you for review.";
-          emptyRow.appendChild(emptyCell);
-          body.appendChild(emptyRow);
+          body.appendChild(emptyCell);
         } else {
           safeRecords.forEach((record) => {
-            const row = document.createElement("tr");
+            const row = document.createElement("article");
+            row.className = "review-case-card";
             const procedureKey = normalizeProcedureKey(
               record.procedure_name || record.procedure_key,
             );
-            const procedureCell = document.createElement("td");
+            const procedureCell = document.createElement("div");
             const procedureBadge = document.createElement("span");
             procedureBadge.className = "instructor-to-review-procedure-badge";
             procedureBadge.textContent =
@@ -2946,7 +2931,7 @@
               "Clinical Record";
             procedureCell.appendChild(procedureBadge);
 
-            const studentCell = document.createElement("td");
+            const studentCell = document.createElement("div");
             studentCell.className = "instructor-to-review-student";
             const studentName = document.createElement("strong");
             studentName.textContent = record.student_name || "Student";
@@ -2956,17 +2941,17 @@
               : "Student ID unavailable";
             studentCell.append(studentName, studentId);
 
-            const caseCell = document.createElement("td");
+            const caseCell = document.createElement("div");
             const caseCode = document.createElement("span");
             caseCode.className = "instructor-to-review-case-code";
             caseCode.textContent = record.case_no || "-";
             caseCell.appendChild(caseCode);
 
-            const diagnosisCell = document.createElement("td");
+            const diagnosisCell = document.createElement("div");
             diagnosisCell.className = "instructor-to-review-diagnosis";
             diagnosisCell.textContent = record.complete_diagnosis || "-";
 
-            const dateCell = document.createElement("td");
+            const dateCell = document.createElement("div");
             dateCell.className = "instructor-to-review-date";
             const rawDate = String(record.date_time_performed || "").trim();
             const parsedDate = PhilippineTime.parse(rawDate, true);
@@ -2990,7 +2975,7 @@
               dateCell.appendChild(datePrimary);
             }
 
-            const facilityCell = document.createElement("td");
+            const facilityCell = document.createElement("div");
             facilityCell.className = "instructor-to-review-facility";
             const facilityName = document.createElement("strong");
             facilityName.textContent = record.facility_name || "Facility not specified";
@@ -3003,7 +2988,7 @@
               .join("\n") || "No facility details";
             facilityCell.append(facilityName, facilityDetails);
 
-            const supervisorCell = document.createElement("td");
+            const supervisorCell = document.createElement("div");
             supervisorCell.className = "instructor-to-review-supervisor";
             const supervisorName = document.createElement("strong");
             supervisorName.textContent = record.supervisor_printed_name || "Supervisor not specified";
@@ -3016,7 +3001,7 @@
               .join("\n") || "No supervisor details";
             supervisorCell.append(supervisorName, supervisorDetails);
 
-            const statusCell = document.createElement("td");
+            const statusCell = document.createElement("div");
             const statusKey = getInstructorProcedureRecordReviewStatus(record) || "submitted";
             const status = document.createElement("span");
             status.className = "instructor-to-review-status";
@@ -3024,7 +3009,7 @@
             status.textContent = statusLabels[statusKey] || statusKey.replace(/_/g, " ");
             statusCell.appendChild(status);
 
-            const detailsCell = document.createElement("td");
+            const detailsCell = document.createElement("div");
             const detailsButton = document.createElement("button");
             detailsButton.type = "button";
             detailsButton.className = "instructor-to-review-details";
@@ -3047,8 +3032,40 @@
             });
             detailsCell.appendChild(detailsButton);
 
+            const studentKey = String(record.student_id || record.student_name || "unknown");
+            if (!studentGroups.has(studentKey)) {
+              const studentCard = document.createElement("section");
+              studentCard.className = "review-student-card";
+              const studentHeader = document.createElement("header");
+              studentHeader.className = "review-student-header";
+              const studentCount = document.createElement("span");
+              studentCount.className = "instructor-to-review-count";
+              studentHeader.append(studentCell, studentCount);
+              const cases = document.createElement("div");
+              cases.className = "review-case-grid";
+              studentCard.append(studentHeader, cases);
+              body.appendChild(studentCard);
+              studentGroups.set(studentKey, { cases, studentCount, count: 0 });
+            }
+            const group = studentGroups.get(studentKey);
+            group.count++;
+            group.studentCount.textContent = `${group.count} ${group.count === 1 ? "case" : "cases"}`;
+            [
+              [procedureCell, "Procedure"], [caseCell, "Case No."],
+              [diagnosisCell, "Complete Diagnosis"], [dateCell, "Date & Time"],
+              [facilityCell, "Facility"], [supervisorCell, "Supervised By"],
+              [statusCell, "Status"],
+            ].forEach(([field, text]) => {
+              const label = document.createElement("span");
+              label.className = "review-field-label";
+              label.textContent = text;
+              // Keep labels separate from the existing text content.
+              const content = document.createElement("div");
+              content.append(...field.childNodes);
+              field.replaceChildren(label, content);
+            });
+            detailsCell.className = "review-case-actions";
             row.append(
-              studentCell,
               procedureCell,
               caseCell,
               diagnosisCell,
@@ -3058,13 +3075,11 @@
               statusCell,
               detailsCell,
             );
-            body.appendChild(row);
+            group.cases.appendChild(row);
           });
         }
 
-        table.appendChild(body);
-        tableWrap.appendChild(table);
-        card.append(cardHeader, tableWrap);
+        card.append(cardHeader, body);
         instructorStudentProcedureTables.appendChild(card);
         instructorStudentProcedureTables.style.removeProperty("display");
       }
