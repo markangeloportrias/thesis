@@ -39,7 +39,7 @@ jobs:
           PHP
           php -l api/config.php
 
-      - name: Recover interrupted dashboard uploads
+      - name: Recover interrupted deployment uploads
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -51,15 +51,15 @@ jobs:
           import os
           import uuid
 
-          # Only recover the known conflicting temporary files; preserve live pages.
-          pages = ('student.html', 'instructor.html')
+          # Recover only known temporary uploads; preserve live files and sync state.
+          files = ('student.html', 'instructor.html', '.ftp-deploy-sync-state.json')
           with ftplib.FTP(timeout=30) as ftp:
               ftp.connect(os.environ['FTP_SERVER'], int(os.environ.get('FTP_PORT') or '21'))
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.cwd('./')
-              for page in pages:
-                  temporary = '.in.' + page + '.'
-                  backup = '.' + page + '-upload-backup-' + uuid.uuid4().hex + '.tmp'
+              for filename in files:
+                  temporary = '.in.' + filename + '.'
+                  backup = '.' + filename + '-upload-backup-' + uuid.uuid4().hex + '.tmp'
                   try:
                       ftp.sendcmd('RNFR ' + temporary)
                   except ftplib.error_perm as error:
