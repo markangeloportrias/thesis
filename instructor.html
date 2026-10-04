@@ -366,21 +366,29 @@
     <style id="instructor-review-nested-cards">
       #instructorStudentProcedureTables tr.review-target-row { outline: 2px solid #0b63b6; outline-offset: -2px; scroll-margin-block: 100px; }
       html body.role-instructor #instructorStudentProcedureTables tr.review-target-row > td { background: #fff5c2 !important; }
-      .role-instructor .review-student-cards { display: grid; gap: 20px; padding: 0; }
-      .role-instructor .review-student-card { min-width: 0; border: 1px solid #cbddee; border-radius: 14px; background: #f3f8fd; overflow: hidden; }
-      .role-instructor .review-student-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #dbe7f1; }
-      .role-instructor .review-case-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 8px 16px; }
-      .role-instructor .review-case-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .6fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, .8fr); align-items: center; gap: 7px 14px; min-width: 0; padding: 8px 16px; border: 1px solid #d4e2ef; border-radius: 12px; background: #fff; box-shadow: 0 3px 10px rgba(0, 41, 107, .04); color: #21466f; font-size: 12px; }
-      .role-instructor .review-case-card > div { min-width: 0; overflow-wrap: anywhere; }
-      .role-instructor .review-case-card .instructor-to-review-diagnosis { line-height: 1.25; }
-      .role-instructor .review-field-label { display: block; margin-bottom: 3px; color: #647d98; font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-      .role-instructor .review-case-actions { display: flex; justify-content: flex-end; align-items: flex-end; }
+      #instructorStudentProcedureTables .review-student-cards { display: grid; gap: 12px; padding: 0; }
+      #instructorStudentProcedureTables .review-student-card { min-width: 0; border: 1px solid #d5e2ef; border-radius: 10px; background: #f5f8fc; overflow: hidden; }
+      #instructorStudentProcedureTables .review-student-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #dce7f1; background: #edf4fb; }
+      #instructorStudentProcedureTables .review-student-header .instructor-to-review-student { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+      #instructorStudentProcedureTables .review-student-header .instructor-to-review-student small { margin: 0; }
+      html body.role-instructor #instructorStudentProcedureTables .review-student-header .instructor-to-review-count { padding: 4px 8px !important; font-size: 10px !important; box-shadow: none; }
+      #instructorStudentProcedureTables .review-case-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 6px; }
+      #instructorStudentProcedureTables .review-case-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .65fr) minmax(0, 2.3fr) minmax(0, .9fr) minmax(0, 1.5fr) minmax(0, 1.3fr) minmax(0, .65fr) minmax(0, .65fr); align-items: center; gap: 6px 10px; min-width: 0; padding: 7px 10px; border: 1px solid #dce6f0; border-radius: 7px; background: #fff; box-shadow: none; color: #294766; font-size: 11px; line-height: 1.3; }
+      #instructorStudentProcedureTables .review-case-card:hover,
+      #instructorStudentProcedureTables .review-case-card:focus-within { border-color: #9ebfdd; background: #f8fbff; }
+      #instructorStudentProcedureTables .review-case-card > div { min-width: 0; overflow-wrap: anywhere; }
+      #instructorStudentProcedureTables .review-case-card .instructor-to-review-diagnosis { font-size: 11px; line-height: 1.3; }
+      #instructorStudentProcedureTables .review-field-label { display: block; margin-bottom: 2px; color: #5d738b; font-size: 9px; line-height: 1.15; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; }
+      #instructorStudentProcedureTables .review-case-actions { display: flex; justify-content: flex-end; align-items: center; }
+      html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-details { min-height: 28px !important; padding: 0 8px !important; border-radius: 6px !important; background: #0861ad !important; box-shadow: none; }
+      html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-status { min-width: 0; padding: 3px 8px; font-size: 10px; }
+      html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-procedure-badge { padding: 3px 6px; font-size: 9px; }
       @media (max-width: 1400px) {
-        .role-instructor .review-case-card { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        #instructorStudentProcedureTables .review-case-card { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       }
       @media (max-width: 600px) {
-        .role-instructor .review-case-grid { padding: 10px; }
-        .role-instructor .review-case-card { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 7px 14px; }
+        #instructorStudentProcedureTables .review-case-card { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px; }
+        #instructorStudentProcedureTables .review-student-header { padding: 8px 10px; }
       }
     </style>
     <style id="instructor-settings-minimal-styles">
