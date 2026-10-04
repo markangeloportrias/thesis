@@ -52,7 +52,7 @@ jobs:
           import uuid
 
           # Recover only known temporary uploads; preserve live files and sync state.
-          files = ('student.html', 'instructor.html', '.ftp-deploy-sync-state.json')
+          files = ('student.html', 'instructor.html', 'admin-dashboard.html', '.ftp-deploy-sync-state.json')
           with ftplib.FTP(timeout=30) as ftp:
               ftp.connect(os.environ['FTP_SERVER'], int(os.environ.get('FTP_PORT') or '21'))
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
