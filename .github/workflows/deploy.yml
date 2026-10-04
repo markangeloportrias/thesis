@@ -39,7 +39,7 @@ jobs:
           PHP
           php -l api/config.php
 
-      - name: Recover interrupted student page upload
+      - name: Recover interrupted dashboard uploads
         env:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
@@ -51,24 +51,26 @@ jobs:
           import os
           import uuid
 
-          # Match the deployment's FTP root and protocol. Preserve the live page.
-          temporary = '.in.student.html.'
-          backup = '.student-upload-backup-' + uuid.uuid4().hex + '.tmp'
+          # Only recover the known conflicting temporary files; preserve live pages.
+          pages = ('student.html', 'instructor.html')
           with ftplib.FTP(timeout=30) as ftp:
               ftp.connect(os.environ['FTP_SERVER'], int(os.environ.get('FTP_PORT') or '21'))
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.cwd('./')
-              try:
-                  ftp.sendcmd('RNFR ' + temporary)
-              except ftplib.error_perm as error:
-                  if not str(error).startswith('550'):
-                      raise
-                  # 550 can mean missing or inaccessible. Let the normal upload
-                  # proceed, but do not claim an inaccessible file was repaired.
-                  print('Temporary upload file absent or inaccessible; proceeding with normal deployment.')
-              else:
-                  ftp.voidcmd('RNTO ' + backup)
-                  print('Preserved interrupted student upload as ' + backup)
+              for page in pages:
+                  temporary = '.in.' + page + '.'
+                  backup = '.' + page + '-upload-backup-' + uuid.uuid4().hex + '.tmp'
+                  try:
+                      ftp.sendcmd('RNFR ' + temporary)
+                  except ftplib.error_perm as error:
+                      if not str(error).startswith('550'):
+                          raise
+                      # 550 can mean missing or inaccessible. Let the normal upload
+                      # proceed, but do not claim an inaccessible file was repaired.
+                      print(temporary + ' absent or inaccessible; proceeding with normal deployment.')
+                  else:
+                      ftp.voidcmd('RNTO ' + backup)
+                      print('Preserved interrupted upload as ' + backup)
           PY
 
       - name: Deploy to Hostinger via FTP
