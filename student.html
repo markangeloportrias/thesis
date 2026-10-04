@@ -613,6 +613,22 @@
     <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260928-mobile-chat-height-1" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
     <style id="student-instructor-assignment-styles">
+      /* Keep the final columns in the same grid when the sidebar expands.
+         A fixed sticky offset cannot track percentage-based column widths. */
+      html body.role-student #recordProcedureTables .procedure-records-table thead tr:first-child :is(th:last-child, th:nth-last-child(2)),
+      html body.role-student #recordProcedureTables .procedure-records-table tbody :is(td:last-child, td:nth-last-child(2)) {
+        position: static;
+        right: auto;
+        z-index: auto;
+        box-shadow: none;
+      }
+
+      @media (min-width: 901px) {
+        html body.role-student #deliveryAssistedWorkspace #recordProcedureTables .procedure-records-table {
+          min-width: 1480px !important;
+        }
+      }
+
       html body.role-student .record-assignment-cell {
         vertical-align: middle;
         width: 10% !important;
@@ -3913,10 +3929,10 @@
           table.setAttribute("aria-labelledby", title.id);
           table.innerHTML = `
             <colgroup>
-              <col style="width:14%"><col style="width:5%"><col style="width:16%">
-              <col style="width:7%"><col style="width:13%"><col style="width:10%">
-              <col style="width:11%"><col style="width:8%"><col style="width:10%">
-              <col style="width:7%"><col style="width:9%">
+              <col style="width:13%"><col style="width:5%"><col style="width:14%">
+              <col style="width:7%"><col style="width:11%"><col style="width:8%">
+              <col style="width:9%"><col style="width:6%"><col style="width:10%">
+              <col style="width:7%"><col style="width:10%">
             </colgroup>
             <thead>
               <tr>
