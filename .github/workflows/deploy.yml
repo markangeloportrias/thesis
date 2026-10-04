@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# Allow an upload to finish before another deployment uses the same FTP files.
+concurrency:
+  group: hostinger-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
