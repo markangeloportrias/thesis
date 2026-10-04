@@ -1,4 +1,18 @@
 /* Match Student My Progress, scoped to the visible admin clinical progress tables. */
+/* Give diagnosis six percentage points from the three supervision columns. */
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table col:nth-child(3) {
+  width: 24% !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table col:nth-child(6) {
+  width: 10% !important;
+}
+
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table col:nth-child(7),
+html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords table.ip-clinical-table col:nth-child(8) {
+  width: 9% !important;
+}
+
 html body.role-admin #yearlyProgressLegacyMount #instructorProgressCopy.yearly-progress-detail #ipRecords .clinical-form-table-container {
   box-sizing: border-box !important;
   padding: 0 !important;
