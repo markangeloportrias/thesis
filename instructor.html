@@ -364,6 +364,8 @@
       }
     </style>
     <style id="instructor-review-nested-cards">
+      #instructorStudentProcedureTables tr.review-target-row { outline: 2px solid #0b63b6; outline-offset: -2px; scroll-margin-block: 100px; }
+      html body.role-instructor #instructorStudentProcedureTables tr.review-target-row > td { background: #fff5c2 !important; }
       .role-instructor .review-student-cards { display: grid; gap: 20px; padding: 0; }
       .role-instructor .review-student-card { min-width: 0; border: 1px solid #cbddee; border-radius: 14px; background: #f3f8fd; overflow: hidden; }
       .role-instructor .review-student-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #dbe7f1; }
@@ -2701,6 +2703,18 @@
         container.style.removeProperty("display");
       }
 
+      function instructorRecordScrollKey(record) {
+        const identity = record.record_identity || record;
+        return JSON.stringify([record.id, ...[
+          "student_id", "procedure_key", "case_no", "patient_name",
+          "academic_year", "date_time_performed", "created_at",
+          "patient_address", "complete_diagnosis", "facility_name",
+          "facility_address", "facility_contact_number", "supervisor_printed_name",
+          "supervisor_contact_number", "supervisor_position_designation",
+          "supervisor_license_no", "supervisor_license_expiry_date",
+        ].map((field) => String(identity[field] ?? record[field] ?? ""))]);
+      }
+
       function renderInstructorProcedureTables(
         container,
         records,
@@ -2769,6 +2783,7 @@
           } else {
             procedureRecords.forEach((record) => {
               const row = document.createElement("tr");
+              row.dataset.recordScrollKey = instructorRecordScrollKey(record);
               const values = [
                 `${record.patient_name || "-"}${record.patient_address ? `\n${record.patient_address}` : ""}`,
                 record.case_no || "-",
@@ -3001,8 +3016,34 @@
             detailsButton.type = "button";
             detailsButton.className = "instructor-to-review-details";
             detailsButton.innerHTML = '<i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i><span>Details</span>';
-            detailsButton.addEventListener("click", () => {
-              showRecordDetail(record);
+            detailsButton.addEventListener("click", async () => {
+              const targetKey = instructorRecordScrollKey(record);
+              selectedCurrentRecordsBlock = {
+                id: record.block_id || record.block_label || "",
+                label: record.block_label || "Registered block",
+                schoolYear: record.registered_school_year || record.academic_year || "",
+              };
+              selectedCurrentRecordsStudent = {
+                student_id: record.student_id,
+                student_name: record.student_name || "Student",
+                block_label: record.block_label || "Registered block",
+              };
+              await setActiveSection("my-records", {
+                preserveCurrentRecordsBlock: true,
+                preserveSelectedStudent: true,
+              });
+              requestAnimationFrame(() => {
+                if (activeType !== "my-records" ||
+                    String(selectedCurrentRecordsStudent?.student_id) !== String(record.student_id)) return;
+                const target = Array.from(instructorStudentProcedureTables.querySelectorAll("tr[data-record-scroll-key]"))
+                  .find((row) => row.dataset.recordScrollKey === targetKey);
+                if (!target) return;
+                target.classList.add("review-target-row");
+                target.setAttribute("tabindex", "-1");
+                target.focus({ preventScroll: true });
+                target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+                window.setTimeout(() => target.classList.remove("review-target-row"), 4000);
+              });
             });
             detailsCell.appendChild(detailsButton);
 
@@ -7730,7 +7771,7 @@
           countActive.style.display = hidesCount ? "none" : "inline-flex";
 
         if (options.updateHistory !== false) pushInstructorHistory(type);
-        loadRecords();
+        return loadRecords();
       }
 
       function restoreInstructorFallbackNavigation() {
