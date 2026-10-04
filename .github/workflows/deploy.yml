@@ -39,6 +39,38 @@ jobs:
           PHP
           php -l api/config.php
 
+      - name: Recover interrupted student page upload
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+        run: |
+          python3 <<'PY'
+          import ftplib
+          import os
+          import uuid
+
+          # Match the deployment's FTP root and protocol. Preserve the live page.
+          temporary = '.in.student.html.'
+          backup = '.student-upload-backup-' + uuid.uuid4().hex + '.tmp'
+          with ftplib.FTP(timeout=30) as ftp:
+              ftp.connect(os.environ['FTP_SERVER'], int(os.environ.get('FTP_PORT') or '21'))
+              ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
+              ftp.cwd('./')
+              try:
+                  ftp.sendcmd('RNFR ' + temporary)
+              except ftplib.error_perm as error:
+                  if not str(error).startswith('550'):
+                      raise
+                  # 550 can mean missing or inaccessible. Let the normal upload
+                  # proceed, but do not claim an inaccessible file was repaired.
+                  print('Temporary upload file absent or inaccessible; proceeding with normal deployment.')
+              else:
+                  ftp.voidcmd('RNTO ' + backup)
+                  print('Preserved interrupted student upload as ' + backup)
+          PY
+
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
