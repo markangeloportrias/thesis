@@ -85,7 +85,9 @@
   function exportSelection(records) {
     const selected = [];
     for (const [key, target] of Object.entries(targets)) {
-      const candidates = records.filter((record) => procedureKey(record) === key);
+      const candidates = records.filter((record) =>
+        String(record?.record_status || record?.status || '').trim().toLowerCase() === 'verified' &&
+        procedureKey(record) === key);
       selected.push(...candidates.slice(0, target));
     }
     return selected;

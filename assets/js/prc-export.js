@@ -81,6 +81,9 @@ window.PrcExport = {
       function getPrcExportRecordsByProcedure(records) {
         return PRC_PREVIEW_PROCEDURE_ORDER.reduce((groupedRecords, procedureKey) => {
           groupedRecords[procedureKey] = (Array.isArray(records) ? records : [])
+            // Both the preview and DOCX use this selection. Filter before the
+            // form limit so unverified entries never consume a numbered slot.
+            .filter((record) => String(record?.record_status || record?.status || "").trim().toLowerCase() === "verified")
             .filter((record) => normalizeProcedureKey(record.procedure_key || record.procedure_name || record.procedureKey || record.procedureName) === procedureKey)
             .slice(0, PROCEDURE_TARGETS[procedureKey] || 0);
           return groupedRecords;
