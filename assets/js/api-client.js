@@ -2418,7 +2418,37 @@
   // output twice before the first response reaches the page.
   var pendingMutationRequests = new Map();
   var completedMutationRequests = new Map();
+  var pendingReadRequests = new Map();
   var mutationDuplicateWindowMs = 1500;
+
+  async function fetchMysqlResponse(url, options) {
+    // Share only concurrent reads. Never cache completed responses, combine
+    // writes, or couple requests with independently controlled abort signals.
+    var readKey = '';
+    if (String(options.method || 'GET').toUpperCase() === 'GET' && !options.signal) {
+      var keyOptions = Object.assign({}, options);
+      delete keyOptions.silent;
+      readKey = JSON.stringify([url, keyOptions]);
+    }
+    var pending = readKey && pendingReadRequests.get(readKey);
+    if (!pending) {
+      pending = (async function () {
+        var response = await fetch(url, options);
+        var result = await response.json().catch(function () { return null; });
+        return { response: response, result: result };
+      })();
+      if (readKey) pendingReadRequests.set(readKey, pending);
+    }
+    try {
+      var loaded = await pending;
+      // Callers may sort or annotate their records; give each its own data.
+      return { response: loaded.response, result: readKey ? JSON.parse(JSON.stringify(loaded.result)) : loaded.result };
+    } finally {
+      if (readKey && pendingReadRequests.get(readKey) === pending) {
+        pendingReadRequests.delete(readKey);
+      }
+    }
+  }
 
   function mutationRequestKey(path, options) {
     var method = String((options && options.method) || 'GET').toUpperCase();
@@ -2437,6 +2467,7 @@
         throw duplicateError;
       }
       pendingMutationRequests.set(mutationKey, true);
+      pendingReadRequests.clear();
     }
     var headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
     var token = sessionStorage.getItem('thesis_api_token') || '';
@@ -2445,8 +2476,9 @@
     var finishLoading;
     try {
       if (window.StudentLoading && !options.silent) finishLoading = window.StudentLoading.begin(path, options);
-      var response = await fetch(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
-      var result = await response.json().catch(function () { return null; });
+      var loaded = await fetchMysqlResponse(apiBase + path, Object.assign({}, options, { headers: headers, cache: 'no-store' }));
+      var response = loaded.response;
+      var result = loaded.result;
       if (response.status === 401 && token) {
         sessionStorage.removeItem('thesis_api_token');
         window.dispatchEvent(new CustomEvent('portal-session-expired'));
@@ -2466,7 +2498,10 @@
       return result;
     } finally {
       if (finishLoading) finishLoading();
-      if (mutationKey) pendingMutationRequests.delete(mutationKey);
+      if (mutationKey) {
+        pendingMutationRequests.delete(mutationKey);
+        pendingReadRequests.clear();
+      }
     }
   }
 
