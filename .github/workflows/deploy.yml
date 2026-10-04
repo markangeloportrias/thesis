@@ -49,17 +49,33 @@ jobs:
           python3 <<'PY'
           import ftplib
           import os
+          from pathlib import Path, PurePosixPath
+          import subprocess
           import uuid
 
-          # Recover only known temporary uploads; preserve live files and sync state.
-          files = ('student.html', 'instructor.html', 'admin-dashboard.html', '.ftp-deploy-sync-state.json')
+          # Only consider temporary counterparts of deployed repository files.
+          # Match the FTP action's exclusions and preserve all live files.
+          tracked = subprocess.check_output(['git', 'ls-files', '-z']).decode('utf-8').split('\0')
+          files = []
+          for filename in tracked:
+              path = PurePosixPath(filename)
+              if not filename or any(part.startswith('.git') or part == 'node_modules' for part in path.parts):
+                  continue
+              if path.is_absolute() or '..' in path.parts or '\r' in filename or '\n' in filename:
+                  raise ValueError('Unsupported deployment path')
+              if Path(filename).is_file():
+                  files.append(path)
+          files.append(PurePosixPath('.ftp-deploy-sync-state.json'))
+          recovered = 0
+          unavailable = 0
           with ftplib.FTP(timeout=30) as ftp:
               ftp.connect(os.environ['FTP_SERVER'], int(os.environ.get('FTP_PORT') or '21'))
               ftp.login(os.environ['FTP_USERNAME'], os.environ['FTP_PASSWORD'])
               ftp.cwd('./')
-              for filename in files:
-                  temporary = '.in.' + filename + '.'
-                  backup = '.' + filename + '-upload-backup-' + uuid.uuid4().hex + '.tmp'
+              for path in files:
+                  # The .in. prefix belongs to the basename, not its directory.
+                  temporary = str(path.with_name('.in.' + path.name + '.'))
+                  backup = str(path.with_name('.upload-backup-' + uuid.uuid4().hex + '.tmp'))
                   try:
                       ftp.sendcmd('RNFR ' + temporary)
                   except ftplib.error_perm as error:
@@ -67,10 +83,12 @@ jobs:
                           raise
                       # 550 can mean missing or inaccessible. Let the normal upload
                       # proceed, but do not claim an inaccessible file was repaired.
-                      print(temporary + ' absent or inaccessible; proceeding with normal deployment.')
+                      unavailable += 1
                   else:
                       ftp.voidcmd('RNTO ' + backup)
-                      print('Preserved interrupted upload as ' + backup)
+                      recovered += 1
+                      print('Preserved ' + temporary + ' as ' + backup)
+          print(f'Recovered {recovered} temporary uploads; {unavailable} absent or inaccessible. Normal deployment follows.')
           PY
 
       - name: Deploy to Hostinger via FTP
