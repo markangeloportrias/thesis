@@ -364,7 +364,7 @@
       }
     </style>
     <style id="instructor-review-nested-cards">
-      .role-instructor .review-student-cards { display: grid; gap: 20px; padding: 20px; }
+      .role-instructor .review-student-cards { display: grid; gap: 20px; padding: 0; }
       .role-instructor .review-student-card { min-width: 0; border: 1px solid #cbddee; border-radius: 14px; background: #f3f8fd; overflow: hidden; }
       .role-instructor .review-student-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid #dbe7f1; }
       .role-instructor .review-case-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; padding: 8px 16px; }
@@ -377,7 +377,6 @@
         .role-instructor .review-case-card { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       }
       @media (max-width: 600px) {
-        .role-instructor .review-student-cards { padding: 10px; }
         .role-instructor .review-case-grid { padding: 10px; }
         .role-instructor .review-case-card { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 7px 14px; }
       }
@@ -2893,21 +2892,6 @@
         };
 
         instructorStudentProcedureTables.replaceChildren();
-        const card = document.createElement("div");
-        card.className = "instructor-to-review-card";
-
-        const cardHeader = document.createElement("div");
-        cardHeader.className = "instructor-to-review-card-header";
-        const heading = document.createElement("div");
-        const title = document.createElement("h3");
-        title.textContent = "Assigned Cases";
-        const subtitle = document.createElement("p");
-        subtitle.textContent = "Clinical records assigned to you for review.";
-        heading.append(title, subtitle);
-        const count = document.createElement("span");
-        count.className = "instructor-to-review-count";
-        count.textContent = `${safeRecords.length} ${safeRecords.length === 1 ? "case" : "cases"}`;
-        cardHeader.append(heading, count);
 
         const body = document.createElement("div");
         body.className = "review-student-cards";
@@ -3082,8 +3066,7 @@
           });
         }
 
-        card.append(cardHeader, body);
-        instructorStudentProcedureTables.appendChild(card);
+        instructorStudentProcedureTables.appendChild(body);
         instructorStudentProcedureTables.style.removeProperty("display");
       }
 
