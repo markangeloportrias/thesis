@@ -85,6 +85,19 @@ html body:is(.role-admin, .role-instructor, .role-student) :is(
   box-shadow: 0 5px 12px rgba(0, 41, 107, .1) !important;
 }
 
+html body.role-instructor #edit-requests-view .edit-requests-panel-icon {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border: 1px solid #e9bd00 !important;
+  border-radius: 12px !important;
+  background: #ffd500 !important;
+  color: #00296b !important;
+  font-size: 19px !important;
+}
+
 @media (max-width: 600px) {
   html body.role-student .workspace-header .workspace-title,
   html body.role-student .chat-directory-title { font-size: 24px !important; }
