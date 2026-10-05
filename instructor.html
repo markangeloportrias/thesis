@@ -6684,7 +6684,14 @@
         if (isToReview) {
           const assignedRecords = (Array.isArray(list) ? list : []).filter(
             isInstructorCaseAssigned,
-          );
+          ).sort((a, b) => {
+            const recordTime = (record) => {
+              const raw = record?.updated_at || record?.created_at || record?.date_time_performed || "";
+              const parsed = PhilippineTime.parse(raw, true);
+              return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+            };
+            return recordTime(b) - recordTime(a) || Number(b?.id || 0) - Number(a?.id || 0);
+          });
           if (activeTitleText) {
             activeTitleText.classList.remove("current-records-student-name");
           }
