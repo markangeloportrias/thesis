@@ -1,0 +1,71 @@
+/* Shared page headings; table, dialog, and export typography stays independent. */
+html body:is(.role-admin, .role-instructor, .role-student) :is(
+  .workspace-header .workspace-title,
+  .instructor-title-copy .workspace-title,
+  #active-title, #active-title-text,
+  .students-panel-header h3, .edit-requests-panel-header h3,
+  .activity-heading h2, .settings-minimal-header h2,
+  .notifications-page-header h3, .chat-directory-title
+) {
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.6px !important;
+  color: #00296b !important;
+  margin: 0 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+/* Match the specificity of existing per-page heading overrides. */
+html body.role-instructor .content-section #active-title-text.current-records-student-name,
+html body.role-instructor #settingsView.settings-minimal .settings-minimal-header h2,
+html body.role-instructor #yearly-report-view .workspace-title,
+html body.role-student #settingsTab.settings-minimal .workspace-title {
+  font-size: 28px !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) :is(
+  .workspace-header .workspace-subtitle,
+  .instructor-title-copy .workspace-subtitle, #active-subtitle,
+  .students-panel-header p, .edit-requests-panel-header p,
+  .activity-heading p, .notifications-page-header p, .chat-directory-subtitle
+) {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  font-weight: 400 !important;
+  color: #587aaf !important;
+  margin: 6px 0 0 !important;
+  white-space: normal !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) :is(
+  .instructor-title-icon, .workspace-header .student-title-icon,
+  .students-panel-icon, .edit-requests-panel-icon,
+  .activity-heading-icon, .settings-minimal-title-icon, .notifications-title-icon
+) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px !important;
+  border: 1px solid #e9bd00 !important;
+  border-radius: 14px !important;
+  background: #ffd500 !important;
+  color: #00296b !important;
+  font-size: 22px !important;
+  box-shadow: 0 5px 12px rgba(0, 41, 107, .1) !important;
+}
+
+html body:is(.role-admin, .role-instructor, .role-student) :is(.instructor-title-heading, .student-title-heading) {
+  gap: 15px !important;
+  align-items: center !important;
+}
+
+@media (max-width: 600px) {
+  html body.role-student .workspace-header .workspace-title,
+  html body.role-student .chat-directory-title { font-size: 24px !important; }
+}
