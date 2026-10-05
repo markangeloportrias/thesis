@@ -65,6 +65,26 @@ html body:is(.role-admin, .role-instructor, .role-student) :is(.instructor-title
   align-items: center !important;
 }
 
+html body:is(.role-admin, .role-instructor, .role-student) :is(
+  .edit-requests-panel-header .edit-requests-panel-icon,
+  .notifications-page-header .notifications-title-icon,
+  .activity-heading .activity-heading-icon,
+  .settings-minimal-title .settings-minimal-title-icon
+) {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  flex: 0 0 44px !important;
+  padding: 0 !important;
+  border: 1px solid #e9bd00 !important;
+  border-radius: 12px !important;
+  background: #ffd500 !important;
+  color: #00296b !important;
+  font-size: 19px !important;
+  box-shadow: 0 5px 12px rgba(0, 41, 107, .1) !important;
+}
+
 @media (max-width: 600px) {
   html body.role-student .workspace-header .workspace-title,
   html body.role-student .chat-directory-title { font-size: 24px !important; }
