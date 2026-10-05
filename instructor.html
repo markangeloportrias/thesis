@@ -6803,9 +6803,7 @@
         const detailContent = document.getElementById("detailContent");
 
         const assignedToCurrentInstructor = isInstructorCaseAssigned(rec);
-        const status = assignedToCurrentInstructor
-          ? (rec.status || (rec.checked_by ? "Verified" : "Submitted"))
-          : "Not assigned CI";
+        const status = rec.status || (rec.checked_by ? "Verified" : "Submitted");
         const detailValue = (value) => escapeHtml(value || "N/A");
         detailContent.innerHTML = `
           <section class="detail-group detail-group-overview">
