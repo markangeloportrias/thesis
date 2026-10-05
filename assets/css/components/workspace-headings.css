@@ -7,7 +7,7 @@ html body:is(.role-admin, .role-instructor, .role-student) :is(
   .activity-heading h2, .settings-minimal-header h2,
   .notifications-page-header h3, .chat-directory-title
 ) {
-  font-size: 28px !important;
+  font-size: 24px !important;
   line-height: 1.2 !important;
   font-weight: 800 !important;
   letter-spacing: -0.6px !important;
@@ -22,7 +22,7 @@ html body.role-instructor .content-section #active-title-text.current-records-st
 html body.role-instructor #settingsView.settings-minimal .settings-minimal-header h2,
 html body.role-instructor #yearly-report-view .workspace-title,
 html body.role-student #settingsTab.settings-minimal .workspace-title {
-  font-size: 28px !important;
+  font-size: 24px !important;
   line-height: 1.2 !important;
   font-weight: 800 !important;
 }
@@ -33,7 +33,7 @@ html body:is(.role-admin, .role-instructor, .role-student) :is(
   .students-panel-header p, .edit-requests-panel-header p,
   .activity-heading p, .notifications-page-header p, .chat-directory-subtitle
 ) {
-  font-size: 15px !important;
+  font-size: 13px !important;
   line-height: 1.5 !important;
   font-weight: 400 !important;
   color: #587aaf !important;
@@ -49,19 +49,19 @@ html body:is(.role-admin, .role-instructor, .role-student) :is(
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 48px !important;
-  height: 48px !important;
-  flex: 0 0 48px !important;
+  width: 44px !important;
+  height: 44px !important;
+  flex: 0 0 44px !important;
   border: 1px solid #e9bd00 !important;
   border-radius: 14px !important;
   background: #ffd500 !important;
   color: #00296b !important;
-  font-size: 22px !important;
+  font-size: 19px !important;
   box-shadow: 0 5px 12px rgba(0, 41, 107, .1) !important;
 }
 
 html body:is(.role-admin, .role-instructor, .role-student) :is(.instructor-title-heading, .student-title-heading) {
-  gap: 15px !important;
+  gap: 12px !important;
   align-items: center !important;
 }
 
