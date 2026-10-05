@@ -779,7 +779,7 @@ try {
                 if (is_array($decodedIdentity)) $identity = $decodedIdentity;
             }
             if ($identity !== []) {
-                [$commentWhere, $commentParams] = caseMutationSelection('resolve', $identity);
+                [$commentWhere, $commentParams] = caseMutationSelection($caseId, $identity);
                 $caseStmt = $pdo->prepare("SELECT * FROM case_records WHERE $commentWhere LIMIT 2");
                 $caseStmt->execute($commentParams);
                 $matches = $caseStmt->fetchAll();
@@ -1267,7 +1267,7 @@ try {
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
             if ($identity !== [] || $id === 'resolve') {
                 if ($identity === []) respond(['ok' => false, 'message' => 'Record identity is required.'], 422);
-                [$commentWhere, $commentParams] = caseMutationSelection('resolve', $identity);
+                [$commentWhere, $commentParams] = caseMutationSelection($id, $identity);
                 $caseStmt = $pdo->prepare("SELECT * FROM case_records WHERE $commentWhere LIMIT 2");
                 $caseStmt->execute($commentParams);
                 $matches = $caseStmt->fetchAll();

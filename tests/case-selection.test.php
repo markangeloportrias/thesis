@@ -69,3 +69,15 @@ checkSelection($edit->rowCount() === 1, 'Editing original inputs must target exa
 checkSelection($db->query('SELECT COUNT(*) FROM case_records')->fetchColumn() === $beforeCount, 'Editing must not create a record');
 checkSelection($db->query('SELECT complete_diagnosis FROM case_records WHERE rowid=1')->fetchColumn() === 'Other diagnosis', 'Editing must preserve other rows with shared IDs');
 echo "PASS: editing replaces original inputs without adding or changing other records\n";
+
+// Comments must retain the supplied ID even when all other details match.
+$db->exec("UPDATE case_records SET id=rowid, archived_at=NULL, case_no='003', complete_diagnosis='Same diagnosis'");
+[$commentWhere, $commentParams] = caseMutationSelection('2', $identity);
+$commentCase = $db->prepare("SELECT id FROM case_records WHERE $commentWhere LIMIT 2");
+$commentCase->execute($commentParams);
+checkSelection(array_map('intval', $commentCase->fetchAll(PDO::FETCH_COLUMN)) === [2], 'Comment lookup must preserve the selected ID for identical record details');
+[$resolveWhere, $resolveParams] = caseMutationSelection('resolve', $identity);
+$resolveCase = $db->prepare("SELECT id FROM case_records WHERE $resolveWhere LIMIT 2");
+$resolveCase->execute($resolveParams);
+checkSelection(count($resolveCase->fetchAll()) === 2, 'Identity-only comment lookup must still expose ambiguity');
+echo "PASS: comment selection retains IDs and identity-only ambiguity checks\n";
