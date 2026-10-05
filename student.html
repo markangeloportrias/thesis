@@ -4248,6 +4248,7 @@
             }
           });
 
+          await hydrateCaseComments(silentRefresh);
           await loadStudentCaseInstructorOptions();
           renderDeliveryRecordsTable();
         } catch (error) {
