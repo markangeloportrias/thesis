@@ -720,6 +720,7 @@
     <script async src="assets/js/prc-export.js?v=9-verified-only"></script>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-compact" />
+    <link rel="stylesheet" href="assets/css/pages/instructor-current-records.css?v=20261007-1" />
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -1249,6 +1250,12 @@
               </nav>
             </div>
             <div id="currentRecordsStudentRoster" class="table-wrapper" style="display:none">
+              <div id="currentRecordsDirectory">
+                <div class="directory-toolbar"><label>Academic Year <select id="currentRecordsYear" aria-label="Academic year"></select></label></div>
+                <div id="currentRecordsSummary" class="directory-summary"></div>
+                <div class="directory-toolbar"><h3>Registered Blocks</h3><label><i class="fas fa-search" aria-hidden="true"></i><input id="currentRecordsBlockSearch" type="search" placeholder="Search block..." aria-label="Search registered blocks"></label></div>
+                <div class="directory-table-scroll"><table class="directory-table"><thead><tr><th>Block</th><th>Academic Year</th><th>Students</th><th>Pending Review</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody id="currentRecordsDirectoryBody"></tbody></table></div>
+              </div>
               <div class="current-records-navigator">
                 <div>
                   <h3 id="currentRecordsLevelTitle">Registered Blocks</h3>
@@ -6290,10 +6297,30 @@
         });
       }
 
+      function filterCurrentRecordsBlocks() {
+        const query = document.getElementById("currentRecordsBlockSearch").value.trim().toLowerCase();
+        let visible = 0;
+        document.querySelectorAll("#currentRecordsDirectoryBody tr").forEach(row => {
+          row.hidden = !row.dataset.blockLabel.includes(query);
+          if (!row.hidden) visible++;
+        });
+        const empty = document.getElementById("currentRecordsStudentRosterEmpty");
+        empty.textContent = query ? "No matching blocks found." : "No registered blocks found.";
+        empty.style.display = visible ? "none" : "block";
+      }
+      document.getElementById("currentRecordsBlockSearch").addEventListener("input", filterCurrentRecordsBlocks);
+      document.getElementById("currentRecordsYear").addEventListener("change", async () => {
+        const select = document.getElementById("currentRecordsYear");
+        select.disabled = true;
+        try { await renderCurrentRecordsStudentRoster(); }
+        catch (error) { console.error("Unable to load current records", error); }
+        finally { select.disabled = false; }
+      });
+
       async function renderCurrentRecordsStudentRoster() {
         const roster = document.getElementById("currentRecordsStudentRoster");
         const searchControl = document.getElementById("currentRecordsSearchControl");
-        const body = document.getElementById("currentRecordsStudentRosterBody");
+        const body = document.getElementById(selectedCurrentRecordsBlock ? "currentRecordsStudentRosterBody" : "currentRecordsDirectoryBody");
         const empty = document.getElementById("currentRecordsStudentRosterEmpty");
         const back = document.getElementById("currentRecordsBackToBlocks");
         const levelTitle = document.getElementById("currentRecordsLevelTitle");
@@ -6308,9 +6335,14 @@
           ApiClient.getAllCasesForInstructor("", ""),
         ]);
         const allYears = await ApiClient.getSchoolYears();
-        const activeYear = allYears && allYears.ok && Array.isArray(allYears.school_years)
+        const defaultYear = allYears && allYears.ok && Array.isArray(allYears.school_years)
           ? allYears.school_years.find((year) => String(year.status || "").toLowerCase() === "active")?.label
           : "";
+        const yearSelect = document.getElementById("currentRecordsYear");
+        const activeYear = selectedCurrentRecordsBlock?.schoolYear || yearSelect.value || defaultYear || "";
+        const years = [...new Set([activeYear, ...(allYears?.school_years || []).map(year => year.label)].filter(Boolean))];
+        yearSelect.innerHTML = years.map(year => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join("");
+        yearSelect.value = activeYear;
         const students = studentResult && studentResult.ok && Array.isArray(studentResult.students)
           ? studentResult.students.slice().sort((a, b) =>
               String(a.student_name || "").localeCompare(String(b.student_name || "")),
@@ -6346,10 +6378,30 @@
           );
           // The search behaves like Annual Records: it provides student suggestions
           // and opens the selected student's records; it does not alter the block list.
+          blocks.forEach(block => {
+            const ids = new Set(block.students.map(student => String(student.student_id)));
+            const records = cases.filter(record => ids.has(String(record.student_id)) &&
+              (!record.academic_year || String(record.academic_year) === block.schoolYear));
+            block.pending = records.filter(record => isInstructorCaseAssigned(record) &&
+              !["verified", "invalid"].includes(getInstructorProcedureRecordReviewStatus(record))).length;
+            block.updated = Math.max(0, ...records.map(record => {
+              const date = PhilippineTime.parse(record.updated_at || record.created_at, false);
+              return date ? Number(date) || 0 : 0;
+            }));
+          });
+          const summary = [
+            ["folder-open", blocks.length, "Registered Blocks"],
+            ["users", students.length, "Total Students"],
+            ["file-alt", blocks.reduce((total, block) => total + block.pending, 0), "Pending Reviews"],
+            ["calendar-alt", activeYear || "Not specified", "Academic Year"],
+          ];
+          document.getElementById("currentRecordsSummary").innerHTML = summary.map(([icon, value, label]) =>
+            `<div class="directory-stat"><i class="fas fa-${icon}" aria-hidden="true"></i><div><strong>${escapeHtml(String(value))}</strong><span>${label}</span></div></div>`).join("");
+          const query = document.getElementById("currentRecordsBlockSearch").value.trim().toLowerCase();
           const visibleBlocks = blocks;
           if (back) back.style.display = "none";
           if (levelTitle) levelTitle.textContent = "Registered Blocks";
-          if (activeTitleText) activeTitleText.textContent = "Registered Blocks";
+          if (activeTitleText) activeTitleText.textContent = "Current Records";
           if (activeSubtitle) activeSubtitle.textContent = "Choose a registered block to view its students and clinical records.";
           if (levelSubtitle) levelSubtitle.textContent = "Choose a block to view its students and clinical records.";
           if (columnTwo) columnTwo.textContent = "Registered Block";
@@ -6361,14 +6413,17 @@
           }
           visibleBlocks.forEach((block, index) => {
             const row = document.createElement("tr");
+            row.dataset.blockLabel = block.label.toLowerCase();
+            row.hidden = !row.dataset.blockLabel.includes(query);
             row.tabIndex = 0;
             row.style.cursor = "pointer";
             row.innerHTML = `
-              <td>${index + 1}</td>
-              <td><div class="current-record-student"><span class="current-record-avatar"><i class="fas fa-layer-group" aria-hidden="true"></i></span><span><strong>${escapeHtml(block.label)}</strong><small>Open registered block</small></span></div></td>
+              <td><strong>${escapeHtml(block.label)}</strong></td>
               <td>${escapeHtml(block.schoolYear || "Not specified")}</td>
               <td><span class="current-record-count">${block.students.length}</span></td>
-              <td><button class="registered-blocks-action" type="button">View Students</button></td>
+              <td><span class="directory-pending">${block.pending}</span></td>
+              <td>${block.updated ? escapeHtml(new Date(block.updated).toLocaleString("en-US", {timeZone: "Asia/Manila", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"})) : "No records yet"}</td>
+              <td><button class="registered-blocks-action" type="button">View Students <i class="fas fa-arrow-right" aria-hidden="true"></i></button></td>
             `;
             const openBlock = () => {
               selectedCurrentRecordsBlock = block;
@@ -6384,6 +6439,7 @@
             body.appendChild(row);
           });
           if (countActive) countActive.textContent = String(visibleBlocks.length);
+          filterCurrentRecordsBlocks();
           return;
         }
 

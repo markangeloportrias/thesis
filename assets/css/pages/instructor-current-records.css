@@ -1,0 +1,68 @@
+/* Only the Current Records block directory; student/record views stay unchanged. */
+html body.role-instructor #currentRecordsStudentRoster:not(.showing-block-students) > table.registered-blocks-table,
+html body.role-instructor #currentRecordsStudentRoster:not(.showing-block-students) > .current-records-navigator,
+html body.role-instructor #currentRecordsStudentRoster.showing-block-students #currentRecordsDirectory {
+  display: none !important;
+}
+html body.role-instructor #currentRecordsDirectory { padding: 0; color: #082f6b; }
+html body.role-instructor #currentRecordsDirectory .directory-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px;
+}
+html body.role-instructor #currentRecordsDirectory .directory-toolbar:first-child { justify-content: flex-end; }
+html body.role-instructor #currentRecordsDirectory h3 { margin: 0; font-size: 20px !important; line-height: 1.25; }
+html body.role-instructor #currentRecordsDirectory label {
+  display: flex; align-items: center; gap: 10px; color: #486484; font-size: 12px;
+}
+html body.role-instructor #currentRecordsDirectory :is(input,select) {
+  box-sizing: border-box; width: 230px; max-width: 100%; min-height: 36px; height: 36px;
+  padding: 7px 10px; border: 1px solid #bdd2ed; border-radius: 8px;
+  background: #fff; color: #082f6b; font-size: 13px;
+}
+html body.role-instructor #currentRecordsDirectory select { width: 155px; }
+html body.role-instructor #currentRecordsDirectory .directory-summary {
+  display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; margin-bottom: 18px;
+}
+html body.role-instructor #currentRecordsDirectory .directory-stat {
+  display: flex; align-items: center; gap: 12px; padding: 14px;
+  border: 1px solid #d4e5f8; border-radius: 12px; background: #f1f8ff;
+}
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(2) { background: #f0faf5; border-color: #d5eee0; }
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(3) { background: #fff9e9; border-color: #f6e7b9; }
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(4) { background: #f5f3ff; border-color: #e3dcfb; }
+html body.role-instructor #currentRecordsDirectory .directory-stat > i {
+  display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0;
+  border-radius: 10px; background: #dceeff; color: #086ab8; font-size: 18px;
+}
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(2) > i { background: #d9f2e3; color: #12804d; }
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(3) > i { background: #fff0be; color: #946000; }
+html body.role-instructor #currentRecordsDirectory .directory-stat:nth-child(4) > i { background: #e8e1ff; color: #6443b0; }
+html body.role-instructor #currentRecordsDirectory .directory-stat strong { display: block; font-size: 23px; line-height: 1.2; color: #082f6b; }
+html body.role-instructor #currentRecordsDirectory .directory-stat span { display: block; font-size: 12px; margin-top: 3px; color: #506783; }
+html body.role-instructor #currentRecordsDirectory .directory-table-scroll { overflow-x: auto; border: 1px solid #cdddf1; border-radius: 10px; }
+html body.role-instructor #currentRecordsDirectory table.directory-table { display: table !important; width: 100%; min-width: 720px; table-layout: auto; border-collapse: collapse; margin: 0; }
+html body.role-instructor #currentRecordsDirectory table.directory-table thead { display: table-header-group !important; }
+html body.role-instructor #currentRecordsDirectory table.directory-table tbody { display: table-row-group !important; }
+html body.role-instructor #currentRecordsDirectory table.directory-table tr { display: table-row !important; }
+html body.role-instructor #currentRecordsDirectory table.directory-table tr[hidden] { display: none !important; }
+html body.role-instructor #currentRecordsDirectory table.directory-table :is(th,td) {
+  display: table-cell !important; padding: 10px 14px !important; height: auto !important;
+  font-family: inherit !important; font-size: 13px !important; text-align: left !important;
+  vertical-align: middle; border: 0 !important; border-bottom: 1px solid #e0e9f4 !important;
+}
+html body.role-instructor #currentRecordsDirectory table.directory-table th { background: #062d6b !important; color: #fff !important; font-size: 11px !important; text-transform: uppercase; }
+html body.role-instructor #currentRecordsDirectory table.directory-table td { background: #fff; color: #163d70; }
+html body.role-instructor #currentRecordsDirectory table.directory-table tr:hover td { background: #f5f9ff; }
+html body.role-instructor #currentRecordsDirectory .directory-pending { font-weight: 700; color: #925600; }
+html body.role-instructor #currentRecordsDirectory button.registered-blocks-action {
+  display: inline-flex; align-items: center; gap: 10px; width: auto; min-height: 32px;
+  padding: 7px 12px; border: 0; border-radius: 7px; background: #0057a7; color: white; font-size: 12px; cursor: pointer;
+}
+html body.role-instructor #currentRecordsDirectory :is(button,input,select):focus-visible { outline: 2px solid #087cce; outline-offset: 2px; }
+@media (max-width: 1100px) {
+  html body.role-instructor #currentRecordsDirectory .directory-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 600px) {
+  html body.role-instructor #currentRecordsDirectory .directory-toolbar { flex-wrap: wrap; }
+  html body.role-instructor #currentRecordsDirectory .directory-stat { padding: 10px; gap: 8px; }
+  html body.role-instructor #currentRecordsDirectory .directory-stat strong { font-size: 18px; }
+}
