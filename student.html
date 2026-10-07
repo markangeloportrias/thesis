@@ -610,7 +610,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20261007-profile-header" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20261007-tablet-nav" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
     <style id="student-instructor-assignment-styles">
       /* Keep the final columns in the same grid when the sidebar expands.
@@ -5999,7 +5999,7 @@
           sidebarToggleBtn?.focus();
         }
       });
-      window.matchMedia("(max-width: 767px)").addEventListener("change", () => setStudentMobileMenu(false));
+      window.matchMedia("(max-width: 1024px)").addEventListener("change", () => setStudentMobileMenu(false));
 
       // Close sidebar when clicking any navigation link (mobile view)
       document.querySelectorAll(".sidebar-nav-item").forEach((item) => {
