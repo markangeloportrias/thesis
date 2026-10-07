@@ -1,32 +1,35 @@
 /* Overview-only presentation. Visibility and interactions remain owned by each dashboard. */
 html body.role-admin #dashboardCard > .admin-dashboard-hero,
-html body.role-instructor .main-content > .dashboard-hero,
+html body.role-instructor .main-content > .dashboard-hero:has(#dashboardHeroTitle),
 html body.role-student #dashboard > .student-dashboard-hero {
   border: 1px solid #d5e3f2 !important;
-  border-radius: 18px !important;
+  border-radius: 14px !important;
   background: linear-gradient(115deg, #ffffff 0%, #f2f7ff 75%, #e9f2ff 100%) !important;
   box-shadow: 0 6px 20px rgba(0, 41, 107, .05) !important;
-  padding: 26px 28px !important;
-  margin-bottom: 20px !important;
+  padding: 18px 20px !important;
+  margin-bottom: 14px !important;
+  min-height: 0 !important;
+  height: auto !important;
 }
 
 html body.role-admin #dashboardCard #adminWorkspaceTitle,
 html body.role-instructor .dashboard-hero #dashboardHeroTitle,
 html body.role-student #dashboard .student-dashboard-hero .hero-title {
-  font-size: clamp(24px, 2.1vw, 32px) !important;
+  font-size: 24px !important;
   line-height: 1.2 !important;
   font-weight: 800 !important;
   letter-spacing: -.7px !important;
   color: #00296b !important;
-  margin: 10px 0 !important;
+  margin: 6px 0 !important;
   max-width: 650px;
 }
 
 html body.role-admin #dashboardCard .admin-dashboard-hero p,
-html body.role-instructor .dashboard-hero > div > p,
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) > div > p,
 html body.role-student #dashboard .student-dashboard-hero .hero-subtitle {
-  font-size: 14px !important;
-  line-height: 1.65 !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  margin: 0 !important;
   color: #506985 !important;
   max-width: 620px;
 }
@@ -34,8 +37,8 @@ html body.role-student #dashboard .student-dashboard-hero .hero-subtitle {
 html body.role-admin #dashboardSummary,
 html body.role-instructor #main-stats-grid,
 html body.role-student #dashboardProgressSection .stats-row {
-  gap: 14px !important;
-  margin-bottom: 20px !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
 }
 
 html body.role-admin #dashboardSummary .summary-box,
@@ -43,7 +46,9 @@ html body.role-instructor #main-stats-grid .stat-card,
 html body.role-student #dashboardProgressSection .stat-card-h {
   border: 1px solid #dce6f1 !important;
   border-radius: 14px !important;
-  padding: 18px !important;
+  padding: 12px 14px !important;
+  min-height: 0 !important;
+  height: auto !important;
   box-shadow: 0 3px 12px rgba(0, 41, 107, .04) !important;
   min-width: 0;
   transition: border-color .15s ease, box-shadow .15s ease;
@@ -52,7 +57,7 @@ html body.role-student #dashboardProgressSection .stat-card-h {
 html body.role-admin #dashboardSummary .summary-box .value,
 html body.role-instructor #main-stats-grid .stat-value,
 html body.role-student #dashboardProgressSection .stat-num {
-  font-size: 30px !important;
+  font-size: 26px !important;
   font-weight: 800 !important;
   line-height: 1.2 !important;
   font-variant-numeric: tabular-nums;
@@ -62,8 +67,9 @@ html body.role-admin #dashboardCard .dashboard-action-card {
   border: 1px solid #dce6f1 !important;
   border-radius: 12px !important;
   background: #ffffff !important;
-  padding: 16px !important;
-  gap: 12px !important;
+  padding: 12px !important;
+  min-height: 0 !important;
+  gap: 10px !important;
   box-shadow: 0 3px 12px rgba(0, 41, 107, .04) !important;
 }
 
@@ -81,7 +87,7 @@ html body.role-student #dashboard > #recentRecordsPanel {
 
 html body.role-admin #dashboardCard .dashboard-activity-header,
 html body.role-student #recentRecordsPanel .recent-records-header {
-  padding: 16px 18px !important;
+  padding: 12px 14px !important;
   border-bottom: 1px solid #e3ebf5 !important;
   background: #f7faff !important;
   border-radius: 14px 14px 0 0;
@@ -106,8 +112,58 @@ html body.role-student .student-dashboard-hero button:focus-visible {
   outline-offset: 3px !important;
 }
 
+/* Explicit light-banner colors override the older dark-banner palette. */
+html body.role-admin #dashboardCard .admin-dashboard-hero .hero-kicker,
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-kicker,
+html body.role-student #dashboard .student-dashboard-hero .hero-eyebrow {
+  color: #31577d !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+  opacity: 1 !important;
+}
+
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-actions,
+html body.role-student #dashboard .student-dashboard-hero .student-hero-actions {
+  margin-top: 12px !important;
+  gap: 8px !important;
+  flex-wrap: wrap;
+}
+
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-action,
+html body.role-student #dashboard .student-dashboard-hero .student-hero-action {
+  color: #00296b !important;
+  background: #ffffff !important;
+  border: 1px solid #b6cde5 !important;
+  border-radius: 8px !important;
+  min-height: 34px !important;
+  padding: 7px 12px !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  box-shadow: none !important;
+}
+
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-action-primary,
+html body.role-student #dashboard .student-dashboard-hero .student-hero-action.primary {
+  background: #ffd500 !important;
+  border-color: #edc400 !important;
+}
+
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-action :is(i, span),
+html body.role-student #dashboard .student-dashboard-hero .student-hero-action :is(i, span) {
+  color: inherit !important;
+}
+
+html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-action:hover,
+html body.role-student #dashboard .student-dashboard-hero .student-hero-action:hover {
+  background: #fff4bd !important;
+  border-color: #d4ad00 !important;
+}
+
+html body.role-admin #dashboardCard .dashboard-activity-card,
+html body.role-student #dashboard > #recentRecordsPanel { padding: 12px !important; }
+
 @media (max-width: 700px) {
-  html body.role-student #dashboard > .student-dashboard-hero { padding: 20px !important; }
+  html body.role-student #dashboard > .student-dashboard-hero { padding: 16px !important; }
   html body.role-student #dashboard > .student-dashboard-hero > .shared-paper-illustration { visibility: hidden !important; }
   html body.role-student #dashboard .student-dashboard-hero-content { width: 100% !important; max-width: none !important; padding-right: 0 !important; }
   html body.role-student #dashboardProgressSection .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
