@@ -343,7 +343,7 @@ try {
             'instructors' => 'SELECT COUNT(*) FROM instructor_accounts WHERE archived_at IS NULL AND status = \'active\'',
             'records' => 'SELECT COUNT(*) FROM case_records WHERE archived_at IS NULL',
             'school_years' => 'SELECT COUNT(*) FROM school_years WHERE archived_at IS NULL',
-            'pending_requests' => 'SELECT COUNT(*) FROM edit_requests WHERE archived_at IS NULL AND status = \'pending\'',
+            'pending_requests' => 'SELECT COUNT(*) FROM edit_requests WHERE archived_at IS NULL AND reviewer_dismissed_at IS NULL AND student_dismissed_at IS NULL AND status = \'pending\'',
         ];
         foreach ($queries as $key => $sql) $counts[$key] = (int)$pdo->query($sql)->fetchColumn();
         respond(['ok' => true, 'counts' => $counts]);
