@@ -63,7 +63,7 @@
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-compact" />
     <link rel="stylesheet" href="assets/css/components/annual-records-summary.css?v=2" />
     <script src="assets/js/annual-records-summary.js?v=1"></script>
-    <link rel="stylesheet" href="assets/css/components/manage-students-summary.css?v=1" />
+    <link rel="stylesheet" href="assets/css/components/manage-students-summary.css?v=2" />
     <script src="assets/js/manage-students-summary.js?v=1"></script>
   </head>
   <body>
@@ -392,13 +392,13 @@
 
               <div class="students-panel active" id="studentsYearPanel">
                 <div id="manageStudentsSummary" aria-label="Student management summary"></div>
-                <div class="row" style="margin-bottom: 10px">
+                <div class="student-management-toolbar">
                   <button
                     class="btn btn-secondary"
                     id="refreshSchoolYearsBtn"
                     type="button"
                   >
-                    Refresh
+                    <i class="fas fa-sync-alt" aria-hidden="true"></i><span>Refresh</span>
                   </button>
                 </div>
                 <div class="table-wrap">
@@ -3009,6 +3009,10 @@
 
       async function renderSchoolYears() {
         const result = await ApiClient.getSchoolYears();
+        if (!result?.ok || !Array.isArray(result.school_years)) {
+          showStudentsNavMessage(result?.message || "Unable to refresh academic years. Please try again.", "error");
+          return false;
+        }
         const years =
           result && result.ok && Array.isArray(result.school_years)
             ? result.school_years
@@ -6687,7 +6691,26 @@
         if (crumb === "blocks") backToStudentsBlocks();
       });
       openAddSchoolYearBtn?.addEventListener("click", showAddSchoolYearModal);
-      refreshSchoolYearsBtn?.addEventListener("click", renderSchoolYears);
+      refreshSchoolYearsBtn?.addEventListener("click", async () => {
+        if (refreshSchoolYearsBtn.disabled) return;
+        refreshSchoolYearsBtn.disabled = true;
+        refreshSchoolYearsBtn.setAttribute("aria-busy", "true");
+        const icon = refreshSchoolYearsBtn.querySelector("i");
+        const label = refreshSchoolYearsBtn.querySelector("span");
+        icon?.classList.add("fa-spin");
+        if (label) label.textContent = "Refreshing…";
+        try {
+          const result = await renderSchoolYears();
+          if (result !== false) showStudentsNavMessage("Student management updated.", "success");
+        } catch (error) {
+          showStudentsNavMessage("Unable to refresh student management. Please try again.", "error");
+        } finally {
+          refreshSchoolYearsBtn.disabled = false;
+          refreshSchoolYearsBtn.removeAttribute("aria-busy");
+          icon?.classList.remove("fa-spin");
+          if (label) label.textContent = "Refresh";
+        }
+      });
       schoolYearsTbody?.addEventListener("click", (e) => {
         const statusBtn = e.target.closest("button[data-year-status]");
         if (statusBtn) {
