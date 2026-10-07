@@ -610,7 +610,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/record-quality.css?v=20260906-internal-header-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20260928-mobile-chat-height-1" />
+    <link rel="stylesheet" href="assets/css/pages/student-mobile.css?v=20261007-profile-header" />
     <link rel="stylesheet" href="assets/css/components/record-table-typography.css?v=1" />
     <style id="student-instructor-assignment-styles">
       /* Keep the final columns in the same grid when the sidebar expands.
@@ -854,7 +854,10 @@
     <div class="dashboard">
       <div class="student-mobile-menu-bar">
         <button id="sidebarToggle" type="button" aria-label="Open navigation menu" aria-controls="studentSidebar" aria-expanded="false"><i class="fas fa-bars" aria-hidden="true"></i></button>
-        <span>Student Portal</span>
+        <div class="student-mobile-profile">
+          <span class="student-mobile-avatar"><img id="mobileStudentPhoto" alt="Student profile photo" style="display:none"><i id="mobileStudentPhotoFallback" class="fas fa-user" aria-hidden="true"></i></span>
+          <div class="student-mobile-profile-copy"><strong id="mobileStudentName">Student</strong><small id="mobileStudentDetails">Clinical trainee</small></div>
+        </div>
       </div>
       <!-- Slim Top Header -->
       <header class="header">
@@ -2267,6 +2270,10 @@
             currentStudent.student_name || "Student";
         }
         // Sync sidebar profile card
+        document.getElementById("mobileStudentName").textContent = currentStudent.student_name || "Student";
+        document.getElementById("mobileStudentDetails").textContent = currentStudent.student_id
+          ? "ID: " + currentStudent.student_id + " · Clinical trainee"
+          : "Clinical trainee";
         const sidebarName = document.getElementById("sidebarProfileName");
         const sidebarRole = document.getElementById("sidebarProfileRole");
         const sidebarInitials = document.getElementById(
@@ -3508,6 +3515,22 @@
       }
 
       function setSidebarStudentPhoto(photoSource) {
+        const mobilePhoto = document.getElementById("mobileStudentPhoto");
+        const mobileFallback = document.getElementById("mobileStudentPhotoFallback");
+        if (mobilePhoto) {
+          const fallback = () => {
+            mobilePhoto.style.display = "none";
+            mobilePhoto.removeAttribute("src");
+            if (mobileFallback) mobileFallback.style.display = "block";
+          };
+          mobilePhoto.onload = () => {
+            mobilePhoto.style.display = "block";
+            if (mobileFallback) mobileFallback.style.display = "none";
+          };
+          mobilePhoto.onerror = fallback;
+          fallback();
+          if (String(photoSource || "").trim()) mobilePhoto.src = String(photoSource).trim();
+        }
         const sidebarPhoto = document.getElementById("sidebarStudentPhoto");
         const sidebarFallback = document.getElementById("sidebarStudentPhotoFallback");
         const sidebarAvatar = sidebarPhoto?.closest(".sidebar-user-avatar");

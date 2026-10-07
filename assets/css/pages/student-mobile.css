@@ -2,6 +2,13 @@
 .student-mobile-menu-bar { display: none; }
 .chat-mobile-back-button { display: none; }
 @media screen and (max-width: 767px) {
+  html body.role-student .student-mobile-profile { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+  html body.role-student .student-mobile-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; overflow: hidden; border-radius: 50%; background: #e3efff; color: #0756a0; border: 2px solid #b9d6ff; }
+  html body.role-student .student-mobile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  html body.role-student .student-mobile-profile-copy { min-width: 0; }
+  html body.role-student .student-mobile-profile-copy strong { display: block; font-size: 13px; line-height: 1.4; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html body.role-student .student-mobile-profile-copy small { display: block; font-size: 10px; line-height: 1.4; font-weight: 400; color: #d6e7ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  html body.role-student .student-mobile-menu-bar #sidebarToggle { flex-shrink: 0; }
   html body.role-student .student-mobile-menu-bar {
     display: flex;
     align-items: center;
