@@ -1,0 +1,124 @@
+/* Overview-only presentation. Visibility and interactions remain owned by each dashboard. */
+html body.role-admin #dashboardCard > .admin-dashboard-hero,
+html body.role-instructor .main-content > .dashboard-hero,
+html body.role-student #dashboard > .student-dashboard-hero {
+  border: 1px solid #d5e3f2 !important;
+  border-radius: 18px !important;
+  background: linear-gradient(115deg, #ffffff 0%, #f2f7ff 75%, #e9f2ff 100%) !important;
+  box-shadow: 0 6px 20px rgba(0, 41, 107, .05) !important;
+  padding: 26px 28px !important;
+  margin-bottom: 20px !important;
+}
+
+html body.role-admin #dashboardCard #adminWorkspaceTitle,
+html body.role-instructor .dashboard-hero #dashboardHeroTitle,
+html body.role-student #dashboard .student-dashboard-hero .hero-title {
+  font-size: clamp(24px, 2.1vw, 32px) !important;
+  line-height: 1.2 !important;
+  font-weight: 800 !important;
+  letter-spacing: -.7px !important;
+  color: #00296b !important;
+  margin: 10px 0 !important;
+  max-width: 650px;
+}
+
+html body.role-admin #dashboardCard .admin-dashboard-hero p,
+html body.role-instructor .dashboard-hero > div > p,
+html body.role-student #dashboard .student-dashboard-hero .hero-subtitle {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  color: #506985 !important;
+  max-width: 620px;
+}
+
+html body.role-admin #dashboardSummary,
+html body.role-instructor #main-stats-grid,
+html body.role-student #dashboardProgressSection .stats-row {
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+}
+
+html body.role-admin #dashboardSummary .summary-box,
+html body.role-instructor #main-stats-grid .stat-card,
+html body.role-student #dashboardProgressSection .stat-card-h {
+  border: 1px solid #dce6f1 !important;
+  border-radius: 14px !important;
+  padding: 18px !important;
+  box-shadow: 0 3px 12px rgba(0, 41, 107, .04) !important;
+  min-width: 0;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+html body.role-admin #dashboardSummary .summary-box .value,
+html body.role-instructor #main-stats-grid .stat-value,
+html body.role-student #dashboardProgressSection .stat-num {
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+}
+
+html body.role-admin #dashboardCard .dashboard-action-card {
+  border: 1px solid #dce6f1 !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  padding: 16px !important;
+  gap: 12px !important;
+  box-shadow: 0 3px 12px rgba(0, 41, 107, .04) !important;
+}
+
+html body.role-admin #dashboardCard .action-copy small {
+  color: #506985 !important;
+  line-height: 1.5 !important;
+}
+
+html body.role-admin #dashboardCard .dashboard-activity-card,
+html body.role-student #dashboard > #recentRecordsPanel {
+  border: 1px solid #dce6f1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 3px 12px rgba(0, 41, 107, .04) !important;
+}
+
+html body.role-admin #dashboardCard .dashboard-activity-header,
+html body.role-student #recentRecordsPanel .recent-records-header {
+  padding: 16px 18px !important;
+  border-bottom: 1px solid #e3ebf5 !important;
+  background: #f7faff !important;
+  border-radius: 14px 14px 0 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+html body.role-admin #dashboardCard .dashboard-action-card:hover,
+html body.role-admin #dashboardSummary [role="button"]:hover,
+html body.role-instructor #main-stats-grid .stat-card:hover,
+html body.role-student #dashboardProgressSection .stat-card-h:hover {
+  border-color: #91b5dd !important;
+  box-shadow: 0 5px 16px rgba(0, 41, 107, .1) !important;
+}
+
+html body.role-admin #dashboardCard :is(button, [role="button"]):focus-visible,
+html body.role-instructor .dashboard-hero button:focus-visible,
+html body.role-instructor #main-stats-grid [tabindex]:focus-visible,
+html body.role-student #dashboardProgressSection [role="button"]:focus-visible,
+html body.role-student .student-dashboard-hero button:focus-visible {
+  outline: 3px solid #00509d !important;
+  outline-offset: 3px !important;
+}
+
+@media (max-width: 700px) {
+  html body.role-student #dashboard > .student-dashboard-hero { padding: 20px !important; }
+  html body.role-student #dashboard > .student-dashboard-hero > .shared-paper-illustration { visibility: hidden !important; }
+  html body.role-student #dashboard .student-dashboard-hero-content { width: 100% !important; max-width: none !important; padding-right: 0 !important; }
+  html body.role-student #dashboardProgressSection .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 420px) {
+  html body.role-student #dashboardProgressSection .stats-row { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html body.role-admin #dashboardSummary .summary-box,
+  html body.role-instructor #main-stats-grid .stat-card,
+  html body.role-student #dashboardProgressSection .stat-card-h { transition: none !important; }
+}
