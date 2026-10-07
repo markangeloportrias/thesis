@@ -720,6 +720,8 @@
     <script async src="assets/js/prc-export.js?v=9-verified-only"></script>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-compact" />
+    <link rel="stylesheet" href="assets/css/components/annual-records-summary.css?v=1" />
+    <script src="assets/js/annual-records-summary.js?v=1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-current-records.css?v=20261007-10" />
   </head>
   <body>
@@ -1346,6 +1348,7 @@
               </div>
 
               <div class="students-panel active" id="yearlyYearPanel">
+                <div id="annualRecordsSummary" aria-label="Annual records summary"></div>
                 <div class="table-wrap">
                   <table style="min-width: 560px">
                     <thead>
@@ -5802,6 +5805,12 @@
 
       function renderYearlyYearRows() {
         if (!yearlyYearsTbody) return;
+        renderAnnualRecordsSummary({
+          years: yearlyYears.length,
+          blocks: yearlyYears.reduce((total, year) => total + Number(year.block_count || 0), 0),
+          students: yearlyYears.reduce((total, year) => total + Number(year.student_count || 0), 0),
+          records: yearlyYears.reduce((total, year) => total + Number(yearlyRecordsByYear[year.label] || year.record_count || 0), 0),
+        });
         yearlyYearsTbody.innerHTML = "";
         if (yearlyYearsEmpty) {
           yearlyYearsEmpty.textContent = "No academic years found.";

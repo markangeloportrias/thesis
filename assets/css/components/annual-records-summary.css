@@ -1,0 +1,26 @@
+/* Isolated to the root Annual Records panel in admin and instructor. */
+html body #yearlyYearPanel #annualRecordsSummary {
+  display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 0 0 18px;
+}
+html body #annualRecordsSummary .annual-summary-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; min-height: 72px;
+  box-sizing: border-box; border: 1px solid #d4e5f8; border-radius: 10px; background: #f1f8ff;
+}
+html body #annualRecordsSummary .annual-summary-card:nth-child(2) { background: #f0faf5; border-color: #d5eee0; }
+html body #annualRecordsSummary .annual-summary-card:nth-child(3) { background: #fff9e9; border-color: #f6e7b9; }
+html body #annualRecordsSummary .annual-summary-card:nth-child(4) { background: #f5f3ff; border-color: #e3dcfb; }
+html body #annualRecordsSummary .annual-summary-card > i {
+  display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px;
+  border-radius: 10px; font-size: 18px; background: #dceeff; color: #086ab8;
+}
+html body #annualRecordsSummary .annual-summary-card:nth-child(2) > i { background: #d9f2e3; color: #12804d; }
+html body #annualRecordsSummary .annual-summary-card:nth-child(3) > i { background: #fff0be; color: #946000; }
+html body #annualRecordsSummary .annual-summary-card:nth-child(4) > i { background: #e8e1ff; color: #6443b0; }
+html body #annualRecordsSummary strong { display: block; color: #082f6b; font-size: 23px; line-height: 1.15; }
+html body #annualRecordsSummary span { display: block; color: #506783; margin-top: 4px; font-size: 12px; line-height: 1.4; }
+@media (max-width: 1100px) {
+  html body #yearlyYearPanel #annualRecordsSummary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 480px) {
+  html body #yearlyYearPanel #annualRecordsSummary { grid-template-columns: 1fr; }
+}
