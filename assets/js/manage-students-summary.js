@@ -6,7 +6,7 @@ window.renderManageStudentsSummary = function (years) {
     ['calendar-alt', rows.length, 'Academic Years'],
     ['folder-open', rows.reduce((sum, year) => sum + (Number(year.block_count) || 0), 0), 'Registered Blocks'],
     ['users', rows.reduce((sum, year) => sum + (Number(year.student_count) || 0), 0), 'Student Enrollments'],
-    ['calendar-check', rows.filter(year => String(year.status || '').toLowerCase() === 'active').length, 'Active Academic Years'],
+    ['calendar-check', rows.filter(year => String(year.status || '').trim().toLowerCase() === 'active').map(year => year.label).filter(Boolean).join(', ') || 'None active', 'Active Academic Year'],
   ];
   container.replaceChildren();
   cards.forEach(([icon, count, label]) => {
