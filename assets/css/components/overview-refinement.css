@@ -256,6 +256,27 @@ html body.role-instructor .dashboard-hero:has(#dashboardHeroTitle) .hero-action:
 html body.role-student #dashboard .student-dashboard-hero .student-hero-action:not(.primary):hover {
   background: #d2e5ff !important; border-color: #518bca !important;
 }
+/* Admin palette uses role-qualified !important rules; override only overview. */
+html body.role-admin #dashboardCard > .admin-dashboard-hero {
+  background: linear-gradient(115deg, #eaf3ff, #d4e7ff) !important;
+  border-color: #a9cbed !important;
+  border-left: 5px solid #0864b5 !important;
+}
+html body.role-admin #dashboardCard #dashboardSummary .summary-box {
+  background: linear-gradient(120deg, #f5f9ff, #dfedff) !important;
+  border-color: #b8d2ef !important;
+  border-top: 3px solid #146bbb !important;
+}
+html body.role-admin #dashboardCard #dashboardSummary .summary-box .icon {
+  background: #0756a0 !important; color: #fff !important;
+}
+html body.role-admin #dashboardCard #dashboardSummary .summary-box .icon i { color: inherit !important; }
+html body.role-admin #dashboardCard .dashboard-activity-header {
+  background: #e1eeff !important; border-bottom-color: #bad3f0 !important;
+}
+html body.role-admin #dashboardCard .dashboard-action-card {
+  border-left: 3px solid #1970bd !important;
+}
 @media (prefers-reduced-motion: reduce) {
   html body.role-admin #dashboardSummary .summary-box,
   html body.role-instructor #main-stats-grid .stat-card,
