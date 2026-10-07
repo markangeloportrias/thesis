@@ -720,7 +720,7 @@
     <script async src="assets/js/prc-export.js?v=9-verified-only"></script>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-compact" />
-    <link rel="stylesheet" href="assets/css/pages/instructor-current-records.css?v=20261007-6" />
+    <link rel="stylesheet" href="assets/css/pages/instructor-current-records.css?v=20261007-7" />
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -1255,6 +1255,7 @@
                 <div class="directory-toolbar"><h3>Registered Blocks</h3><label>Academic Year <select id="currentRecordsYear" aria-label="Academic year"></select></label></div>
                 <div class="directory-table-scroll"><table class="directory-table"><thead><tr><th>Block</th><th>Academic Year</th><th>Students</th><th>Pending Review</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody id="currentRecordsDirectoryBody"></tbody></table></div>
               </div>
+              <div id="currentRecordsStudentSummary" aria-label="Block student summary"></div>
               <div class="current-records-navigator">
                 <div>
                   <h3 id="currentRecordsLevelTitle">Registered Blocks</h3>
@@ -6432,6 +6433,16 @@
           return blockId === String(selectedCurrentRecordsBlock.id) &&
             schoolYear === String(selectedCurrentRecordsBlock.schoolYear);
         });
+        const blockStudentIds = new Set(blockStudents.map(student => String(student.student_id || "")));
+        const blockCases = cases.filter(record => blockStudentIds.has(String(record.student_id || "")));
+        const pendingReviews = blockCases.filter(record => isInstructorCaseAssigned(record) &&
+          !["verified", "invalid"].includes(getInstructorProcedureRecordReviewStatus(record))).length;
+        document.getElementById("currentRecordsStudentSummary").innerHTML = [
+          ["users", blockStudents.length, "Registered Students"],
+          ["folder-open", blockCases.length, "Clinical Records"],
+          ["file-alt", pendingReviews, "Pending Reviews"],
+          ["calendar-alt", selectedCurrentRecordsBlock.schoolYear || "Not specified", "Academic Year"],
+        ].map(([icon, value, label]) => `<div class="student-summary-card"><i class="fas fa-${icon}" aria-hidden="true"></i><div><strong>${escapeHtml(String(value))}</strong><span>${label}</span></div></div>`).join("");
         if (back) back.style.display = "inline-flex";
         if (levelTitle) levelTitle.textContent = selectedCurrentRecordsBlock.label || "Block Students";
         if (activeTitleText) activeTitleText.textContent = "Registered Students";
