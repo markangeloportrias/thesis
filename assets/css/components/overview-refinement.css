@@ -162,6 +162,46 @@ html body.role-student #dashboard .student-dashboard-hero .student-hero-action:h
 html body.role-admin #dashboardCard .dashboard-activity-card,
 html body.role-student #dashboard > #recentRecordsPanel { padding: 12px !important; }
 
+/* Compact only the student overview's procedure tracker cards. */
+html body.role-student #dashboardProgressSection .stats-row > .stat-card-h {
+  padding: 8px 12px !important;
+  gap: 2px 10px !important;
+  min-height: 0 !important;
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+  border-radius: 10px !important;
+}
+
+html body.role-student #dashboardProgressSection .stat-card-h .stat-icon-wrap {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+html body.role-student #dashboardProgressSection .stat-card-h .stat-name {
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  white-space: normal !important;
+}
+
+html body.role-student #dashboardProgressSection .stat-card-h .stat-num {
+  font-size: 22px !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+}
+
+html body.role-student #dashboardProgressSection .stat-card-h .stat-sub {
+  margin: 0 !important;
+  font-size: 9px !important;
+  line-height: 1.3 !important;
+}
+
+html body.role-student #dashboardProgressSection .stat-card-h .stat-progress {
+  height: 4px !important;
+  margin-top: 3px !important;
+}
+
 @media (max-width: 700px) {
   html body.role-student #dashboard > .student-dashboard-hero { padding: 16px !important; }
   html body.role-student #dashboard > .student-dashboard-hero > .shared-paper-illustration { visibility: hidden !important; }
