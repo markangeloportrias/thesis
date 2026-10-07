@@ -28,4 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
     childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['src'],
   }));
   sync();
+  const clock = document.createElement('div');
+  clock.className = 'desktop-profile-clock';
+  const date = document.createElement('span');
+  const time = document.createElement('time');
+  clock.append(date, time);
+  header.append(clock);
+  const dateFormat = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
+  });
+  const timeFormat = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila', hour: 'numeric', minute: '2-digit', hour12: true,
+  });
+  const updateClock = () => {
+    const now = new Date();
+    date.textContent = dateFormat.format(now);
+    time.dateTime = now.toISOString();
+    time.textContent = timeFormat.format(now) + ' · Philippine Time';
+  };
+  updateClock();
+  const clockInterval = setInterval(() => { if (!document.hidden) updateClock(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
+  window.addEventListener('pagehide', event => { if (!event.persisted) clearInterval(clockInterval); });
 });

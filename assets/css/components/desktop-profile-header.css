@@ -13,6 +13,16 @@
   }
   html body #desktopProfileHeader img { width: 100%; height: 100%; object-fit: cover; }
   html body #desktopProfileHeader .desktop-profile-copy { min-width: 0; }
+  html body #desktopProfileHeader .desktop-profile-clock {
+    margin-left: auto; padding-left: 18px; border-left: 1px solid rgba(255,255,255,.25);
+    text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  html body #desktopProfileHeader .desktop-profile-clock span {
+    display: block; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.5;
+  }
+  html body #desktopProfileHeader .desktop-profile-clock time {
+    display: block; color: #d8e9ff; font-size: 11px; line-height: 1.5;
+  }
   html body #desktopProfileHeader strong { display: block; color: #fff; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
   html body #desktopProfileHeader small { display: block; color: #d8e9ff; font-size: 12px; line-height: 1.4; }
 }
