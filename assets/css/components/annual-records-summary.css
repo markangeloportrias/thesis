@@ -1,4 +1,17 @@
 /* Isolated to the root Annual Records panel in admin and instructor. */
+/* Legacy first-child toolbar rules must not position summary cards absolutely. */
+html body:has(#annualRecordsSummary) #yearlyYearPanel.students-panel > #annualRecordsSummary {
+  position: static !important; inset: auto !important; transform: none !important;
+  float: none !important; display: grid !important; width: 100% !important;
+  max-width: none !important; margin: 0 0 18px !important; padding: 0 !important;
+  grid-column: 1 / -1 !important; box-sizing: border-box;
+}
+html body:has(#annualRecordsSummary) #yearlyYearPanel.students-panel:has(> #annualRecordsSummary) > .table-wrap {
+  position: static !important; inset: auto !important; transform: none !important;
+  float: none !important; clear: both !important; display: block !important;
+  width: 100% !important; max-width: none !important; margin: 0 !important;
+  box-sizing: border-box; grid-column: 1 / -1 !important;
+}
 html body #yearlyYearPanel #annualRecordsSummary {
   display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin: 0 0 18px;
 }
