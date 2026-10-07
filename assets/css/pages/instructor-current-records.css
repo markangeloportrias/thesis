@@ -79,59 +79,6 @@ html body.role-instructor #currentRecordsStudentRoster #currentRecordsDirectory 
 html body.role-instructor #currentRecordsDirectory .directory-student-count {
   display: inline !important; color: #163d70 !important; font-weight: 700;
 }
-/* Nested block roster: retain the existing five columns and navigation. */
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table {
-  border: 1px solid #cdddf1 !important; border-radius: 10px !important;
-  border-spacing: 0 !important; background: #fff !important;
-}
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table :is(th,td) {
-  padding: 10px 14px !important; height: auto !important; line-height: 1.4 !important;
-  border: 0 !important; border-bottom: 1px solid #e0e9f4 !important;
-  box-shadow: none !important; border-radius: 0 !important; font-family: inherit !important;
-}
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table th {
-  background: #062d6b !important; color: white !important; font-size: 11px !important;
-}
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table td {
-  background: white !important; color: #163d70 !important; font-size: 13px !important;
-}
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table tr:hover td { background: #f5f9ff !important; }
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students .registered-blocks-action {
-  min-height: 32px !important; padding: 7px 12px !important; border-radius: 7px !important;
-  background: #0057a7 !important; color: #fff !important; font-size: 12px !important;
-}
-/* Student procedure records only; excludes annual records, To Review and exports. */
-@media screen {
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail .instructor-current-procedure-section {
-    padding: 12px !important; margin: 0 0 14px !important; border: 1px solid #cdddf1 !important;
-    border-radius: 12px !important; background: #fff !important; box-shadow: none !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail .summary-procedure-heading {
-    padding: 10px 12px !important; margin: 0 0 10px !important; background: #f1f8ff !important;
-    border-radius: 8px !important; color: #082f6b !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail .summary-procedure-heading h3 {
-    font-size: 17px !important; margin: 0 !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail .instructor-current-table-wrap {
-    overflow-x: auto !important; border: 1px solid #cdddf1 !important; border-radius: 10px !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail table.instructor-current-procedure-table {
-    min-width: 1100px !important; border-collapse: collapse !important; margin: 0 !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail table.instructor-current-procedure-table :is(th,td) {
-    padding: 8px 10px !important; height: auto !important; font-family: inherit !important;
-    line-height: 1.4 !important; border: 1px solid #dce6f2 !important;
-    white-space: normal !important; word-break: normal !important; overflow-wrap: anywhere !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail table.instructor-current-procedure-table th {
-    background: #062d6b !important; color: #fff !important; font-size: 11px !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail table.instructor-current-procedure-table td {
-    background: #fff !important; color: #163d70 !important; font-size: 12px !important; text-transform: none !important;
-  }
-  html body.role-instructor #instructorStudentProcedureTables.current-records-compact-detail table.instructor-current-procedure-table tbody tr:hover td { background: #f5f9ff !important; }
-}
 @media (max-width: 1100px) {
   html body.role-instructor #currentRecordsDirectory .directory-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
