@@ -1,0 +1,30 @@
+/* Display-only cards within the Manage Students academic-year panel. */
+html body :is(#studentsYearPanel, #instructorStudentsYearPanel) > #manageStudentsSummary {
+  display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px;
+  position: static !important; inset: auto !important; float: none !important;
+  width: 100% !important; max-width: none !important; margin: 0 0 18px !important;
+  padding: 0 !important; grid-column: 1 / -1;
+}
+html body #manageStudentsSummary .manage-students-summary-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  min-height: 72px; box-sizing: border-box; background: #f1f8ff;
+  border: 1px solid #d4e5f8; border-radius: 10px;
+}
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(2) { background: #f0faf5; border-color: #d5eee0; }
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(3) { background: #fff9e9; border-color: #f6e7b9; }
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(4) { background: #f5f3ff; border-color: #e3dcfb; }
+html body #manageStudentsSummary .manage-students-summary-card > i {
+  display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0;
+  border-radius: 10px; background: #dceeff; color: #086ab8; font-size: 18px;
+}
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(2) > i { background: #d9f2e3; color: #12804d; }
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(3) > i { background: #fff0be; color: #946000; }
+html body #manageStudentsSummary .manage-students-summary-card:nth-child(4) > i { background: #e8e1ff; color: #6443b0; }
+html body #manageStudentsSummary strong { display: block; font-size: 23px; line-height: 1.15; color: #082f6b; }
+html body #manageStudentsSummary span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.4; color: #506783; }
+@media (max-width: 1100px) {
+  html body :is(#studentsYearPanel, #instructorStudentsYearPanel) > #manageStudentsSummary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 480px) {
+  html body :is(#studentsYearPanel, #instructorStudentsYearPanel) > #manageStudentsSummary { grid-template-columns: 1fr; }
+}

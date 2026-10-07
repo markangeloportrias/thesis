@@ -722,6 +722,8 @@
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-compact" />
     <link rel="stylesheet" href="assets/css/components/annual-records-summary.css?v=2" />
     <script src="assets/js/annual-records-summary.js?v=1"></script>
+    <link rel="stylesheet" href="assets/css/components/manage-students-summary.css?v=1" />
+    <script src="assets/js/manage-students-summary.js?v=1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-current-records.css?v=20261007-10" />
   </head>
   <body>
@@ -1543,6 +1545,7 @@
                   class="students-panel active"
                   id="instructorStudentsYearPanel"
                 >
+                  <div id="manageStudentsSummary" aria-label="Student management summary"></div>
                   <div class="table-wrapper">
                     <table id="instructor-school-years-table" class="dashboard-data-table admin-premium-table">
                       <caption class="sr-only">Academic years with their block and student totals.</caption>
@@ -5951,6 +5954,7 @@
           result && result.ok && Array.isArray(result.school_years)
             ? result.school_years
             : [];
+        renderManageStudentsSummary(years);
         if (instructorSchoolYearsTbody)
           instructorSchoolYearsTbody.innerHTML = "";
         if (instructorSchoolYearsEmpty) {
