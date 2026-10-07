@@ -849,6 +849,8 @@
     <script async src="assets/js/prc-export.js?v=9-verified-only"></script>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-mobile-1" />
+    <link rel="stylesheet" href="assets/css/components/desktop-profile-header.css?v=1" />
+    <script src="assets/js/desktop-profile-header.js?v=1" defer></script>
   </head>
   <body>
     <div class="dashboard">
@@ -1079,6 +1081,10 @@
 
       <!-- Main Content -->
       <main class="main-content" id="dashboard">
+        <div id="desktopProfileHeader" data-profile-role="student" aria-label="Student profile">
+          <span class="desktop-profile-avatar"><img alt="Student profile photo" style="display:none"><i class="fas fa-user" aria-hidden="true"></i></span>
+          <div class="desktop-profile-copy"><strong>Student</strong><small>Clinical trainee</small></div>
+        </div>
         <!-- Hero Section -->
         <header class="page-hero student-dashboard-hero" aria-label="Student dashboard hero">
           <div class="hero-content student-dashboard-hero-content">

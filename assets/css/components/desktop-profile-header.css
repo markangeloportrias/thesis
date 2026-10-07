@@ -1,0 +1,18 @@
+#desktopProfileHeader { display: none !important; }
+@media screen and (min-width: 768px) {
+  html body #desktopProfileHeader {
+    display: flex !important; align-items: center; gap: 12px; box-sizing: border-box;
+    width: 100%; padding: 12px 18px; margin: 0 0 16px;
+    border: 1px solid #175493; border-radius: 12px;
+    background: linear-gradient(110deg, #063573, #07569d); color: white;
+    flex-shrink: 0; grid-column: 1 / -1;
+  }
+  html body #desktopProfileHeader .desktop-profile-avatar {
+    display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0;
+    border: 2px solid #bedbff; border-radius: 50%; overflow: hidden; background: #e3efff; color: #0756a0;
+  }
+  html body #desktopProfileHeader img { width: 100%; height: 100%; object-fit: cover; }
+  html body #desktopProfileHeader .desktop-profile-copy { min-width: 0; }
+  html body #desktopProfileHeader strong { display: block; color: #fff; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+  html body #desktopProfileHeader small { display: block; color: #d8e9ff; font-size: 12px; line-height: 1.4; }
+}
