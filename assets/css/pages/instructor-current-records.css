@@ -154,21 +154,21 @@ html body.role-instructor #currentRecordsStudentSummary .student-summary-card sp
 }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students .current-records-navigator h3 { font-size: 19px !important; }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table :is(th,td) {
-  padding: 9px 14px !important; height: auto !important; line-height: 1.4 !important;
+  padding: 12px 16px !important; height: auto !important; line-height: 1.4 !important;
   border-radius: 0 !important; box-shadow: none !important; border: 0 !important;
   border-bottom: 1px solid #e0e9f4 !important; font-family: inherit !important;
 }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table th {
-  background: #062d6b !important; color: #fff !important; font-size: 11px !important;
+  background: #062d6b !important; color: #fff !important; font-size: 13px !important;
 }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table td {
-  background: #fff !important; color: #163d70 !important; font-size: 12px !important;
+  background: #fff !important; color: #163d70 !important; font-size: 14px !important;
 }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table :is(th,td):nth-child(3) { text-align: left !important; }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students > table.registered-blocks-table tbody tr:hover td { background: #f5f9ff !important; }
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students .registered-blocks-action {
-  min-height: 32px !important; padding: 7px 12px !important; border-radius: 7px !important;
-  background: #0057a7 !important; color: #fff !important; font-size: 11px !important; box-shadow: none !important;
+  min-height: 36px !important; padding: 8px 14px !important; border-radius: 7px !important;
+  background: #0057a7 !important; color: #fff !important; font-size: 13px !important; box-shadow: none !important;
 }
 @media (max-width: 1100px) {
   html body.role-instructor #currentRecordsStudentRoster.showing-block-students #currentRecordsStudentSummary { grid-template-columns: repeat(2,minmax(0,1fr)); }
