@@ -277,6 +277,49 @@ html body.role-admin #dashboardCard .dashboard-activity-header {
 html body.role-admin #dashboardCard .dashboard-action-card {
   border-left: 3px solid #1970bd !important;
 }
+/* Mobile student overview: prevent icon/text collisions and retain every column. */
+@media (max-width: 700px) {
+  html body.role-student #dashboard #dashboardProgressSection .stats-row {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stats-row > .stat-card-h {
+    display: grid !important; grid-template-columns: 36px minmax(0,1fr) !important;
+    grid-template-rows: auto !important; gap: 12px !important;
+    padding: 12px 30px 12px 12px !important; min-height: 76px !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stat-card-h .stat-icon-wrap {
+    grid-column: 1 !important; grid-row: 1 !important;
+    width: 36px !important; min-width: 36px !important; height: 36px !important;
+    position: static !important; transform: none !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stat-card-h .stat-info {
+    display: flex !important; flex-direction: column !important;
+    grid-column: 2 !important; grid-row: 1 !important; min-width: 0 !important; gap: 5px !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stat-card-h .stat-name {
+    font-size: 13px !important; line-height: 1.4 !important; white-space: normal !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stat-card-h .stat-sub {
+    font-size: 12px !important; line-height: 1.4 !important; width: 100% !important;
+  }
+  html body.role-student #dashboard #dashboardProgressSection .stat-card-h .stat-progress {
+    width: 100% !important; margin: 0 !important; height: 5px !important;
+  }
+  html body.role-student #dashboard #recentRecordsPanel {
+    width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box;
+  }
+  html body.role-student #dashboard #recentRecordsPanel .recent-records-table-wrap {
+    display: block !important; width: 100% !important; max-width: 100% !important;
+    overflow-x: auto !important; -webkit-overflow-scrolling: touch;
+  }
+  html body.role-student #dashboard #recentRecordsPanel .recent-records-table {
+    display: table !important; width: 100% !important; min-width: 900px !important;
+    table-layout: auto !important;
+  }
+  html body.role-student #dashboard #recentRecordsPanel .recent-records-table :is(th,td) {
+    font-size: 12px !important; line-height: 1.4 !important;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html body.role-admin #dashboardSummary .summary-box,
   html body.role-instructor #main-stats-grid .stat-card,
