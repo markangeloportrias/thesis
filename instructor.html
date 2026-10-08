@@ -6754,6 +6754,8 @@
         if (isToReview) {
           const assignedRecords = (Array.isArray(list) ? list : []).filter(
             isInstructorCaseAssigned,
+          ).filter((record) =>
+            getInstructorProcedureRecordReviewStatus(record) !== "verified",
           ).sort((a, b) => {
             const recordTime = (record) => {
               const raw = record?.updated_at || record?.created_at || record?.date_time_performed || "";
