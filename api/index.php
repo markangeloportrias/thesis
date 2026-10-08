@@ -1730,12 +1730,17 @@ try {
                 $identity = is_array($details['record_identity'] ?? null) ? $details['record_identity'] : [];
                 // Older creation events kept these fields at the top level.
                 $identity += array_intersect_key($details, array_flip(['student_id', 'procedure_key', 'procedure_name', 'case_no', 'academic_year']));
-                $matches = array_values(array_filter($recordsById[(string)$entry['entity_uid']] ?? [], static function ($record) use ($identity) {
+                $candidateRecords = $recordsById[(string)$entry['entity_uid']] ?? [];
+                $matches = array_values(array_filter($candidateRecords, static function ($record) use ($identity) {
                     foreach (['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at'] as $field) {
                         if (array_key_exists($field, $identity) && (string)$identity[$field] !== (string)$record[$field]) return false;
                     }
                     return true;
                 }));
+                // Older audit rows may have a stale identity snapshot. When the
+                // event ID resolves to one record for this student, that record
+                // remains the safest source for its current case number.
+                if (!$matches && count($candidateRecords) === 1) $matches = $candidateRecords;
                 // Preserve known fields even when an imported ID matches multiple rows.
                 // A recorded case number is a historical snapshot and survives later edits.
                 $caseNumbers = array_values(array_unique(array_column($matches, 'case_no')));
