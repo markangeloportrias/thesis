@@ -989,6 +989,7 @@ try {
             if (!empty($_GET['school_year'])) { $conditions[] = 'c.academic_year=?'; $params[] = $_GET['school_year']; }
             if (!empty($_GET['procedure'])) { $conditions[] = 'c.procedure_key=?'; $params[] = $_GET['procedure']; }
             $stmt = $pdo->prepare("SELECT c.*,
+                COALESCE(NULLIF(TRIM(i.display_name), ''), NULLIF(TRIM(i.username), ''), c.instructor_name) AS current_instructor_name,
                 (SELECT y.label
                  FROM student_block_assignments a
                  JOIN student_blocks b ON b.id=a.block_id AND b.archived_at IS NULL
@@ -996,8 +997,19 @@ try {
                  WHERE a.student_id=c.student_id AND a.archived_at IS NULL
                  ORDER BY (y.label=c.academic_year) DESC,(y.status='active') DESC,y.start_year DESC
                  LIMIT 1) AS assigned_school_year
-                FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
-            $stmt->execute($params); respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
+                FROM case_records c
+                LEFT JOIN instructor_accounts i ON i.account_uid=c.instructor_uid AND i.archived_at IS NULL
+                WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
+            $stmt->execute($params);
+            $cases = $stmt->fetchAll();
+            foreach ($cases as &$case) {
+                if (array_key_exists('current_instructor_name', $case)) {
+                    $case['instructor_name'] = $case['current_instructor_name'];
+                    unset($case['current_instructor_name']);
+                }
+            }
+            unset($case);
+            respond(['ok' => true, 'cases' => $cases]);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'assign') {
             if (!in_array($user['role'], ['admin', 'student'], true)) respond(['ok' => false, 'message' => 'Only the student or an administrator can assign an instructor.'], 403);
