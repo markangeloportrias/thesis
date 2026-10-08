@@ -1036,7 +1036,7 @@ try {
             if (trim((string)($record['instructor_uid'] ?? '')) !== $instructorId) audit($pdo, $user, 'assign_instructor', 'case', (string)$record['id'], [
                 'instructor_uid' => $instructorId !== '' ? $instructorId : null,
                 'instructor_name' => $instructorName,
-                'record_identity' => array_intersect_key($record, array_flip(['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at'])),
+                'record_identity' => array_intersect_key($record, array_flip(['student_id', 'procedure_key', 'procedure_name', 'case_no', 'academic_year', 'created_at'])),
             ]);
             respond(['ok' => true, 'instructor_uid' => $instructorId, 'instructor_name' => $instructorName]);
         }
@@ -1194,7 +1194,7 @@ try {
                 }
             }
             $reviewStep = 'audit';
-            audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null, 'record_identity' => array_intersect_key($reviewRecord, array_flip(['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at']))]);
+            audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null, 'record_identity' => array_intersect_key($reviewRecord, array_flip(['student_id', 'procedure_key', 'procedure_name', 'case_no', 'academic_year', 'created_at']))]);
             $reviewStep = 'commit';
             $pdo->commit();
             respond(['ok' => true]);
@@ -1270,7 +1270,7 @@ try {
 
             if ($roleConflict !== null) respond(caseRoleConflictPayload($roleContext), 409);
             if ($duplicateCase) respond(['ok' => false, 'code' => 'duplicate_submission', 'message' => 'This case is already recorded for this student, procedure, and academic year.'], 409);
-            if ($inserted) audit($pdo, $user, 'create', 'case', $caseId, ['student_id' => $data['student_id'], 'procedure_key' => $data['procedure_key']]);
+            if ($inserted) audit($pdo, $user, 'create', 'case', $caseId, ['student_id' => $data['student_id'], 'procedure_key' => $data['procedure_key'], 'record_identity' => ['student_id' => $data['student_id'], 'procedure_key' => $data['procedure_key'], 'case_no' => $caseNo, 'academic_year' => $academicYear]]);
             respond(['ok' => $inserted, 'id' => $caseId], 201);
         }
         if ($method === 'PATCH' && $id !== '' && $action === 'comment') {
@@ -1304,7 +1304,7 @@ try {
             $stmt->execute([$id,$user['user_uid'],$authorName,$user['role']==='admin'?'admin':'instructor',$remarks,caseCommentScope($case)]);
             $commentId=(string)$pdo->lastInsertId();
             $pdo->prepare("UPDATE case_records SET teacher_remarks=? WHERE $commentWhere LIMIT 1")->execute(array_merge([$remarks], $commentParams));
-            audit($pdo,$user,'comment','case',$id,['comment_id'=>$commentId,'remarks'=>$remarks]);
+            audit($pdo,$user,'comment','case',$id,['comment_id'=>$commentId,'remarks'=>$remarks,'record_identity'=>array_intersect_key($case, array_flip(['student_id','procedure_key','procedure_name','case_no','academic_year','created_at']))]);
             $pdo->commit();
             respond(['ok'=>true,'id'=>$commentId]);
         }
@@ -1728,21 +1728,26 @@ try {
             foreach ($rows as &$entry) {
                 $details = json_decode((string)($entry['details'] ?? ''), true) ?: [];
                 $identity = is_array($details['record_identity'] ?? null) ? $details['record_identity'] : [];
+                // Older creation events kept these fields at the top level.
+                $identity += array_intersect_key($details, array_flip(['student_id', 'procedure_key', 'procedure_name', 'case_no', 'academic_year']));
                 $matches = array_values(array_filter($recordsById[(string)$entry['entity_uid']] ?? [], static function ($record) use ($identity) {
                     foreach (['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at'] as $field) {
                         if (array_key_exists($field, $identity) && (string)$identity[$field] !== (string)$record[$field]) return false;
                     }
                     return true;
                 }));
-                // Do not invent a case number for old events with an ambiguous ID.
-                $entry['case_no'] = count($matches) === 1 ? $matches[0]['case_no'] : null;
-                $entry['procedure_name'] = count($matches) === 1 ? $matches[0]['procedure_name'] : 'Clinical record';
+                // Preserve known fields even when an imported ID matches multiple rows.
+                // A recorded case number is a historical snapshot and survives later edits.
+                $caseNumbers = array_values(array_unique(array_column($matches, 'case_no')));
+                $procedureNames = array_values(array_unique(array_column($matches, 'procedure_name')));
+                $entry['case_no'] = $identity['case_no'] ?? (count($caseNumbers) === 1 ? $caseNumbers[0] : null);
+                $entry['procedure_name'] = $identity['procedure_name'] ?? (count($procedureNames) === 1 ? $procedureNames[0] : 'Clinical record');
                 $entry['record_ambiguous'] = count($matches) !== 1;
             }
             unset($entry);
             $rows = array_values(array_filter($rows, static function ($entry) use ($user) {
                 $details = json_decode((string)($entry['details'] ?? ''), true) ?: [];
-                $owner = $details['record_identity']['student_id'] ?? null;
+                $owner = $details['record_identity']['student_id'] ?? $details['student_id'] ?? null;
                 return $owner === null || (string)$owner === (string)$user['user_uid'];
             }));
         } elseif ($user['role'] === 'instructor') {
