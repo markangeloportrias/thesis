@@ -4881,7 +4881,7 @@
               try { details = JSON.parse(details); } catch (_) { details = null; }
             }
             if (details && Object.prototype.hasOwnProperty.call(details, "instructor_uid")) {
-              const recordKey = JSON.stringify([entry.entity_uid || "", entry.procedure_name || "", entry.case_no || ""]);
+              const recordKey = JSON.stringify([entry.entity_uid || "", entry.procedure_name || "", entry.case_no || "", details.record_identity || null]);
               const instructorId = String(details.instructor_uid || "");
               if (lastAssignmentByRecord.get(recordKey) === instructorId) return false;
               lastAssignmentByRecord.set(recordKey, instructorId);
@@ -4916,14 +4916,26 @@
         container.innerHTML = '<div class="activity-log-table-wrap"><table class="activity-log-table"><thead><tr><th>Activity</th><th>Procedure</th><th>Case No.</th><th>Date &amp; Time</th></tr></thead><tbody></tbody></table></div>';
         const activityTableBody = container.querySelector("tbody");
         entries.forEach((entry) => {
-          const [icon, label] = actionMap[entry.action_name] || ["fa-clock-rotate-left", String(entry.action_name || "Record activity").replace(/_/g, " ")];
+          const [icon, actionLabel] = actionMap[entry.action_name] || ["fa-clock-rotate-left", String(entry.action_name || "Record activity").replace(/_/g, " ")];
+          let details = entry.details;
+          if (typeof details === "string") {
+            try { details = JSON.parse(details); } catch (_) { details = null; }
+          }
+          let label = actionLabel;
+          if (entry.action_name === "assign_instructor" && details) {
+            label = details.instructor_uid
+              ? `Instructor assigned: ${details.instructor_name || "Clinical Instructor"}`
+              : "Instructor assignment removed";
+          } else if (entry.action_name === "review" && details?.status) {
+            label = `Record reviewed: ${details.status}`;
+          }
           const item = document.createElement("tr");
           item.className = `activity-log-row ${entry.action_name || "activity"}`;
           const recordLabel = [entry.procedure_name, entry.case_no ? `Case ${entry.case_no}` : ""]
             .filter(Boolean)
             .join(" · ") || "Clinical record";
           item.innerHTML = `<div class="activity-log-icon"><i class="fas ${icon}" aria-hidden="true"></i></div><div class="activity-log-copy"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(recordLabel)}</span></div><time datetime="${escapeHtml(entry.created_at || "")}">${escapeHtml(formatActivityTimestamp(entry.created_at))}</time>`;
-          item.innerHTML = `<td><span class="activity-log-action"><i class="fas ${icon}" aria-hidden="true"></i>${escapeHtml(label)}</span></td><td>${escapeHtml(entry.procedure_name || "Clinical record")}</td><td>${escapeHtml(entry.case_no || "—")}</td><td>${escapeHtml(formatActivityTimestamp(entry.created_at))}</td>`;
+          item.innerHTML = `<td><span class="activity-log-action"><i class="fas ${icon}" aria-hidden="true"></i>${escapeHtml(label)}</span></td><td>${escapeHtml(entry.procedure_name || "Clinical record")}</td><td>${escapeHtml(entry.case_no || (entry.record_ambiguous ? "Case link unavailable" : "—"))}</td><td>${escapeHtml(formatActivityTimestamp(entry.created_at))}</td>`;
           activityTableBody?.appendChild(item);
         });
       }

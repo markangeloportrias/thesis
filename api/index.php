@@ -1036,6 +1036,7 @@ try {
             if (trim((string)($record['instructor_uid'] ?? '')) !== $instructorId) audit($pdo, $user, 'assign_instructor', 'case', (string)$record['id'], [
                 'instructor_uid' => $instructorId !== '' ? $instructorId : null,
                 'instructor_name' => $instructorName,
+                'record_identity' => array_intersect_key($record, array_flip(['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at'])),
             ]);
             respond(['ok' => true, 'instructor_uid' => $instructorId, 'instructor_name' => $instructorName]);
         }
@@ -1193,7 +1194,7 @@ try {
                 }
             }
             $reviewStep = 'audit';
-            audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null]);
+            audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null, 'record_identity' => array_intersect_key($reviewRecord, array_flip(['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at']))]);
             $reviewStep = 'commit';
             $pdo->commit();
             respond(['ok' => true]);
@@ -1709,16 +1710,41 @@ try {
         }
         $recordId = (string)($_GET['record_id'] ?? '');
         if ($user['role'] === 'student') {
-            $sql = 'SELECT a.*, c.case_no, c.procedure_name FROM audit_trail a INNER JOIN case_records c ON a.entity_type = \'case\' AND a.entity_uid = CAST(c.id AS CHAR) WHERE c.student_id = ?';
+            // EXISTS returns each audit event once, even for imported duplicate case IDs.
+            $sql = 'SELECT a.* FROM audit_trail a WHERE a.entity_type = \'case\' AND EXISTS (SELECT 1 FROM case_records c WHERE a.entity_uid = CAST(c.id AS CHAR) AND c.student_id = ?)';
             $params = [$user['user_uid']];
             if ($recordId !== '') {
-                $sql .= ' AND c.id = ?';
+                $sql .= ' AND a.entity_uid = ?';
                 $params[] = $recordId;
             }
-            $sql .= ' ORDER BY a.created_at DESC LIMIT 200';
+            $sql .= ' ORDER BY a.created_at DESC, a.id DESC LIMIT 200';
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $rows = $stmt->fetchAll();
+            $recordStmt = $pdo->prepare('SELECT id,student_id,procedure_key,procedure_name,case_no,academic_year,created_at FROM case_records WHERE student_id=?');
+            $recordStmt->execute([$user['user_uid']]);
+            $recordsById = [];
+            foreach ($recordStmt->fetchAll() as $record) $recordsById[(string)$record['id']][] = $record;
+            foreach ($rows as &$entry) {
+                $details = json_decode((string)($entry['details'] ?? ''), true) ?: [];
+                $identity = is_array($details['record_identity'] ?? null) ? $details['record_identity'] : [];
+                $matches = array_values(array_filter($recordsById[(string)$entry['entity_uid']] ?? [], static function ($record) use ($identity) {
+                    foreach (['student_id', 'procedure_key', 'case_no', 'academic_year', 'created_at'] as $field) {
+                        if (array_key_exists($field, $identity) && (string)$identity[$field] !== (string)$record[$field]) return false;
+                    }
+                    return true;
+                }));
+                // Do not invent a case number for old events with an ambiguous ID.
+                $entry['case_no'] = count($matches) === 1 ? $matches[0]['case_no'] : null;
+                $entry['procedure_name'] = count($matches) === 1 ? $matches[0]['procedure_name'] : 'Clinical record';
+                $entry['record_ambiguous'] = count($matches) !== 1;
+            }
+            unset($entry);
+            $rows = array_values(array_filter($rows, static function ($entry) use ($user) {
+                $details = json_decode((string)($entry['details'] ?? ''), true) ?: [];
+                $owner = $details['record_identity']['student_id'] ?? null;
+                return $owner === null || (string)$owner === (string)$user['user_uid'];
+            }));
         } elseif ($user['role'] === 'instructor') {
             if ($recordId !== '') {
                 $caseAccess = $pdo->prepare('SELECT instructor_uid FROM case_records WHERE id=? LIMIT 1');
