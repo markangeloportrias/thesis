@@ -1033,7 +1033,7 @@ try {
             }
             $update = $pdo->prepare("UPDATE case_records SET instructor_uid=?,instructor_name=? WHERE $where LIMIT 1");
             $update->execute([$instructorId !== '' ? $instructorId : null, $instructorName, ...$params]);
-            audit($pdo, $user, 'assign_instructor', 'case', (string)$record['id'], [
+            if (trim((string)($record['instructor_uid'] ?? '')) !== $instructorId) audit($pdo, $user, 'assign_instructor', 'case', (string)$record['id'], [
                 'instructor_uid' => $instructorId !== '' ? $instructorId : null,
                 'instructor_name' => $instructorName,
             ]);

@@ -4871,13 +4871,31 @@
           }));
         }
         const displayedActivityKeys = new Set();
+        const lastAssignmentByRecord = new Map();
         entries = entries.filter((entry) => {
-          const activityKey = [
+          // Collapse repeated assignments to the same instructor, even when
+          // requests were logged seconds apart. Keep genuine reassignments.
+          if (entry.action_name === "assign_instructor") {
+            let details = entry.details;
+            if (typeof details === "string") {
+              try { details = JSON.parse(details); } catch (_) { details = null; }
+            }
+            if (details && Object.prototype.hasOwnProperty.call(details, "instructor_uid")) {
+              const recordKey = JSON.stringify([entry.entity_uid || "", entry.procedure_name || "", entry.case_no || ""]);
+              const instructorId = String(details.instructor_uid || "");
+              if (lastAssignmentByRecord.get(recordKey) === instructorId) return false;
+              lastAssignmentByRecord.set(recordKey, instructorId);
+            }
+          }
+          const activityKey = JSON.stringify([
+            entry.entity_uid || "",
+            entry.actor_uid || "",
             entry.action_name || "",
             entry.procedure_name || "",
             entry.case_no || "",
             entry.created_at || "",
-          ].map((value) => String(value).trim().toLowerCase()).join("|");
+            entry.details || null,
+          ]);
           if (displayedActivityKeys.has(activityKey)) return false;
           displayedActivityKeys.add(activityKey);
           return true;
@@ -4893,11 +4911,12 @@
           update: ["fa-pen-to-square", "Record updated"],
           review: ["fa-clipboard-check", "Record reviewed"],
           comment: ["fa-comment-dots", "Instructor feedback added"],
+          assign_instructor: ["fa-user-check", "Instructor assignment changed"],
         };
         container.innerHTML = '<div class="activity-log-table-wrap"><table class="activity-log-table"><thead><tr><th>Activity</th><th>Procedure</th><th>Case No.</th><th>Date &amp; Time</th></tr></thead><tbody></tbody></table></div>';
         const activityTableBody = container.querySelector("tbody");
         entries.forEach((entry) => {
-          const [icon, label] = actionMap[entry.action_name] || ["fa-clock-rotate-left", "Record activity"];
+          const [icon, label] = actionMap[entry.action_name] || ["fa-clock-rotate-left", String(entry.action_name || "Record activity").replace(/_/g, " ")];
           const item = document.createElement("tr");
           item.className = `activity-log-row ${entry.action_name || "activity"}`;
           const recordLabel = [entry.procedure_name, entry.case_no ? `Case ${entry.case_no}` : ""]
