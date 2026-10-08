@@ -1,4 +1,11 @@
 #desktopProfileHeader { display: none !important; }
+.mobile-profile-clock { display: none; }
+@media screen and (max-width: 1024px) {
+  html body.role-student .student-mobile-profile-copy .mobile-profile-clock {
+    display: block; color: #d8e9ff; font-size: 10px; font-weight: 400;
+    line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+}
 @media screen and (min-width: 768px) {
   html body #desktopProfileHeader {
     display: flex !important; align-items: center; gap: 12px; box-sizing: border-box;

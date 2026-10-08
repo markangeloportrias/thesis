@@ -34,6 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const time = document.createElement('time');
   clock.append(date, time);
   header.append(clock);
+  const mobileProfile = document.querySelector('.student-mobile-profile-copy');
+  const mobileTime = mobileProfile ? document.createElement('time') : null;
+  if (mobileTime) {
+    mobileTime.className = 'mobile-profile-clock';
+    mobileProfile.append(mobileTime);
+  }
+  const mobileDateFormat = new Intl.DateTimeFormat('en-PH', {
+    timeZone: 'Asia/Manila', month: 'short', day: 'numeric',
+  });
   const dateFormat = new Intl.DateTimeFormat('en-PH', {
     timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
   });
@@ -44,6 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const now = new Date();
     date.textContent = dateFormat.format(now);
     time.dateTime = now.toISOString();
+    if (mobileTime) {
+      mobileTime.dateTime = now.toISOString();
+      mobileTime.textContent = mobileDateFormat.format(now) + ' · ' + timeFormat.format(now) + ' PHT';
+      mobileTime.title = dateFormat.format(now) + ' · Philippine Time';
+    }
     time.textContent = timeFormat.format(now) + ' · Philippine Time';
   };
   updateClock();
