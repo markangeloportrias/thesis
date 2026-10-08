@@ -4870,6 +4870,18 @@
             created_at: record.created_at || record.date_time_performed,
           }));
         }
+        const displayedActivityKeys = new Set();
+        entries = entries.filter((entry) => {
+          const activityKey = [
+            entry.action_name || "",
+            entry.procedure_name || "",
+            entry.case_no || "",
+            entry.created_at || "",
+          ].map((value) => String(value).trim().toLowerCase()).join("|");
+          if (displayedActivityKeys.has(activityKey)) return false;
+          displayedActivityKeys.add(activityKey);
+          return true;
+        });
         if (!entries.length) {
           container.innerHTML = '<div class="frontend-panel-empty"><i class="fas fa-clock-rotate-left"></i><p>No record activity yet.</p></div>';
           return;
