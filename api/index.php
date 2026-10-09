@@ -1022,6 +1022,17 @@ try {
             $record = $matches[0] ?? false;
             if (!$record) respond(['ok' => false, 'message' => 'Clinical record not found or already archived.'], 404);
 
+            // A verified record keeps its instructor assignment. Students may
+            // assign or change an instructor only while the record is still
+            // awaiting review.
+            $recordStatus = strtolower(trim((string)($record['record_status'] ?? $record['status'] ?? '')));
+            $isVerified = $recordStatus === 'verified'
+                || trim((string)($record['checked_by'] ?? '')) !== ''
+                || trim((string)($record['checked_at'] ?? '')) !== '';
+            if ($user['role'] === 'student' && $isVerified) {
+                respond(['ok' => false, 'message' => 'A verified clinical record cannot change its assigned instructor.'], 409);
+            }
+
             $instructorId = trim((string)($data['instructor_id'] ?? $data['instructorId'] ?? ''));
             $instructorName = null;
             if ($instructorId !== '') {

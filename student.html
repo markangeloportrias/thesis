@@ -683,6 +683,19 @@
         text-transform: uppercase;
       }
 
+      html body.role-student .case-assignment-locked {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: #16805b;
+        font-size: 8px;
+        font-weight: 800;
+        line-height: 1;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
       html body.role-student .case-assignment-btn {
         display: inline-flex;
         align-items: center;
@@ -2977,6 +2990,8 @@
         const renderControl = () => {
           control.replaceChildren();
           const selectedId = String(record.instructorId || "");
+          const recordStatus = String(record.status || record.recordStatus || "").trim().toLowerCase();
+          const isVerified = recordStatus === "verified" || Boolean(record.checkedBy || record.checkedAt);
           if (selectedId) {
             const assignedName = document.createElement("span");
             assignedName.className = "case-assignment-name";
@@ -2984,6 +2999,15 @@
               || studentCaseInstructorOptions.find((account) => account.id === selectedId)?.name
               || "Assigned instructor";
             control.appendChild(assignedName);
+          }
+
+          if (isVerified) {
+            const locked = document.createElement("span");
+            locked.className = "case-assignment-locked";
+            locked.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i><span>Verified</span>';
+            locked.title = "The assigned instructor is locked after verification.";
+            control.appendChild(locked);
+            return;
           }
 
           const button = document.createElement("button");
