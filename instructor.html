@@ -2862,6 +2862,11 @@
                 label.textContent = status;
                 label.style.cssText = `min-width:0;max-width:100%;color:inherit !important;font-size:inherit !important;font-weight:inherit !important;white-space:${compactStatus ? "nowrap" : "normal"} !important;overflow-wrap:anywhere;`;
                 badge.append(icon, label);
+                // Keep long status labels inside the fixed-width status column.
+                badge.style.setProperty("flex-wrap", "wrap", "important");
+                badge.style.setProperty("white-space", "normal", "important");
+                label.style.setProperty("white-space", "normal", "important");
+                label.style.setProperty("overflow-wrap", "anywhere", "important");
                 statusCell.appendChild(badge);
                 row.appendChild(statusCell);
               }
