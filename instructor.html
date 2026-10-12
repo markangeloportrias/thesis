@@ -362,6 +362,18 @@
           flex-direction: column;
         }
       }
+      /* Keep the Manage Students hover highlight continuous across cells. */
+      html body.role-instructor #students-view #instructor-block-students-table tbody tr,
+      html body.role-instructor #students-view #instructor-block-students-table tbody tr:hover,
+      html body.role-instructor #students-view #instructor-block-students-table tbody tr td,
+      html body.role-instructor #students-view #instructor-block-students-table tbody tr:hover td {
+        box-shadow: none !important;
+        transform: none !important;
+        border-radius: 0 !important;
+      }
+      html body.role-instructor #students-view #instructor-block-students-table tbody tr:hover td {
+        background: #edf6ff !important;
+      }
     </style>
     <style id="instructor-review-nested-cards">
       #instructorStudentProcedureTables tr.review-target-row { outline: 2px solid #0b63b6; outline-offset: -2px; scroll-margin-block: 100px; }
