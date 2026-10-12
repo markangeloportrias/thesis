@@ -46,6 +46,24 @@ function ensureInstructorCaseAccess(array $user, array $case): void
     }
 }
 
+function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorUid): bool
+{
+    $numbers = json_decode((string)($request['case_numbers'] ?? ''), true);
+    if (!is_array($numbers) || !$numbers) return false;
+    $numbers = array_unique(array_map('strval', $numbers));
+    $cases = $pdo->prepare('SELECT case_no,instructor_uid FROM case_records WHERE student_id=? AND procedure_key=? AND archived_at IS NULL');
+    $cases->execute([$request['student_id'], $request['procedure_key']]);
+    $matched = [];
+    foreach ($cases->fetchAll() as $case) {
+        $number = (string)$case['case_no'];
+        if (!in_array($number, $numbers, true)) continue;
+        // Never expose a request containing another instructor's case.
+        if ((string)$case['instructor_uid'] !== $instructorUid) return false;
+        $matched[] = $number;
+    }
+    return !array_diff($numbers, $matched);
+}
+
 function normalizeCaseRoleValue(string $value): string
 {
     $value = preg_replace('/\s+/', '', trim($value)) ?? '';
@@ -1438,6 +1456,9 @@ try {
             $stmt = $pdo->prepare('SELECT edit_requests.* FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             $requests = $stmt->fetchAll();
+            if ($user['role'] === 'instructor') {
+                $requests = array_values(array_filter($requests, static fn($request) => instructorOwnsEditRequest($pdo, $request, (string)$user['user_uid'])));
+            }
             $legacyReviewer = $pdo->prepare('SELECT CASE
                     WHEN audit_trail.actor_role = \'instructor\' THEN COALESCE(instructor_accounts.display_name, instructor_accounts.username, audit_trail.actor_uid)
                     WHEN audit_trail.actor_role = \'admin\' THEN \'Administrator\'
@@ -1512,6 +1533,10 @@ try {
                 respond(['ok'=>false,'message'=>'Edit request not found.'],404);
             }
             $resolvedRequestId = (string)$currentRequest['id'];
+            if ($user['role'] === 'instructor' && !instructorOwnsEditRequest($pdo, $currentRequest, (string)$user['user_uid'])) {
+                $pdo->rollBack();
+                respond(['ok'=>false,'message'=>'This edit request is not assigned to you.'],403);
+            }
             $nextStatus = $action === 'approve' ? 'approved' : 'rejected';
             if (in_array($action, ['approve','reject'], true) && ($currentRequest['archived_at'] !== null || $currentRequest['status'] === $nextStatus)) {
                 $pdo->commit();
@@ -1568,17 +1593,18 @@ try {
                     if (!array_key_exists($field, $requestIdentity)) respond(['ok'=>false,'message'=>'Edit request details are incomplete.'],422);
                 }
                 $caseNumbers = is_array($requestIdentity['case_numbers']) ? json_encode($requestIdentity['case_numbers']) : (string)$requestIdentity['case_numbers'];
-                $requestStmt = $pdo->prepare('SELECT id,student_id,status FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? LIMIT 2');
+                $requestStmt = $pdo->prepare('SELECT * FROM edit_requests WHERE student_id=? AND procedure_key=? AND case_numbers=? AND requested_at=? LIMIT 2');
                 $requestStmt->execute([(string)$requestIdentity['student_id'], (string)$requestIdentity['procedure_key'], $caseNumbers, (string)$requestIdentity['requested_at']]);
                 $requestMatches = $requestStmt->fetchAll();
                 if (count($requestMatches) > 1) respond(['ok'=>false,'message'=>'Multiple edit requests match these details. Refresh and try again.'],409);
                 $request = $requestMatches[0] ?? false;
             } else {
-                $requestStmt = $pdo->prepare('SELECT id,student_id,status FROM edit_requests WHERE id=?');
+                $requestStmt = $pdo->prepare('SELECT * FROM edit_requests WHERE id=?');
                 $requestStmt->execute([$id]);
                 $request = $requestStmt->fetch();
             }
             if (!$request) respond(['ok'=>false,'message'=>'Edit request not found.'],404);
+            if ($user['role'] === 'instructor' && !instructorOwnsEditRequest($pdo, $request, (string)$user['user_uid'])) respond(['ok'=>false,'message'=>'This edit request is not assigned to you.'],403);
             if ($user['role'] === 'student' && $user['user_uid'] !== (string)$request['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
             if (!in_array(strtolower((string)$request['status']), ['approved', 'rejected'], true)) respond(['ok'=>false,'message'=>'Only approved or rejected edit requests can be deleted.'],409);
             $deleteId = (string)$request['id'];
@@ -1691,7 +1717,16 @@ try {
             $archived = ($_GET['archived'] ?? '0') === '1';
             $where = $user['role']==='student' ? ' AND (notification_history.student_id=? OR notification_history.student_id IS NULL)' : '';
             $stmt=$pdo->prepare('SELECT notification_history.*, edit_requests.case_numbers AS request_case_numbers FROM notification_history LEFT JOIN edit_requests ON edit_requests.id=notification_history.request_id WHERE '.($archived ? 'notification_history.archived_at IS NOT NULL' : 'notification_history.archived_at IS NULL').$where.' ORDER BY notification_history.created_at DESC');
-            $stmt->execute($where?[$user['user_uid']]:[]);respond(['ok'=>true,'notifications'=>$stmt->fetchAll()]);
+            $stmt->execute($where?[$user['user_uid']]:[]);
+            $notifications = $stmt->fetchAll();
+            if ($user['role'] === 'instructor') {
+                $notifications = array_values(array_filter($notifications, static function ($notice) use ($pdo, $user) {
+                    if (strpos((string)$notice['event_type'], 'edit_request_') !== 0) return true;
+                    $notice['case_numbers'] = $notice['request_case_numbers'] ?? '';
+                    return instructorOwnsEditRequest($pdo, $notice, (string)$user['user_uid']);
+                }));
+            }
+            respond(['ok'=>true,'notifications'=>$notifications]);
         }
         if ($method === 'POST') {
             requireFields($data,['event_type']);$stmt=$pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message,remarks,meta) VALUES (?,?,?,?,?,?,?,?,?)');$stmt->execute([$data['event_type'],$data['student_id']??null,$data['procedure_key']??null,$data['procedure_type']??null,$data['case_no']??null,$data['request_id']??null,$data['message']??null,$data['remarks']??null,json_encode($data['meta']??null)]);respond(['ok'=>true,'id'=>$pdo->lastInsertId()],201);
