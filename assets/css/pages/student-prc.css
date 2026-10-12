@@ -266,7 +266,8 @@ html body.role-student .sr-only { position: absolute; width: 1px; height: 1px; p
 html body.role-student .edit-requests-table-wrap { overflow-x: auto; }
 html body.role-student table.edit-requests-table {
   width: 100%;
-  min-width: 700px;
+  min-width: 960px;
+  table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
   color: #24415f;
@@ -341,6 +342,10 @@ html body.role-student #editRequestsTab table.edit-requests-table tbody tr {
 }
 html body.role-student #editRequestsTab table.edit-requests-table tbody td {
   padding: 6px 12px !important;
+  overflow-wrap: anywhere;
+}
+html body.role-student #editRequestsTab .edit-request-status {
+  white-space: normal;
 }
 
 /* Activity log table. */

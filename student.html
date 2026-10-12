@@ -5001,7 +5001,7 @@
           });
           return;
         }
-        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div>';
+        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:13%"><col style="width:19%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Assigned Instructor</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div>';
         const requestTableBody = container.querySelector("tbody");
         requests.forEach((request, requestIndex) => {
           const status = correctionRequestStatus(request);
@@ -5018,6 +5018,9 @@
           card.innerHTML = `<div class="notification-icon"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}"></i></div><div><div class="notification-title">${label}</div><div class="notification-meta">${request.procedure || "Clinical record"} · Case ${request.caseNo || "—"}</div><small class="notification-time">${escapeHtml(formatActivityTimestamp(request.requestedAt))} · Open case</small></div><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button>`;
           card.innerHTML = `<td><span class="edit-request-status ${status}"><i class="fas ${status === "accepted" ? "fa-circle-check" : status === "rejected" ? "fa-circle-xmark" : "fa-clock"}" aria-hidden="true"></i>${escapeHtml(label)}</span>${rejectionRemarksMarkup}</td><td>${escapeHtml(request.procedure || "Clinical record")}</td><td>${escapeHtml(request.caseNo || "—")}</td><td>${escapeHtml(request.requestedAt || "—")}</td><td><button type="button" class="delete-edit-notification" data-delete-edit-notification="${requestIndex}" aria-label="Delete this notification"><i class="fas fa-trash"></i> Delete</button></td>`;
           const isPendingRequest = status === "requested" || status === "pending";
+          const instructorCell = document.createElement("td");
+          instructorCell.textContent = request.assigned_instructor_name || "Not assigned";
+          card.insertBefore(instructorCell, card.children[3]);
           const requestActionButton = card.querySelector("[data-delete-edit-notification]");
           if (requestActionButton) {
             requestActionButton.setAttribute("aria-label", isPendingRequest ? "Cancel this edit request" : "Dismiss this notification");

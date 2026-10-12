@@ -1472,6 +1472,17 @@ try {
                 ORDER BY ABS(TIMESTAMPDIFF(SECOND, audit_trail.created_at, ?)), audit_trail.id DESC
                 LIMIT 1');
             foreach ($requests as &$request) {
+                if ($user['role'] === 'student') {
+                    $assigned = $pdo->prepare("SELECT c.case_no, COALESCE(NULLIF(TRIM(i.display_name), ''), NULLIF(TRIM(i.username), ''), NULLIF(TRIM(c.instructor_name), ''), 'Not assigned') AS instructor_name FROM case_records c LEFT JOIN instructor_accounts i ON i.account_uid=c.instructor_uid WHERE c.student_id=? AND c.procedure_key=? AND c.archived_at IS NULL");
+                    $assigned->execute([$request['student_id'], $request['procedure_key']]);
+                    $numbers = json_decode((string)$request['case_numbers'], true);
+                    $numbers = is_array($numbers) ? array_map('strval', $numbers) : [];
+                    $names = [];
+                    foreach ($assigned->fetchAll() as $case) {
+                        if (in_array((string)$case['case_no'], $numbers, true)) $names[] = $case['instructor_name'];
+                    }
+                    $request['assigned_instructor_name'] = $names ? implode(', ', array_unique($names)) : 'Not assigned';
+                }
                 if (trim((string)($request['reviewer_name'] ?? '')) !== '') continue;
                 $decisionAction = $request['status'] === 'approved' ? 'approve' : ($request['status'] === 'rejected' ? 'reject' : '');
                 $decisionAt = $request['status'] === 'approved' ? ($request['approved_at'] ?? '') : ($request['rejected_at'] ?? '');
