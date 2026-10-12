@@ -4121,6 +4121,15 @@
           }
 
           const buttons = actions.querySelectorAll("button");
+          if (reviewStatus === "verified" || rec.checkedBy || rec.checkedAt) {
+            actions.replaceChildren();
+            const locked = document.createElement("span");
+            locked.className = "case-assignment-locked";
+            locked.innerHTML = '<i class="fas fa-lock" aria-hidden="true"></i><span>Locked</span>';
+            locked.title = "Actions are locked after verification.";
+            actions.appendChild(locked);
+            return;
+          }
           buttons[0]?.addEventListener("click", () => {
             openInstructorFeedback(rec, false);
           });          buttons[1]?.addEventListener("click", () => {

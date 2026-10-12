@@ -1065,6 +1065,9 @@ try {
 
             if ($user['role'] === 'student') {
                 $editStep = 'permission-check';
+                if (strtolower(trim((string)$record['record_status'])) === 'verified' || !empty($record['checked_by']) || !empty($record['checked_at'])) {
+                    respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot be edited.'], 409);
+                }
                 if (!hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'])) {
                     respond(['ok' => false, 'message' => 'Instructor correction approval is required before editing this record.'], 403);
                 }
@@ -1103,8 +1106,13 @@ try {
                 $pdo->beginTransaction();
                 $selected = $pdo->prepare("SELECT * FROM case_records WHERE $editWhere LIMIT 2 FOR UPDATE");
                 $selected->execute($recordParams);
-                if (count($selected->fetchAll()) !== 1) {
+                $lockedRecords = $selected->fetchAll();
+                if (count($lockedRecords) !== 1) {
                     throw new RuntimeException('The selected record changed. Refresh before editing.');
+                }
+                if ($user['role'] === 'student' && (strtolower(trim((string)$lockedRecords[0]['record_status'])) === 'verified' || !empty($lockedRecords[0]['checked_by']) || !empty($lockedRecords[0]['checked_at']))) {
+                    $pdo->rollBack();
+                    respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot be edited.'], 409);
                 }
                 $editStep = 'permission-lock';
                 if ($user['role'] === 'student' && !hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'], true)) {
@@ -1323,12 +1331,16 @@ try {
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
             [$where, $params] = caseMutationSelection($id, $identity, $user['role'] === 'student' ? $user['user_uid'] : null);
             $pdo->beginTransaction();
-            $selected = $pdo->prepare("SELECT id FROM case_records WHERE $where LIMIT 2 FOR UPDATE");
+            $selected = $pdo->prepare("SELECT id,record_status,checked_by,checked_at FROM case_records WHERE $where LIMIT 2 FOR UPDATE");
             $selected->execute($params);
             $matches = $selected->fetchAll();
             if (count($matches) !== 1) {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => count($matches) ? 'Multiple records share this identity. No records were archived.' : 'Active record not found.'], count($matches) ? 409 : 404);
+            }
+            if ($user['role'] === 'student' && (strtolower(trim((string)$matches[0]['record_status'])) === 'verified' || !empty($matches[0]['checked_by']) || !empty($matches[0]['checked_at']))) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot be archived.'], 409);
             }
             if ($user['role'] === 'instructor') {
                 $access = $pdo->prepare('SELECT instructor_uid FROM case_records WHERE id=? LIMIT 1');
@@ -1454,6 +1466,13 @@ try {
             $pdo->beginTransaction();
             $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers) VALUES (?, ?, ?, ?)');
             $caseNumbers = is_array($data['case_numbers'] ?? null) ? $data['case_numbers'] : [];
+            $lockedCases = $pdo->prepare("SELECT case_no FROM case_records WHERE student_id=? AND procedure_key=? AND archived_at IS NULL AND (LOWER(TRIM(record_status))='verified' OR NULLIF(TRIM(checked_by),'') IS NOT NULL OR checked_at IS NOT NULL) FOR UPDATE");
+            $lockedCases->execute([$user['user_uid'], $data['procedure_key']]);
+            $verifiedCaseNumbers = array_map('strval', $lockedCases->fetchAll(PDO::FETCH_COLUMN));
+            if ($verifiedCaseNumbers && (!$caseNumbers || array_intersect(array_map('strval', $caseNumbers), $verifiedCaseNumbers))) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot request edits.'], 409);
+            }
             $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers)]);
             $requestId = (string)$pdo->lastInsertId();
             $notice = $pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message) VALUES (?,?,?,?,?,?,?)');
