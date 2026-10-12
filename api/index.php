@@ -46,6 +46,27 @@ function ensureInstructorCaseAccess(array $user, array $case): void
     }
 }
 
+function normalizedCaseNumber(string $value): string
+{
+    $value = strtoupper(trim($value));
+    return preg_replace('/[^A-Z0-9]+/', '-', $value) ?? $value;
+}
+
+function caseNumbersMatch(string $requested, string $stored): bool
+{
+    $requested = normalizedCaseNumber($requested);
+    $stored = normalizedCaseNumber($stored);
+    if ($requested === '' || $stored === '') return false;
+    if ($requested === $stored) return true;
+
+    // Requests created by older screens may include the procedure/year prefix
+    // while case_records keeps only the final case number (for example,
+    // DH-2026-001 versus 001).
+    preg_match('/(\d+)$/', $requested, $requestedSuffix);
+    preg_match('/(\d+)$/', $stored, $storedSuffix);
+    return isset($requestedSuffix[1], $storedSuffix[1]) && $requestedSuffix[1] === $storedSuffix[1];
+}
+
 function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorUid): bool
 {
     $numbers = json_decode((string)($request['case_numbers'] ?? ''), true);
@@ -53,15 +74,22 @@ function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorU
     $numbers = array_unique(array_map('strval', $numbers));
     $cases = $pdo->prepare('SELECT case_no,instructor_uid FROM case_records WHERE student_id=? AND procedure_key=? AND archived_at IS NULL');
     $cases->execute([$request['student_id'], $request['procedure_key']]);
-    $matched = [];
+    $matched = 0;
     foreach ($cases->fetchAll() as $case) {
         $number = (string)$case['case_no'];
-        if (!in_array($number, $numbers, true)) continue;
+        $matchesRequestedCase = false;
+        foreach ($numbers as $requestedNumber) {
+            if (caseNumbersMatch((string)$requestedNumber, $number)) {
+                $matchesRequestedCase = true;
+                break;
+            }
+        }
+        if (!$matchesRequestedCase) continue;
         // Never expose a request containing another instructor's case.
         if ((string)$case['instructor_uid'] !== $instructorUid) return false;
-        $matched[] = $number;
+        $matched++;
     }
-    return !array_diff($numbers, $matched);
+    return $matched === count($numbers);
 }
 
 function normalizeCaseRoleValue(string $value): string
@@ -1479,7 +1507,12 @@ try {
                     $numbers = is_array($numbers) ? array_map('strval', $numbers) : [];
                     $names = [];
                     foreach ($assigned->fetchAll() as $case) {
-                        if (in_array((string)$case['case_no'], $numbers, true)) $names[] = $case['instructor_name'];
+                        foreach ($numbers as $requestedNumber) {
+                            if (caseNumbersMatch((string)$requestedNumber, (string)$case['case_no'])) {
+                                $names[] = $case['instructor_name'];
+                                break;
+                            }
+                        }
                     }
                     $request['assigned_instructor_name'] = $names ? implode(', ', array_unique($names)) : 'Not assigned';
                 }
