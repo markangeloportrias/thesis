@@ -57,14 +57,7 @@ function caseNumbersMatch(string $requested, string $stored): bool
     $requested = normalizedCaseNumber($requested);
     $stored = normalizedCaseNumber($stored);
     if ($requested === '' || $stored === '') return false;
-    if ($requested === $stored) return true;
-
-    // Requests created by older screens may include the procedure/year prefix
-    // while case_records keeps only the final case number (for example,
-    // DH-2026-001 versus 001).
-    preg_match('/(\d+)$/', $requested, $requestedSuffix);
-    preg_match('/(\d+)$/', $stored, $storedSuffix);
-    return isset($requestedSuffix[1], $storedSuffix[1]) && $requestedSuffix[1] === $storedSuffix[1];
+    return $requested === $stored;
 }
 
 function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorUid): bool
@@ -72,8 +65,8 @@ function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorU
     $numbers = json_decode((string)($request['case_numbers'] ?? ''), true);
     if (!is_array($numbers) || !$numbers) return false;
     $numbers = array_unique(array_map('strval', $numbers));
-    $cases = $pdo->prepare('SELECT case_no,instructor_uid FROM case_records WHERE student_id=? AND procedure_key=? AND archived_at IS NULL');
-    $cases->execute([$request['student_id'], $request['procedure_key']]);
+    $cases = $pdo->prepare("SELECT case_no,instructor_uid FROM case_records WHERE student_id=? AND REPLACE(LOWER(TRIM(procedure_key)), '-', ' ')=? AND archived_at IS NULL");
+    $cases->execute([$request['student_id'], editPermissionProcedure((string)$request['procedure_key'])]);
     $matched = 0;
     foreach ($cases->fetchAll() as $case) {
         $number = (string)$case['case_no'];
@@ -1501,8 +1494,8 @@ try {
                 LIMIT 1');
             foreach ($requests as &$request) {
                 if ($user['role'] === 'student') {
-                    $assigned = $pdo->prepare("SELECT c.case_no, COALESCE(NULLIF(TRIM(i.display_name), ''), NULLIF(TRIM(i.username), ''), NULLIF(TRIM(c.instructor_name), ''), 'Not assigned') AS instructor_name FROM case_records c LEFT JOIN instructor_accounts i ON i.account_uid=c.instructor_uid WHERE c.student_id=? AND c.procedure_key=? AND c.archived_at IS NULL");
-                    $assigned->execute([$request['student_id'], $request['procedure_key']]);
+                    $assigned = $pdo->prepare("SELECT c.case_no, COALESCE(NULLIF(TRIM(i.display_name), ''), NULLIF(TRIM(i.username), ''), NULLIF(TRIM(c.instructor_name), ''), CASE WHEN NULLIF(TRIM(c.instructor_uid), '') IS NOT NULL THEN 'Instructor name unavailable' ELSE 'Not assigned' END) AS instructor_name FROM case_records c LEFT JOIN instructor_accounts i ON i.account_uid=c.instructor_uid WHERE c.student_id=? AND REPLACE(LOWER(TRIM(c.procedure_key)), '-', ' ')=? AND c.archived_at IS NULL");
+                    $assigned->execute([$request['student_id'], editPermissionProcedure((string)$request['procedure_key'])]);
                     $numbers = json_decode((string)$request['case_numbers'], true);
                     $numbers = is_array($numbers) ? array_map('strval', $numbers) : [];
                     $names = [];
@@ -1514,7 +1507,7 @@ try {
                             }
                         }
                     }
-                    $request['assigned_instructor_name'] = $names ? implode(', ', array_unique($names)) : 'Not assigned';
+                    $request['assigned_instructor_name'] = $names ? implode(', ', array_unique($names)) : 'Case link unavailable';
                 }
                 if (trim((string)($request['reviewer_name'] ?? '')) !== '') continue;
                 $decisionAction = $request['status'] === 'approved' ? 'approve' : ($request['status'] === 'rejected' ? 'reject' : '');
