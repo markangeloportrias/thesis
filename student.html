@@ -5467,6 +5467,9 @@
         const legacyHeading = document.getElementById("summaryAllRecordsHeading");
         const legacyTable = document.getElementById("summaryTableBody")?.closest(".clinical-form-table-container");
         if (!info || !container) return;
+        const verifiedCases = (Array.isArray(cases) ? cases : []).filter(
+          (record) => getProcedureRecordReviewStatus(record) === "verified",
+        );
         const navigationInfo = document.getElementById("studentProgressNavigationInfo");
         if (navigationInfo) navigationInfo.textContent = "Viewing all procedure records. Scroll to review each procedure separately.";
         if (legacyHeading) legacyHeading.style.display = "none";
@@ -5522,7 +5525,7 @@
           currentStudent?.parent_name || "Not provided",
           currentStudent?.registered_school_year || currentStudent?.academic_year || "Not provided",
           currentStudent?.block_label || currentStudent?.registered_block || "Not provided",
-          String(cases.length),
+          String(verifiedCases.length),
           currentStudent?.parent_contact || "Not provided",
         ];
         const identityStrong = info.querySelector(".summary-student-identity strong");
@@ -5545,7 +5548,7 @@
           const section = document.createElement("section");
           section.className = "summary-procedure-section";
           section.id = `summaryProcedure-${key}`;
-          const records = cases.filter((record) => normalizeProcedureKey(record.procedure_name) === key);
+          const records = verifiedCases.filter((record) => normalizeProcedureKey(record.procedure_name) === key);
           const target = PROCEDURE_TARGETS[key] || 0;
           const heading = document.createElement("div");
           heading.className = "summary-procedure-heading";
