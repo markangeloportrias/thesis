@@ -4389,7 +4389,7 @@
               .filter(Boolean),
           );
           const yearCases = allCases.filter((record) =>
-            recordMatchesSchoolYear(record, yearLabel),
+            String(record.record_status || record.status || "").trim().toLowerCase() === "verified" && recordMatchesSchoolYear(record, yearLabel),
           );
           const blockCount = allBlocks
             ? yearBlocks.length
@@ -4446,6 +4446,7 @@
           const caseCount = allCases.filter(
             (record) =>
               studentIds.has(String(record.student_id || "")) &&
+              String(record.record_status || record.status || "").trim().toLowerCase() === "verified" &&
               recordMatchesSchoolYear(record, yearlyNav.schoolYear),
           ).length;
           const tr = document.createElement("tr");
@@ -4483,6 +4484,7 @@
           const caseCount = allCases.filter(
             (record) =>
               String(record.student_id || "") === String(s.student_id || "") &&
+              String(record.record_status || record.status || "").trim().toLowerCase() === "verified" &&
               recordMatchesSchoolYear(record, yearlyNav.schoolYear),
           ).length;
           const tr = document.createElement("tr");
@@ -4532,6 +4534,7 @@
 
         const yearlyStudentYearRecords = cases.filter(
           (record) =>
+            String(record.record_status || record.status || "").trim().toLowerCase() === "verified" &&
             String(record.student_id || "").trim() ===
               String(studentId || "").trim() &&
             recordMatchesSchoolYear(record, schoolYear),
@@ -5025,6 +5028,7 @@
         setButtonLoading(exportYearlyPrcBtn, true);
         try {
           const annualRecords = (await ApiClient.getJoinedCases(yearlyNav.studentId, "", ""))
+            .filter((record) => String(record.record_status || record.status || "").trim().toLowerCase() === "verified")
             .filter((record) => recordMatchesSchoolYear(record, yearlyNav.schoolYear));
           await studentPrcExportInstructor({
             student: {
@@ -5551,7 +5555,7 @@
           const result = await ApiClient.getJoinedCases("", "", "");
           const records = Array.isArray(result) ? result : [];
           const yearRecords = records.filter((record) =>
-            recordMatchesSchoolYear(record, yearLabel),
+            String(record.record_status || record.status || "").trim().toLowerCase() === "verified" && recordMatchesSchoolYear(record, yearLabel),
           );
 
           if (!yearRecords.length) {

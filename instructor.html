@@ -4658,6 +4658,7 @@
           const records = await ApiClient.getAllCasesForInstructor("", "");
           const normalizedYear = String(yearLabel).trim().replace(/\s+/g, "");
           const yearRecords = (Array.isArray(records) ? records : []).filter((record) => {
+            if (String(record.record_status || record.status || "").trim().toLowerCase() !== "verified") return false;
             const recordYear = record.academic_year || record.school_year || record.assigned_school_year || record.registered_school_year || "";
             return String(recordYear).trim().replace(/\s+/g, "") === normalizedYear;
           });
@@ -5881,6 +5882,7 @@
             : [];
         const allCases = await ApiClient.getAllCasesForInstructor("", "");
         yearlyRecordsByYear = (Array.isArray(allCases) ? allCases : []).reduce((counts, record) => {
+          if (String(record.record_status || record.status || "").trim().toLowerCase() !== "verified") return counts;
           const key = record.academic_year || record.school_year || "";
           if (key) counts[key] = (counts[key] || 0) + 1;
           return counts;
@@ -5936,7 +5938,7 @@
           const studentIds = new Set((roster?.students || []).map((student) => String(student.student_id || "")));
           return {
             ...block,
-            record_count: allCases.filter((record) => studentIds.has(String(record.student_id || ""))).length,
+            record_count: allCases.filter((record) => studentIds.has(String(record.student_id || "")) && String(record.record_status || record.status || "").trim().toLowerCase() === "verified").length,
           };
         }));
         renderYearlyBlockRows();
@@ -5953,6 +5955,7 @@
           ? rosterResult.students
           : [];
         const recordCountByStudent = (Array.isArray(cases) ? cases : []).reduce((counts, record) => {
+          if (String(record.record_status || record.status || "").trim().toLowerCase() !== "verified") return counts;
           const matchesYear = record.academic_year === yearlyRecordsNav.year || record.school_year === yearlyRecordsNav.year;
           if (matchesYear && record.student_id) {
             const id = String(record.student_id);
@@ -7471,6 +7474,7 @@
         const normalizedSelectedYear = selectedYear.replace(/\s+/g, "");
         const yearParts = selectedYear.match(/(\d{4})\s*-\s*(\d{4})/);
         const yearlyStudentYearRecords = cases.filter((rec) => {
+          if (String(rec.record_status || rec.status || "").trim().toLowerCase() !== "verified") return false;
           const recordYear = String(rec.academic_year || rec.school_year || "").trim();
           if (recordYear.replace(/\s+/g, "") === normalizedSelectedYear) return true;
           if (!yearParts || !rec.date_time_performed) return false;
