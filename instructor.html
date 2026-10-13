@@ -374,6 +374,16 @@
       html body.role-instructor #students-view #instructor-block-students-table tbody tr:hover td {
         background: #edf6ff !important;
       }
+      /* Scope the destructive color to the edit-request Reject action. */
+      html body.role-instructor #edit-requests-view button.request-reject-btn[data-reject-edit-request] {
+        background: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #ffffff !important;
+      }
+      html body.role-instructor #edit-requests-view button.request-reject-btn[data-reject-edit-request]:hover {
+        background: #b91c1c !important;
+        border-color: #b91c1c !important;
+      }
     </style>
     <style id="instructor-review-nested-cards">
       #instructorStudentProcedureTables tr.review-target-row { outline: 2px solid #0b63b6; outline-offset: -2px; scroll-margin-block: 100px; }
