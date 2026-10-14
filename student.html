@@ -861,10 +861,17 @@
     </style>
     <script async src="assets/js/prc-export.js?v=9-verified-only"></script>
     <style id="student-chat-scroll">
-      /* Allow the messages workspace to reach controls below the viewport. */
-      html body.role-student #chatTab.student-chat-panel {
-        overflow-x: hidden !important;
+      /* Keep the composer visible; the conversation area scrolls independently. */
+      @media (min-width: 641px) {
+        html body.role-student #chatTab.student-chat-panel {
+          height: clamp(420px, calc(100dvh - 252px), 680px) !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+        }
+      }
+      html body.role-student #chatTab .chat-thread {
         overflow-y: auto !important;
+        overscroll-behavior: contain;
       }
     </style>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
