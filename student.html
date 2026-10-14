@@ -3429,13 +3429,12 @@
                           },
                         comment_text: comment.comment_text || "",
                       };
-                      const deleteTargets = commentIds.length ? commentIds : [null];
-                      for (const commentId of deleteTargets) {
-                        const result = await ApiClient.deleteCaseComment(commentId, fallbackDelete);
-                        if (!result?.ok) {
-                          showOptionPane({ title: "Delete Failed", message: result?.message || "Unable to delete this comment." });
-                          return;
-                        }
+                      // Resolve deletion by this record's complete identity. Imported data can
+                      // reuse numeric IDs, so an ID-only delete can select another student's row.
+                      const result = await ApiClient.deleteCaseComment(null, fallbackDelete);
+                      if (!result?.ok) {
+                        showOptionPane({ title: "Delete Failed", message: result?.message || "Unable to delete this comment." });
+                        return;
                       }
                       const remaining = comments.filter((entry) => entry !== comment && !(entry.duplicateIds || []).some((id) => commentIds.includes(id)));
                       if (config.record) {
