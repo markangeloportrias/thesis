@@ -1404,7 +1404,8 @@ try {
                     respond(['ok' => false, 'message' => 'This clinical record is assigned to another instructor.'], 403);
                 }
             }
-            $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NOW(), record_status='archived' WHERE $where LIMIT 1");
+            // Archiving changes visibility only; retain the original review state.
+            $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NOW() WHERE $where LIMIT 1");
             $stmt->execute($params);
             audit($pdo, $user, 'archive', 'case', (string)$matches[0]['id'], ['record_identity' => $identity]);
             $pdo->commit();
@@ -1450,7 +1451,13 @@ try {
                     );
                 }
                 if ($roleConflict === null) {
-                    $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NULL, record_status='submitted' WHERE $where LIMIT 1");
+                    // Older versions replaced the original status with 'archived'.
+                    // Do not silently invent a review status for those records.
+                    if (strtolower(trim((string)$matches[0]['record_status'])) === 'archived') {
+                        $pdo->rollBack();
+                        throw new RuntimeException('This record was archived by an older version that did not preserve its original status. Its review status must be recovered before it can be restored.');
+                    }
+                    $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NULL WHERE $where LIMIT 1");
                     $stmt->execute($params);
                     $restored = $stmt->rowCount() === 1;
                 }
