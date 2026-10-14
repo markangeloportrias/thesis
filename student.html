@@ -864,16 +864,53 @@
       /* Keep the composer visible; the conversation area scrolls independently. */
       @media (min-width: 641px) {
         html body.role-student #chatTab.student-chat-panel {
-          height: clamp(420px, calc(100dvh - 252px), 680px) !important;
+          height: var(--student-chat-height, calc(100dvh - 150px)) !important;
           min-height: 0 !important;
+          box-sizing: border-box !important;
           overflow: hidden !important;
         }
+        html body.role-student #chatTab .student-chat-layout {
+          height: 100% !important;
+          min-height: 0 !important;
+          grid-template-rows: minmax(0, 1fr) !important;
+        }
+        html body.role-student #chatTab .chat-conversation {
+          min-height: 0 !important;
+          grid-template-rows: auto minmax(0, 1fr) auto !important;
+        }
       }
-      html body.role-student #chatTab .chat-thread {
+      html body.role-student #chatTab .chat-thread,
+      html body.role-student #chatTab .chat-instructor-list {
+        min-height: 0 !important;
         overflow-y: auto !important;
         overscroll-behavior: contain;
       }
     </style>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const panel = document.getElementById("chatTab");
+        if (!panel) return;
+        let frame;
+        const fitStudentChat = () => {
+          cancelAnimationFrame(frame);
+          frame = requestAnimationFrame(() => {
+            if (!window.matchMedia("(min-width: 641px)").matches || !panel.getClientRects().length) return;
+            const viewport = window.visualViewport;
+            const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+            const height = `${Math.max(0, Math.floor(bottom - panel.getBoundingClientRect().top - 20))}px`;
+            if (panel.style.getPropertyValue("--student-chat-height") !== height) {
+              panel.style.setProperty("--student-chat-height", height);
+            }
+          });
+        };
+        new MutationObserver(fitStudentChat).observe(panel, { attributes: true, attributeFilter: ["class", "style", "hidden"] });
+        const header = document.getElementById("desktopProfileHeader");
+        if (header) new ResizeObserver(fitStudentChat).observe(header);
+        window.addEventListener("resize", fitStudentChat);
+        window.visualViewport?.addEventListener("resize", fitStudentChat);
+        fitStudentChat();
+      });
+    </script>
     <link rel="stylesheet" href="assets/css/components/workspace-headings.css?v=20261005-1" />
     <link rel="stylesheet" href="assets/css/components/overview-refinement.css?v=20261007-mobile-1" />
     <link rel="stylesheet" href="assets/css/components/desktop-profile-header.css?v=3" />
