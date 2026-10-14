@@ -1443,22 +1443,18 @@ try {
                     $pdo->rollBack();
                     throw new RuntimeException('The archived selection changed. Refresh before restoring.');
                 }
-                if ($roleContext !== null) {
-                    $roleConflict = findCaseRoleConflict(
-                        getActiveCaseRoleRecords($pdo, $roleContext),
-                        $roleContext['role'],
-                        (string)$record['student_id'],
-                    );
-                }
+                // Restoring reactivates this student's own archived case. A later
+                // case entered by another student must not permanently block it.
+                $roleConflict = null;
                 if ($roleConflict === null) {
-                    // Older versions replaced the original status with 'archived'.
-                    // Do not silently invent a review status for those records.
-                    if (strtolower(trim((string)$matches[0]['record_status'])) === 'archived') {
-                        $pdo->rollBack();
-                        throw new RuntimeException('This record was archived by an older version that did not preserve its original status. Its review status must be recovered before it can be restored.');
+                    $restoreStatus = strtolower(trim((string)$matches[0]['record_status']));
+                    if ($restoreStatus === '' || $restoreStatus === 'archived') {
+                        $restoreStatus = !empty($matches[0]['checked_by']) || !empty($matches[0]['checked_at'])
+                            ? 'verified'
+                            : 'submitted';
                     }
-                    $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NULL WHERE $where LIMIT 1");
-                    $stmt->execute($params);
+                    $stmt = $pdo->prepare("UPDATE case_records SET archived_at=NULL, record_status=? WHERE $where LIMIT 1");
+                    $stmt->execute(array_merge([$restoreStatus], $params));
                     $restored = $stmt->rowCount() === 1;
                 }
                 if ($restored) audit($pdo, $user, 'restore', 'case', (string)$record['id'], ['record_identity' => $identity]);
