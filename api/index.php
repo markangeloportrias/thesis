@@ -935,10 +935,24 @@ try {
             // intermediate request failed or was blocked by the old owner lookup.
             $allowActiveDelete = $user['role'] === 'student';
             $archiveFilter = $allowActiveDelete ? '' : ' AND m.archived_at IS NOT NULL';
-            $ownerStmt=$pdo->prepare('SELECT c.student_id,c.instructor_uid,m.case_id,m.source_key,m.comment_text FROM case_comments m JOIN case_records c ON c.id=m.case_id WHERE m.id=?'.$archiveFilter);
+            $ownerStmt=$pdo->prepare('SELECT m.* FROM case_comments m WHERE m.id=?'.$archiveFilter);
             $ownerStmt->execute([$id]);
             $comment=$ownerStmt->fetch();
             if (!$comment) respond(['ok'=>false,'message'=>$allowActiveDelete ? 'Comment not found.' : 'Archived comment not found.'],404);
+            // Imported cases may share an ID; authorize against the same scope
+            // used when loading comments, never an arbitrary joined case.
+            $caseStmt = $pdo->prepare('SELECT * FROM case_records WHERE id=?');
+            $caseStmt->execute([$comment['case_id']]);
+            $commentCases = $caseStmt->fetchAll();
+            $scope = (string)($comment['record_scope'] ?? '');
+            $matchingCases = $scope === '' ? $commentCases : array_values(array_filter(
+                $commentCases,
+                static fn($record) => caseCommentScope($record) === $scope
+            ));
+            if (count($matchingCases) !== 1) respond(['ok'=>false,'message'=>'Unable to identify the clinical record for this comment.'],409);
+            $commentCase = $matchingCases[0];
+            $comment['student_id'] = (string)$commentCase['student_id'];
+            $comment['instructor_uid'] = $commentCase['instructor_uid'];
             if ($user['role']==='student' && $user['user_uid']!==$comment['student_id']) respond(['ok'=>false,'message'=>'Access denied.'],403);
             ensureInstructorCaseAccess($user, $comment);
             $pdo->beginTransaction();
@@ -952,8 +966,8 @@ try {
                 // Clear the mirror when it contains the deleted comment so the GET
                 // endpoint cannot recreate that same comment after deletion.
                 if ($deleted && ($sourceKey === '' || strpos($sourceKey, 'legacy-case:') === 0)) {
-                    $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND teacher_remarks=?');
-                    $clearCase->execute([$comment['case_id'], $comment['comment_text']]);
+                    $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND student_id=? AND procedure_key <=> ? AND academic_year <=> ? AND created_at <=> ? AND teacher_remarks=?');
+                    $clearCase->execute([$commentCase['id'], $commentCase['student_id'], $commentCase['procedure_key'], $commentCase['academic_year'], $commentCase['created_at'], $comment['comment_text']]);
                 }
                 if ($deleted && strpos($sourceKey, 'edit-request:') === 0) {
                     $requestId = explode(':', $sourceKey)[1];
