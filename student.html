@@ -4880,7 +4880,7 @@
               <div><span class="archive-record-label">Case number</span><div class="archive-record-case">${escapeHtml(item.case_no || "Unnumbered")}</div></div>
               <div><span class="archive-record-label">Clinical record</span><div class="archive-record-value">${escapeHtml(item.procedure_name || "Clinical Record")}</div></div>
               <div><span class="archive-record-label">Archived</span><div class="archive-record-value">${escapeHtml(archivedDate)}</div></div>
-            </div><div class="archive-record-actions"><button class="archive-action-btn" type="button" data-archive-action="details"><i class="fas fa-eye" aria-hidden="true"></i>Details</button><button class="archive-action-btn" type="button" data-archive-action="restore"><i class="fas fa-rotate-left" aria-hidden="true"></i>Restore</button><button class="archive-action-btn delete" type="button" data-archive-action="delete"><i class="fas fa-trash" aria-hidden="true"></i>Delete</button></div>`;
+            </div><div class="archive-record-actions"><button class="archive-action-btn" type="button" data-archive-action="details"><i class="fas fa-eye" aria-hidden="true"></i>Details</button><button class="archive-action-btn" type="button" data-archive-action="restore"><i class="fas fa-rotate-left" aria-hidden="true"></i>Restore</button></div>`;
           row.querySelector('[data-archive-action="details"]')?.addEventListener("click", () => {
             showCaseDetail(item);
           });
