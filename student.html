@@ -2342,8 +2342,8 @@
         // Sync sidebar profile card
         document.getElementById("mobileStudentName").textContent = currentStudent.student_name || "Student";
         document.getElementById("mobileStudentDetails").textContent = currentStudent.student_id
-          ? "ID: " + currentStudent.student_id + " · Clinical trainee"
-          : "Clinical trainee";
+          ? "ID: " + currentStudent.student_id + " · Midwifery Student"
+          : "Midwifery Student";
         const sidebarName = document.getElementById("sidebarProfileName");
         const sidebarRole = document.getElementById("sidebarProfileRole");
         const sidebarInitials = document.getElementById(
@@ -2353,7 +2353,7 @@
           sidebarName.textContent = currentStudent.student_name || "Student";
         }
         if (sidebarRole) {
-          sidebarRole.textContent = currentStudent.role || "Clinical trainee";
+          sidebarRole.textContent = "Midwifery Student";
         }
         if (sidebarInitials) {
           const parts = (currentStudent.student_name || "ST").split(" ");

@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fallback = header.querySelector('.desktop-profile-avatar i');
   const sync = () => {
     header.querySelector('strong').textContent = name?.textContent || (instructor ? 'Instructor' : 'Student');
-    header.querySelector('small').textContent = details?.textContent || (instructor ? 'Clinical instructor' : 'Clinical trainee');
+    header.querySelector('small').textContent = details?.textContent || (instructor ? 'Clinical instructor' : 'Midwifery Student');
     const src = sourcePhoto?.getAttribute('src') || '';
     if (src && photo.getAttribute('src') !== src) {
       photo.style.display = 'none';
