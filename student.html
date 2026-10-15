@@ -6578,17 +6578,6 @@
           }
         });
       });
-      document?.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          updateDashboardStats();
-        }
-      });
-
-      window?.addEventListener("focus", () => {
-        updateDashboardStats();
-        refreshStudentLiveData();
-      });
-
       window?.addEventListener("storage", (event) => {
         if (event.key === "thesis_chat_messages_v1") {
           if (currentTab === "chat") renderChatThread();
