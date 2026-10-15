@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261015-mobile-requests-3" />
+    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261015-mobile-records-1" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260930-shared-export" />
     <style id="student-settings-minimal-styles">
@@ -4476,7 +4476,7 @@
           return;
         }
 
-        list.innerHTML = sorted.map((record) => {
+        const recentMobileCards = sorted.map((record) => {
           const key = normalizeProcedureKey(record.procedure_name || record.procedureName);
           const config = PROCEDURE_CONFIGS[key];
           const procedure = config?.procedureName || record.procedure_name || "Clinical Record";
@@ -4525,7 +4525,7 @@
                 : "Awaiting review";
           return `<tr class="recent-record-row" data-recent-procedure="${escapeHtml(key)}" tabindex="0" role="button" aria-label="Open ${escapeHtml(procedure)} record"><td>${escapeHtml(procedure)}</td><td>${escapeHtml(patient)}</td><td>${escapeHtml(caseNumber)}</td><td>${escapeHtml(diagnosis)}</td><td title="${escapeHtml(facility)}">${escapeHtml(facility)}</td><td><span class="recent-record-status${isVerified ? " verified" : ""}"><i class="fas ${isVerified ? "fa-circle-check" : "fa-clock"}" aria-hidden="true"></i>${escapeHtml(statusLabel)}</span></td><td><span class="recent-record-table-date">${escapeHtml(displayDate)}${displayTime ? `<small>${escapeHtml(displayTime)}</small>` : ""}</span></td><td><button class="recent-record-open" type="button" aria-label="Open ${escapeHtml(procedure)} record"><i class="fas fa-arrow-right" aria-hidden="true"></i></button></td></tr>`;
         }).join("");
-        list.innerHTML = `<div class="recent-records-table-wrap"><table class="recent-records-table"><thead><tr><th>Procedure</th><th>Patient</th><th>Case No.</th><th>Diagnosis</th><th>Facility</th><th>Status</th><th>Date &amp; Time</th><th><span class="sr-only">Open</span></th></tr></thead><tbody>${recentRows}</tbody></table></div>`;
+        list.innerHTML = `<div class="recent-records-table-wrap"><table class="recent-records-table"><thead><tr><th>Procedure</th><th>Patient</th><th>Case No.</th><th>Diagnosis</th><th>Facility</th><th>Status</th><th>Date &amp; Time</th><th><span class="sr-only">Open</span></th></tr></thead><tbody>${recentRows}</tbody></table></div><div class="recent-records-mobile-list">${recentMobileCards}</div>`;
 
         list.querySelectorAll("[data-recent-procedure]").forEach((item) => {
           item.addEventListener("click", () => switchTab("procedure", item.dataset.recentProcedure));
