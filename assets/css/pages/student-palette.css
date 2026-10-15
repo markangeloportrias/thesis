@@ -1273,3 +1273,16 @@ html body.role-student .record-workspace > .workspace-header,
 html body.role-student #chatTab :is(.chat-directory-header, .chat-conversation-header) {
   border-bottom: 1px solid #b9cee1 !important;
 }
+
+/* Instructor photos in the student message directory use the standard round profile treatment. */
+html body.role-student #chatTab :is(.chat-instructor-avatar, .chat-conversation-avatar) {
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+
+html body.role-student #chatTab :is(.chat-instructor-avatar, .chat-conversation-avatar) > img {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  object-fit: cover;
+}
