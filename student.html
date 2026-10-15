@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20260824-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261015-mobile-requests-2" />
+    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261015-mobile-requests-3" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260930-shared-export" />
     <style id="student-settings-minimal-styles">
@@ -5052,8 +5052,9 @@
           });
           return;
         }
-        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:13%"><col style="width:19%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Assigned Instructor</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div>';
+        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:13%"><col style="width:19%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Assigned Instructor</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div><div class="edit-requests-mobile-list" aria-label="Correction requests"></div>';
         const requestTableBody = container.querySelector("tbody");
+        const mobileRequestList = container.querySelector(".edit-requests-mobile-list");
         requests.forEach((request, requestIndex) => {
           const status = correctionRequestStatus(request);
           const reviewerName = String(request.reviewer_name || request.reviewerName || "").trim();
@@ -5118,6 +5119,26 @@
             switchTab("procedure", procedureKey);
           });
           requestTableBody?.appendChild(card);
+          const mobileCard = document.createElement("article");
+          mobileCard.className = `edit-request-mobile-card ${status}`;
+          mobileCard.tabIndex = 0;
+          mobileCard.innerHTML = `<div class="edit-request-mobile-status">${card.children[0].innerHTML}</div><dl><div><dt>Procedure</dt><dd>${escapeHtml(request.procedure || "Clinical record")}</dd></div><div><dt>Case No.</dt><dd>${escapeHtml(request.caseNo || "â€”")}</dd></div><div><dt>Assigned Instructor</dt><dd>${escapeHtml(request.assigned_instructor_name || "Not assigned")}</dd></div><div><dt>Requested</dt><dd>${escapeHtml(request.requestedAt || "â€”")}</dd></div></dl><div class="edit-request-mobile-action"></div>`;
+          const mobileAction = requestActionButton.cloneNode(true);
+          mobileCard.querySelector(".edit-request-mobile-action")?.appendChild(mobileAction);
+          mobileAction.addEventListener("click", (event) => {
+            event.stopPropagation();
+            requestActionButton.click();
+          });
+          mobileCard.addEventListener("click", (event) => {
+            if (!event.target.closest("button")) card.click();
+          });
+          mobileCard.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              card.click();
+            }
+          });
+          mobileRequestList?.appendChild(mobileCard);
         });
       }
 

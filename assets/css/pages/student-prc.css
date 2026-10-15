@@ -349,68 +349,52 @@ html body.role-student #editRequestsTab .edit-request-status {
 }
 
 @media (max-width: 767px) {
-  html body.role-student #editRequestsTab .edit-requests-table-wrap {
-    overflow: visible;
+  html body.role-student #editRequestsTab .edit-requests-table-wrap { display: none; }
+  html body.role-student #editRequestsTab .edit-requests-mobile-list {
+    display: grid;
+    gap: 10px;
   }
-  html body.role-student #editRequestsTab table.edit-requests-table,
-  html body.role-student #editRequestsTab table.edit-requests-table tbody,
-  html body.role-student #editRequestsTab table.edit-requests-table tr,
-  html body.role-student #editRequestsTab table.edit-requests-table td {
-    display: block;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  html body.role-student #editRequestsTab table.edit-requests-table colgroup,
-  html body.role-student #editRequestsTab table.edit-requests-table thead {
-    display: none;
-  }
-  html body.role-student #editRequestsTab table.edit-requests-table {
-    border: 0;
-    background: transparent;
-  }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody {
-    display: block !important;
-  }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody tr {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr);
-    height: auto !important;
-    min-height: 0 !important;
-    margin-bottom: 10px;
-    padding: 10px 12px;
+  html body.role-student #editRequestsTab .edit-request-mobile-card {
+    padding: 12px;
     border: 1px solid #d7e3ee;
     border-radius: 10px;
     background: #fff;
+    color: #24415f;
+    cursor: pointer;
   }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td {
-    display: flex !important;
-    flex-direction: column;
-    align-items: flex-start;
-    min-height: 0 !important;
-    height: auto !important;
-    padding: 6px 0 !important;
-    border: 0;
-    text-align: left !important;
+  html body.role-student #editRequestsTab .edit-request-mobile-status {
+    padding-bottom: 9px;
+    border-bottom: 1px solid #e5edf5;
   }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td::before {
-    display: block;
-    margin-bottom: 2px;
+  html body.role-student #editRequestsTab .edit-request-mobile-card dl {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+    margin: 10px 0 0;
+  }
+  html body.role-student #editRequestsTab .edit-request-mobile-card dt {
+    margin: 0 0 3px;
     color: #6b7f99;
     font-size: 9px;
     font-weight: 800;
     letter-spacing: .04em;
     text-transform: uppercase;
   }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(1)::before { content: "Status"; }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(2)::before { content: "Procedure"; }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(3)::before { content: "Case No."; }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(4)::before { content: "Assigned Instructor"; }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(5)::before { content: "Requested"; }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(6) {
-    padding-top: 10px !important;
-    text-align: right !important;
+  html body.role-student #editRequestsTab .edit-request-mobile-card dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+    font-weight: 700;
   }
-  html body.role-student #editRequestsTab table.edit-requests-table tbody td:nth-child(6)::before { content: none; }
+  html body.role-student #editRequestsTab .edit-request-mobile-action {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  html body.role-student #editRequestsTab .edit-requests-mobile-list { display: none; }
 }
 
 /* Activity log table. */
