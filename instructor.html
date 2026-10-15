@@ -8348,10 +8348,6 @@
       }
       refreshInstructorLiveData();
       setInterval(refreshInstructorLiveData, 5000);
-      window.addEventListener("focus", refreshInstructorLiveData);
-      document.addEventListener("visibilitychange", () => {
-        if (!document.hidden) refreshInstructorLiveData();
-      });
     </script>
     <script>
       // Hide table header and wrapper border when tbody is empty to avoid
