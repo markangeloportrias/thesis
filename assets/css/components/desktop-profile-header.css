@@ -1,9 +1,27 @@
 #desktopProfileHeader { display: none !important; }
 .mobile-profile-clock { display: none; }
 @media screen and (max-width: 1024px) {
-  html body.role-student .student-mobile-profile-copy .mobile-profile-clock {
-    display: block; color: #d8e9ff; font-size: 10px; font-weight: 400;
-    line-height: 1.4; white-space: nowrap; font-variant-numeric: tabular-nums;
+  html body.role-student .student-mobile-menu-bar {
+    gap: 8px;
+  }
+  html body.role-student .student-mobile-profile {
+    flex: 1 1 auto;
+  }
+  html body.role-student .student-mobile-profile-copy {
+    overflow: hidden;
+  }
+  html body.role-student .student-mobile-menu-bar .mobile-profile-clock {
+    display: block; margin-left: auto; padding-left: 9px;
+    border-left: 1px solid rgba(255,255,255,.25); text-align: right;
+    flex: 0 0 auto; color: #d8e9ff; font-variant-numeric: tabular-nums;
+  }
+  html body.role-student .student-mobile-menu-bar .mobile-profile-clock span {
+    display: block; color: #fff; font-size: 10px; font-weight: 600;
+    line-height: 1.35; white-space: nowrap;
+  }
+  html body.role-student .student-mobile-menu-bar .mobile-profile-clock time {
+    display: block; color: #d8e9ff; font-size: 9px; font-weight: 400;
+    line-height: 1.35; white-space: nowrap;
   }
 }
 @media screen and (min-width: 768px) {
