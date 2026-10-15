@@ -2428,7 +2428,11 @@
   var pendingMutationRequests = new Map();
   var completedMutationRequests = new Map();
   var pendingReadRequests = new Map();
+  var completedReadResponses = new Map();
   var mutationDuplicateWindowMs = 1500;
+  // Dashboard views often ask for the same data during one navigation. Keep
+  // successful reads briefly in memory, and discard them on every write.
+  var readCacheTtlMs = 5000;
 
   async function fetchMysqlResponse(url, options) {
     // Share only concurrent reads. Never cache completed responses, combine
@@ -2439,6 +2443,14 @@
       delete keyOptions.silent;
       readKey = JSON.stringify([url, keyOptions]);
     }
+    var cached = readKey && completedReadResponses.get(readKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return {
+        response: cached.response,
+        result: JSON.parse(JSON.stringify(cached.result))
+      };
+    }
+    if (cached) completedReadResponses.delete(readKey);
     var pending = readKey && pendingReadRequests.get(readKey);
     if (!pending) {
       pending = (async function () {
@@ -2450,6 +2462,19 @@
     }
     try {
       var loaded = await pending;
+      if (readKey && loaded.response.ok && loaded.result && loaded.result.ok === true) {
+        var cacheEntry = {
+          response: loaded.response,
+          result: loaded.result,
+          expiresAt: Date.now() + readCacheTtlMs
+        };
+        completedReadResponses.set(readKey, cacheEntry);
+        window.setTimeout(function () {
+          if (completedReadResponses.get(readKey) === cacheEntry && cacheEntry.expiresAt <= Date.now()) {
+            completedReadResponses.delete(readKey);
+          }
+        }, readCacheTtlMs + 50);
+      }
       // Callers may sort or annotate their records; give each its own data.
       return { response: loaded.response, result: readKey ? JSON.parse(JSON.stringify(loaded.result)) : loaded.result };
     } finally {
@@ -2477,6 +2502,7 @@
       }
       pendingMutationRequests.set(mutationKey, true);
       pendingReadRequests.clear();
+      completedReadResponses.clear();
     }
     var headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
     var token = sessionStorage.getItem('thesis_api_token') || '';
