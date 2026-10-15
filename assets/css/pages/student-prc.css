@@ -349,11 +349,6 @@ html body.role-student #editRequestsTab .edit-request-status {
 }
 
 @media (max-width: 767px) {
-  html body.role-student #recentRecordsPanel .recent-records-table-wrap { display: none; }
-  html body.role-student #recentRecordsPanel .recent-records-mobile-list {
-    display: grid;
-    gap: 8px;
-  }
   html body.role-student #editRequestsTab .edit-requests-table-wrap { display: none; }
   html body.role-student #editRequestsTab .edit-requests-mobile-list {
     display: grid;
@@ -400,7 +395,6 @@ html body.role-student #editRequestsTab .edit-request-status {
 
 @media (min-width: 768px) {
   html body.role-student #editRequestsTab .edit-requests-mobile-list { display: none; }
-  html body.role-student #recentRecordsPanel .recent-records-mobile-list { display: none; }
 }
 
 /* Activity log table. */
