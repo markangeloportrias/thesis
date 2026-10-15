@@ -2803,6 +2803,12 @@
     var result = await mysqlRequest(query, requestOptions || {});
     return filterApiCases(result.cases || [], '', '');
   };
+  ApiClient.getAnnualStudentCases = async function (studentId, academicYear, requestOptions) {
+    var query = 'cases?annual_year=' + encodeURIComponent(normalize(academicYear));
+    if (normalize(studentId)) query += '&student_id=' + encodeURIComponent(normalize(studentId));
+    var result = await mysqlRequest(query, requestOptions || {});
+    return filterApiCases(result.cases || [], '', '');
+  };
   ApiClient.deleteCaseRecord = async function (studentId, caseId, identity) {
     try {
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/archive', {

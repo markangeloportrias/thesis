@@ -1867,7 +1867,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260913-remark-dates-1"></script>
+    <script src="assets/js/api-client.js?v=20261015-annual-records-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=20260928-comment-label-1"></script>
     <script>
@@ -7437,8 +7437,12 @@
         const profileRequest = yearlyRecordsNav.studentProfile
           ? Promise.resolve({ ok: true, student: yearlyRecordsNav.studentProfile })
           : ApiClient.getStudent(yearlyRecordsNav.studentId);
+        const selectedYear = String(yearlyRecordsNav.year || "").trim();
+        const casesRequest = selectedYear && typeof ApiClient.getAnnualStudentCases === "function"
+          ? ApiClient.getAnnualStudentCases(yearlyRecordsNav.studentId, selectedYear)
+          : ApiClient.getJoinedCases(yearlyRecordsNav.studentId, "", "");
         const [caseResult, profileResult] = await Promise.all([
-          ApiClient.getJoinedCases(yearlyRecordsNav.studentId, "", ""),
+          casesRequest,
           profileRequest,
         ]);
         if (
@@ -7456,7 +7460,6 @@
                 student_name: yearlyRecordsNav.studentName,
               };
         yearlyRecordsNav.studentProfile = studentProfile;
-        const selectedYear = String(yearlyRecordsNav.year || "").trim();
         const normalizedSelectedYear = selectedYear.replace(/\s+/g, "");
         const yearParts = selectedYear.match(/(\d{4})\s*-\s*(\d{4})/);
         const yearlyStudentYearRecords = cases.filter((rec) => {

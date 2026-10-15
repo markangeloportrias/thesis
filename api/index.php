@@ -1044,9 +1044,26 @@ try {
             if ($user['role'] === 'student') { $conditions[] = 'c.student_id=?'; $params[] = $user['user_uid']; }
             elseif (!empty($_GET['student_id'])) { $conditions[] = 'c.student_id=?'; $params[] = $_GET['student_id']; }
             if (!empty($_GET['school_year'])) { $conditions[] = 'c.academic_year=?'; $params[] = $_GET['school_year']; }
+            $annualYear = trim((string)($_GET['annual_year'] ?? ''));
+            if ($annualYear !== '' && preg_match('/^(\d{4})\s*-\s*(\d{4})$/', $annualYear, $yearMatch)) {
+                // Annual-record views accept records explicitly assigned to the
+                // selected school year, plus legacy records identified by their
+                // performed date. This mirrors the previous browser-side filter.
+                $periodStart = $yearMatch[1] . '-01-01 00:00:00';
+                $periodEnd = ((int)$yearMatch[2] + 1) . '-01-01 00:00:00';
+                $conditions[] = '(c.academic_year=? OR (c.date_time_performed>=? AND c.date_time_performed<?))';
+                array_push($params, $annualYear, $periodStart, $periodEnd);
+            }
             if (!empty($_GET['procedure'])) { $conditions[] = 'c.procedure_key=?'; $params[] = $_GET['procedure']; }
             if (($_GET['summary'] ?? '') === 'dashboard') {
                 $stmt = $pdo->prepare("SELECT c.id,c.student_id,c.procedure_key,c.procedure_name,c.case_no,c.patient_name,c.complete_diagnosis,c.date_time_performed,c.facility_name,c.record_status,c.checked_by,c.checked_at,c.created_at,c.updated_at FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
+                $stmt->execute($params);
+                respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
+            }
+            if ($annualYear !== '') {
+                // The annual student-detail table uses fields stored on the
+                // record itself, so skip the per-row assignment lookup.
+                $stmt = $pdo->prepare('SELECT c.* FROM case_records c WHERE ' . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
                 $stmt->execute($params);
                 respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
             }
