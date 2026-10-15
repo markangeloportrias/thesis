@@ -4537,7 +4537,7 @@
         });
       }
 
-      async function loadMySavedRecords(forceRefresh) {
+      async function loadMySavedRecords(forceRefresh, silentRefresh = false) {
         if (isLoadingMyRecords && !forceRefresh) {
           return;
         }
@@ -4560,6 +4560,7 @@
         try {
           const cases = await ApiClient.getJoinedCases(
             currentStudent.student_id,
+            undefined, undefined, { silent: silentRefresh },
           );
 
           // Dynamic sidebar badges update
@@ -4635,7 +4636,7 @@
           renderRecentRecords(cases);
 
           if (currentTab === "summary") {
-            renderSummaryTab();
+            await renderSummaryTab(cases);
           }
         } catch (e) {
           console.error("Error loading saved records: ", e);
@@ -4675,11 +4676,14 @@
           if (!nextVersion) return;
           if (nextVersion === studentLiveVersion) return;
           const isFirstCheck = !studentLiveVersion;
-          studentLiveVersion = nextVersion;
-          if (isFirstCheck) return;
+          if (isFirstCheck) {
+            studentLiveVersion = nextVersion;
+            return;
+          }
           const scrollState = captureScrollState();
           if (currentTab === "procedure") await loadActiveWorkspaceRecords(true);
-          else await loadMySavedRecords();
+          else await loadMySavedRecords(false, true);
+          studentLiveVersion = nextVersion;
           requestAnimationFrame(() => restoreScrollState(scrollState));
         } catch (error) {
           console.warn("Student live synchronization unavailable:", error);
@@ -5648,7 +5652,7 @@
         applyStudentProgressProcedureFilter(activeProgressProcedureKey);
       }
 
-      async function renderSummaryTab() {
+      async function renderSummaryTab(loadedCases) {
         if (!currentStudent) return;
 
         const tbody = document.getElementById("summaryTableBody");
@@ -5664,7 +5668,7 @@
         }
 
         try {
-          const cases = await ApiClient.getJoinedCases(
+          const cases = Array.isArray(loadedCases) ? loadedCases : await ApiClient.getJoinedCases(
             currentStudent.student_id,
           );
 
@@ -6660,7 +6664,7 @@
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) {
           refreshStudentLiveData();
-          void refreshStudentChatUnreadIndicator(currentTab === "chat");
+          void refreshStudentChatUnreadIndicator(currentTab === "chat", true);
         }
       });
     </script>
