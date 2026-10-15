@@ -369,18 +369,23 @@ html body.role-student #editRequestsTab .edit-request-status {
     background: transparent;
   }
   html body.role-student #editRequestsTab table.edit-requests-table tbody {
-    display: grid;
-    gap: 10px;
+    display: block !important;
   }
   html body.role-student #editRequestsTab table.edit-requests-table tbody tr {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr);
     height: auto !important;
     min-height: 0 !important;
+    margin-bottom: 10px;
     padding: 10px 12px;
     border: 1px solid #d7e3ee;
     border-radius: 10px;
     background: #fff;
   }
   html body.role-student #editRequestsTab table.edit-requests-table tbody td {
+    display: flex !important;
+    flex-direction: column;
+    align-items: flex-start;
     min-height: 0 !important;
     height: auto !important;
     padding: 6px 0 !important;
