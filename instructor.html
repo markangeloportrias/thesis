@@ -3789,34 +3789,23 @@
 
       async function renderEditRequestsList() {
         const version = ++instructorRequestRenderVersion;
-        console.log('[INSTRUCTOR_DEBUG] renderEditRequestsList() called');
-        const [requests, studentsResult] = await Promise.all([
-          ApiClient.getEditRequests(),
-          ApiClient.getAllStudents().catch(() => ({ ok: false, students: [] })),
-        ]);
+        const requests = await ApiClient.getEditRequests();
         if (version !== instructorRequestRenderVersion) return;
         instructorEditRequests = requests;
-        const studentsById = new Map(
-          (Array.isArray(studentsResult?.students) ? studentsResult.students : [])
-            .map((student) => [String(student.student_id || ""), student]),
-        );
         const pendingCount = requests.filter((request) => {
           const caseNo = normalizeCaseNo(request.caseNumbers?.[0]);
           const status = request.caseStatuses?.[caseNo] || request.status || "pending";
           return ["pending", "Requested"].includes(status);
         }).length;
-        console.log('[INSTRUCTOR_DEBUG] Received edit requests:', requests);
         const editRequestsList = document.getElementById("edit-requests-list");
         const editRequestsCount = document.getElementById("editRequestsPendingCount");
         
         if (editRequestsCount) editRequestsCount.textContent = String(pendingCount);
         if (!editRequestsList) {
-          console.warn('[INSTRUCTOR_DEBUG] edit-requests-list element not found');
           return;
         }
 
         if (!requests.length) {
-          console.log('[INSTRUCTOR_DEBUG] No edit requests, showing empty state');
           editRequestsList.innerHTML = "";
           applyInstructorRequestFilter();
           return;
@@ -3833,9 +3822,8 @@
           </div>
         `;
         for (const [requestIndex, req] of requests.entries()) {
-          const student = studentsById.get(String(req.studentId || "")) || {};
-          const studentName = student.student_name || "Unknown Student";
-          const studentId = student.student_id || req.studentId || "N/A";
+          const studentName = req.student_name || "Unknown Student";
+          const studentId = req.studentId || "N/A";
           const when = req.requestedAt
             ? PhilippineTime.parse(req.requestedAt).toLocaleDateString("en-PH", { timeZone: "Asia/Manila" })
             : "Unknown";
@@ -3845,8 +3833,6 @@
             req.caseNumbers && req.caseNumbers.length
               ? req.caseNumbers
               : ["(no case)"];
-
-          console.log('[INSTRUCTOR_DEBUG] Rendering request:', {req, studentName, formType, cases});
 
           cases.forEach((caseNum) => {
             const decision = req.caseStatuses?.[normalizeCaseNo(caseNum)] || req.status || "pending";

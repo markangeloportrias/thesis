@@ -1491,11 +1491,11 @@ try {
         if ($method === 'GET') {
             $archived = ($_GET['archived'] ?? '0') === '1';
             $where = $user['role'] === 'student'
-                ? ' AND student_id=? AND student_dismissed_at IS NULL'
+                ? ' AND edit_requests.student_id=? AND edit_requests.student_dismissed_at IS NULL'
                 : ($archived
-                    ? ' AND archived_at IS NOT NULL AND student_dismissed_at IS NULL'
-                    : ' AND archived_at IS NULL AND reviewer_dismissed_at IS NULL AND student_dismissed_at IS NULL');
-            $stmt = $pdo->prepare('SELECT edit_requests.* FROM edit_requests WHERE 1=1' . $where . ' ORDER BY requested_at DESC');
+                    ? ' AND edit_requests.archived_at IS NOT NULL AND edit_requests.student_dismissed_at IS NULL'
+                    : ' AND edit_requests.archived_at IS NULL AND edit_requests.reviewer_dismissed_at IS NULL AND edit_requests.student_dismissed_at IS NULL');
+            $stmt = $pdo->prepare('SELECT edit_requests.*, students.student_name FROM edit_requests LEFT JOIN students ON students.student_id=edit_requests.student_id WHERE 1=1' . $where . ' ORDER BY edit_requests.requested_at DESC');
             $stmt->execute($user['role'] === 'student' ? [$user['user_uid']] : []);
             $requests = $stmt->fetchAll();
             if ($user['role'] === 'instructor') {
