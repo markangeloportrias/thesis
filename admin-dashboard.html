@@ -7055,6 +7055,10 @@
           loadAdminNotifications();
           loadAdminActivityLog();
           setInterval(refreshAdminLiveData, 5000);
+          window.addEventListener("focus", refreshAdminLiveData);
+          document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) refreshAdminLiveData();
+          });
         });
       }
 
