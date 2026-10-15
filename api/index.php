@@ -664,7 +664,11 @@ try {
     if ($resource === 'instructors') {
         $user = currentUser($pdo, ['admin', 'student', 'instructor']);
         if ($method === 'GET') {
-            $rows = $pdo->query('SELECT account_uid AS id, username, display_name, contact_number, profile_photo, role_title AS role, status, archived_at, created_at FROM instructor_accounts WHERE archived_at IS NULL ORDER BY display_name')->fetchAll();
+            $summaryOnly = ($_GET['summary'] ?? '0') === '1';
+            $columns = $summaryOnly
+                ? 'account_uid AS id, username, display_name, status, created_at'
+                : 'account_uid AS id, username, display_name, contact_number, profile_photo, role_title AS role, status, archived_at, created_at';
+            $rows = $pdo->query("SELECT $columns FROM instructor_accounts WHERE archived_at IS NULL ORDER BY display_name")->fetchAll();
             respond(['ok' => true, 'accounts' => $rows]);
         }
         if ($method === 'POST' && $id === '') {

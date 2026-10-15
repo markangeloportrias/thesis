@@ -2902,6 +2902,9 @@
     try { return await mysqlRequest('instructors'); }
     catch (error) { return mysqlRequest('instructor-directory'); }
   };
+  ApiClient.getInstructorAccountSummaries = async function () {
+    return mysqlRequest('instructors?summary=1');
+  };
   ApiClient.getActiveInstructorDirectory = async function () {
     try { return await mysqlRequest('instructor-directory'); }
     catch (error) {

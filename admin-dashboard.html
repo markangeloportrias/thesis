@@ -1165,7 +1165,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20260912-admin-scope-2"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20260912-block-identities-1"></script>
+    <script src="assets/js/api-client.js?v=20261015-instructor-summary-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -2087,7 +2087,7 @@
             ? cases.length
             : 0;
 
-        ApiClient.getInstructorAccounts().then((result) => {
+        ApiClient.getInstructorAccountSummaries().then((result) => {
           const accounts = result && result.ok && Array.isArray(result.accounts)
             ? result.accounts
             : [];
@@ -2308,7 +2308,7 @@
         instructorsEmpty.style.display = "block";
         sidebarCountInstructors.textContent = "0";
         try {
-          const result = await ApiClient.getInstructorAccounts();
+          const result = await ApiClient.getInstructorAccountSummaries();
           if (version !== instructorAccountsLoadVersion) return;
           const list =
             result && result.ok && Array.isArray(result.accounts)
