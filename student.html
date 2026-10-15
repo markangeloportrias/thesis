@@ -1872,6 +1872,7 @@
       let isLoadingMyRecords = false;
       let myRecordsRefreshTimer = null;
       let studentLiveVersion = "";
+      let studentLiveRefreshBusy = false;
       const MY_RECORDS_AUTO_REFRESH_MS = 5000;
       let currentTab = "dashboard"; // SPA state: dashboard, procedure, summary
       const CHAT_MESSAGES_STORAGE_PREFIX = "student_instructor_chat_v2";
@@ -4648,8 +4649,10 @@
         const focused = document.activeElement;
         if (
           document.hidden ||
+          studentLiveRefreshBusy ||
           (focused && ["INPUT", "TEXTAREA", "SELECT"].includes(focused.tagName))
         ) return;
+        studentLiveRefreshBusy = true;
         const captureScrollState = () => ({
           x: window.scrollX,
           y: window.scrollY,
@@ -4670,14 +4673,7 @@
           const sync = await ApiClient.getSyncState();
           const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
           if (!nextVersion) return;
-          if (nextVersion === studentLiveVersion) {
-            if (currentTab === "procedure") {
-              const scrollState = captureScrollState();
-              await loadActiveWorkspaceRecords(true);
-              requestAnimationFrame(() => restoreScrollState(scrollState));
-            }
-            return;
-          }
+          if (nextVersion === studentLiveVersion) return;
           const isFirstCheck = !studentLiveVersion;
           studentLiveVersion = nextVersion;
           if (isFirstCheck) return;
@@ -4687,6 +4683,8 @@
           requestAnimationFrame(() => restoreScrollState(scrollState));
         } catch (error) {
           console.warn("Student live synchronization unavailable:", error);
+        } finally {
+          studentLiveRefreshBusy = false;
         }
       }
 
@@ -6578,17 +6576,6 @@
           }
         });
       });
-      document?.addEventListener("visibilitychange", () => {
-        if (!document.hidden) {
-          updateDashboardStats();
-        }
-      });
-
-      window?.addEventListener("focus", () => {
-        updateDashboardStats();
-        refreshStudentLiveData();
-      });
-
       window?.addEventListener("storage", (event) => {
         if (event.key === "thesis_chat_messages_v1") {
           if (currentTab === "chat") renderChatThread();
