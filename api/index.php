@@ -1045,6 +1045,11 @@ try {
             elseif (!empty($_GET['student_id'])) { $conditions[] = 'c.student_id=?'; $params[] = $_GET['student_id']; }
             if (!empty($_GET['school_year'])) { $conditions[] = 'c.academic_year=?'; $params[] = $_GET['school_year']; }
             if (!empty($_GET['procedure'])) { $conditions[] = 'c.procedure_key=?'; $params[] = $_GET['procedure']; }
+            if (($_GET['summary'] ?? '') === 'dashboard') {
+                $stmt = $pdo->prepare("SELECT c.id,c.student_id,c.procedure_key,c.procedure_name,c.case_no,c.patient_name,c.complete_diagnosis,c.date_time_performed,c.facility_name,c.record_status,c.checked_by,c.checked_at,c.created_at,c.updated_at FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
+                $stmt->execute($params);
+                respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
+            }
             $stmt = $pdo->prepare("SELECT c.*,
                 COALESCE(NULLIF(TRIM(i.display_name), ''), NULLIF(TRIM(i.username), ''), c.instructor_name) AS current_instructor_name,
                 (SELECT y.label

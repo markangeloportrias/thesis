@@ -2797,6 +2797,12 @@
     var result = await mysqlRequest(query, requestOptions || {});
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
+  ApiClient.getStudentDashboardCases = async function (studentId, requestOptions) {
+    var query = 'cases?summary=dashboard';
+    if (normalize(studentId)) query += '&student_id=' + encodeURIComponent(normalize(studentId));
+    var result = await mysqlRequest(query, requestOptions || {});
+    return filterApiCases(result.cases || [], '', '');
+  };
   ApiClient.deleteCaseRecord = async function (studentId, caseId, identity) {
     try {
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/archive', {
