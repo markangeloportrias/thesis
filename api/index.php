@@ -364,6 +364,22 @@ try {
                 (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_requests) AS pending_requests")->fetch();
             respond(['ok' => true, 'version' => hash('sha256', implode('|', $row ?: []))]);
         }
+        if (($_GET['scope'] ?? '') === 'instructor') {
+            // Instructor live refresh needs these teaching-data tables, but not
+            // notification or audit history. Keep it to one database round trip.
+            $row = $pdo->query("SELECT
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM students) AS students,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM instructor_accounts) AS instructors,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM school_years) AS school_years,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM student_blocks) AS blocks,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM student_block_assignments) AS assignments,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM case_records) AS records,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(COALESCE(archived_at, created_at)), '')) FROM case_comments) AS comments,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_requests) AS edit_requests,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_permissions) AS edit_permissions,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(created_at), '')) FROM chat_messages) AS messages")->fetch();
+            respond(['ok' => true, 'version' => hash('sha256', implode('|', $row ?: []))]);
+        }
         $parts = [];
         foreach ([
             ['students', 'updated_at'],

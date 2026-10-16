@@ -8309,7 +8309,7 @@
         ) return;
         instructorLiveRefreshBusy = true;
         try {
-          const sync = await ApiClient.getSyncState();
+          const sync = await ApiClient.request("sync-state?scope=instructor", { silent: true });
           const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
           if (!nextVersion || nextVersion === instructorLiveVersion) return;
           const isFirstCheck = !instructorLiveVersion;
@@ -8339,7 +8339,7 @@
         }
       }
       refreshInstructorLiveData();
-      setInterval(refreshInstructorLiveData, 5000);
+      setInterval(refreshInstructorLiveData, 30000);
       document.addEventListener("visibilitychange", () => {
         if (!document.hidden) refreshInstructorLiveData();
       });
