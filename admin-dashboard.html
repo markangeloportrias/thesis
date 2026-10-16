@@ -1165,7 +1165,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261015-read-cache-1"></script>
+    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -7001,14 +7001,14 @@
       // an active table, move focus, or restore an obsolete scroll position.
       let adminLiveRefreshBusy = false;
       let adminLiveVersion = "";
-      async function refreshAdminLiveData() {
+      async function refreshAdminLiveData(initialLoad = false) {
         if (document.hidden || adminLiveRefreshBusy) return;
         adminLiveRefreshBusy = true;
         try {
-          const sync = await ApiClient.getSyncState();
+          const sync = await ApiClient.getSyncState(initialLoad ? { globalLoading: true } : { silent: true });
           const nextVersion = sync?.ok ? String(sync.version || "") : "";
           if (!nextVersion || nextVersion === adminLiveVersion) return;
-          const result = await ApiClient.request("dashboard-stats", { silent: true });
+          const result = await ApiClient.request("dashboard-stats", initialLoad ? { globalLoading: true } : { silent: true });
           if (!result?.ok || document.hidden) return;
           const counts = result.counts || {};
           const values = {
@@ -7051,7 +7051,7 @@
           ? (callback) => window.requestIdleCallback(callback, { timeout: 800 })
           : (callback) => window.setTimeout(callback, 0);
         deferAdminStartupLoad(() => {
-          refreshAdminLiveData();
+          refreshAdminLiveData(true);
           loadAdminNotifications();
           loadAdminActivityLog();
           setInterval(refreshAdminLiveData, 5000);

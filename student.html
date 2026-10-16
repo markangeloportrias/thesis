@@ -1840,7 +1840,7 @@
 <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261015-read-cache-1"></script>
+    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -2268,7 +2268,7 @@
       let initialDashboardRecordsRequest = null;
       function prepareInitialDashboardRecords(studentId) {
         if (!studentId) return;
-        initialDashboardRecordsRequest = ApiClient.getStudentDashboardCases(studentId, { silent: true })
+        initialDashboardRecordsRequest = ApiClient.getStudentDashboardCases(studentId, { globalLoading: true })
           .catch(() => null);
       }
 
@@ -2285,7 +2285,7 @@
               return;
             }
             prepareInitialDashboardRecords(storedStudent?.student_id);
-            const verified = await ApiClient.getStudent(storedStudent?.student_id || "");
+            const verified = await ApiClient.getStudent(storedStudent?.student_id || "", { globalLoading: true });
             const account = verified?.student;
             const paused = !account || account.archived_at || String(account.status || "").toLowerCase() !== "active";
             if (paused) throw new Error("Student account is paused or archived.");
@@ -2310,7 +2310,7 @@
           try {
             // Load full student data using the ID
             prepareInitialDashboardRecords(currentStudentId);
-            const studentData = await ApiClient.getStudent(currentStudentId);
+            const studentData = await ApiClient.getStudent(currentStudentId, { globalLoading: true });
             const account = studentData?.student;
             if (account && !account.archived_at && String(account.status || "active").toLowerCase() === "active") {
               currentStudent = account;

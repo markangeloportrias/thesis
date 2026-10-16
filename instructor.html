@@ -1867,7 +1867,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261015-read-cache-1"></script>
+    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=20260928-comment-label-1"></script>
     <script>
@@ -3193,9 +3193,12 @@
       }
 
       let instructorAllCasesRequest = null;
+      let instructorInitialCasesLoad = true;
       function getInstructorAllCases() {
         if (!instructorAllCasesRequest) {
-          instructorAllCasesRequest = ApiClient.getAllCasesForInstructor("", "")
+          const requestOptions = instructorInitialCasesLoad ? { globalLoading: true } : undefined;
+          instructorInitialCasesLoad = false;
+          instructorAllCasesRequest = ApiClient.getAllCasesForInstructor("", "", requestOptions)
             .finally(() => {
               instructorAllCasesRequest = null;
             });

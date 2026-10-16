@@ -2869,8 +2869,8 @@
     var rows = await ApiClient.getJoinedCases(studentId, '', '');
     return rows.length;
   };
-  ApiClient.getAllCasesForInstructor = async function (procedureName, searchTerm) {
-    var result = await mysqlRequest('cases');
+  ApiClient.getAllCasesForInstructor = async function (procedureName, searchTerm, requestOptions) {
+    var result = await mysqlRequest('cases', requestOptions || {});
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
   ApiClient.assignCaseInstructor = async function (caseId, instructorId, recordIdentity) {
@@ -2927,14 +2927,14 @@
   ApiClient.getAllStudents = async function () {
     return mysqlRequest('students');
   };
-  ApiClient.getStudent = async function (studentId) {
-    try{return await mysqlRequest('students/'+encodeURIComponent(normalize(studentId)));}catch(error){return {ok:false,student:null,message:error.message};}
+  ApiClient.getStudent = async function (studentId, requestOptions) {
+    try{return await mysqlRequest('students/'+encodeURIComponent(normalize(studentId)), requestOptions || {});}catch(error){return {ok:false,student:null,message:error.message};}
   };
   ApiClient.updateStudent = async function (studentId,payload) {
     try{return await mysqlRequest('students/'+encodeURIComponent(normalize(studentId)),{method:'PATCH',body:JSON.stringify(payload||{})});}catch(error){return {ok:false,message:error.message};}
   };
-  ApiClient.getSyncState = async function () {
-    return mysqlRequest('sync-state');
+  ApiClient.getSyncState = async function (requestOptions) {
+    return mysqlRequest('sync-state', requestOptions || {});
   };
   ApiClient.getInstructorAccounts = async function () {
     try { return await mysqlRequest('instructors'); }
