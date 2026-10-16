@@ -18,7 +18,7 @@
 
   function render() {
     var visible = Array.from(pending.values()).filter(function (request) {
-      return request.mutation || request.scope === scope;
+      return request.showGlobal && request.scope === scope;
     });
     label.textContent = visible.some(function (request) { return request.mutation; })
       ? 'Saving changes…' : 'Loading data…';
@@ -53,7 +53,14 @@
         button.setAttribute('aria-busy', 'true');
         button.classList.add('student-button-loading');
       }
-      pending.set(key, { mutation: mutation, scope: scope });
+      // A page can explicitly request the floating notice for a full-page
+      // transition. Routine reads and button actions already have local
+      // loading states and should not make the dashboard appear to reload.
+      pending.set(key, {
+        mutation: mutation,
+        scope: scope,
+        showGlobal: options.globalLoading === true
+      });
       render();
       var finished = false;
       return function () {
