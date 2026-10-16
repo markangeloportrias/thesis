@@ -1873,13 +1873,13 @@
       let myRecordsRefreshTimer = null;
       let studentLiveVersion = "";
       let studentLiveRefreshBusy = false;
-      const MY_RECORDS_AUTO_REFRESH_MS = 5000;
+      const MY_RECORDS_AUTO_REFRESH_MS = 30000;
       let currentTab = "dashboard"; // SPA state: dashboard, procedure, summary
       const CHAT_MESSAGES_STORAGE_PREFIX = "student_instructor_chat_v2";
       const CHAT_SELECTED_INSTRUCTOR_PREFIX = "student_selected_instructor_v1";
       const LEGACY_CHAT_MESSAGES_KEY = "student_instructor_chat";
       const STUDENT_CHAT_UNREAD_SEEN_PREFIX = "student_chat_unread_seen_v1";
-      const STUDENT_CHAT_UNREAD_REFRESH_MS = 5000;
+      const STUDENT_CHAT_UNREAD_REFRESH_MS = 15000;
       let studentChatUnreadTimer = null;
       let chatInstructorOptions = [];
       let mobileChatInstructorSelected = false;
@@ -4703,7 +4703,7 @@
             });
         };
         try {
-          const sync = await ApiClient.getSyncState();
+          const sync = await ApiClient.request("sync-state?scope=student", { silent: true });
           const nextVersion = sync && sync.ok ? String(sync.version || "") : "";
           if (!nextVersion) return;
           if (nextVersion === studentLiveVersion) return;

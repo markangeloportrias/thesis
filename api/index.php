@@ -352,7 +352,7 @@ try {
     }
 
     if ($resource === 'sync-state' && $method === 'GET') {
-        currentUser($pdo, ['admin', 'instructor', 'student']);
+        $user = currentUser($pdo, ['admin', 'instructor', 'student']);
         if (($_GET['scope'] ?? '') === 'dashboard') {
             // The dashboard counter refresh only depends on these tables. Keep
             // this single compact check separate from the full portal sync.
@@ -378,6 +378,23 @@ try {
                 (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_requests) AS edit_requests,
                 (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_permissions) AS edit_permissions,
                 (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(created_at), '')) FROM chat_messages) AS messages")->fetch();
+            respond(['ok' => true, 'version' => hash('sha256', implode('|', $row ?: []))]);
+        }
+        if (($_GET['scope'] ?? '') === 'student') {
+            // A student only needs changes to their own records, assignments,
+            // feedback, and edit requests. This avoids scanning portal-wide data.
+            $studentId = (string)$user['user_uid'];
+            $stmt = $pdo->prepare("SELECT
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM students WHERE student_id=?) AS student,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM student_block_assignments WHERE student_id=?) AS assignments,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM case_records WHERE student_id=?) AS records,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(COALESCE(cc.archived_at, cc.created_at)), '')) FROM case_comments cc JOIN case_records c ON c.id=cc.case_id WHERE c.student_id=?) AS comments,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_requests WHERE student_id=?) AS edit_requests,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_permissions WHERE student_id=?) AS edit_permissions,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(b.updated_at), '')) FROM student_blocks b JOIN student_block_assignments a ON a.block_id=b.id WHERE a.student_id=?) AS blocks,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(y.updated_at), '')) FROM school_years y JOIN student_block_assignments a ON a.school_year_id=y.id WHERE a.student_id=?) AS school_years");
+            $stmt->execute(array_fill(0, 8, $studentId));
+            $row = $stmt->fetch();
             respond(['ok' => true, 'version' => hash('sha256', implode('|', $row ?: []))]);
         }
         $parts = [];
