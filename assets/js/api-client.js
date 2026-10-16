@@ -2873,6 +2873,10 @@
     var result = await mysqlRequest('cases', requestOptions || {});
     return filterApiCases(result.cases || [], procedureName, searchTerm);
   };
+  ApiClient.getInstructorCaseDirectorySummary = async function (requestOptions) {
+    var result = await mysqlRequest('cases?summary=directory', requestOptions || {});
+    return result.cases || [];
+  };
   ApiClient.assignCaseInstructor = async function (caseId, instructorId, recordIdentity) {
     try {
       var result = await mysqlRequest('cases/' + encodeURIComponent(caseId) + '/assign', {

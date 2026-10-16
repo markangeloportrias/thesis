@@ -1065,6 +1065,14 @@ try {
                 $stmt->execute($params);
                 respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
             }
+            if (($_GET['summary'] ?? '') === 'directory') {
+                // Directory and annual-list screens only need ownership, status,
+                // year, and timestamps for their counts. Do not load patient or
+                // supervisor fields until the instructor opens a student's record.
+                $stmt = $pdo->prepare("SELECT c.student_id,c.academic_year,c.record_status,c.instructor_uid,c.created_at,c.updated_at FROM case_records c WHERE " . implode(' AND ', $conditions) . ' ORDER BY c.created_at ASC, c.id ASC');
+                $stmt->execute($params);
+                respond(['ok' => true, 'cases' => $stmt->fetchAll()]);
+            }
             if ($annualYear !== '') {
                 // The annual student-detail table uses fields stored on the
                 // record itself, so skip the per-row assignment lookup.

@@ -1867,7 +1867,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
+    <script src="assets/js/api-client.js?v=20261016-instructor-directory-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <script src="assets/js/instructor-activity.js?v=20260928-comment-label-1"></script>
     <script>
@@ -5869,7 +5869,7 @@
           result && result.ok && Array.isArray(result.school_years)
             ? result.school_years
             : [];
-        const allCases = await ApiClient.getAllCasesForInstructor("", "");
+        const allCases = await ApiClient.getInstructorCaseDirectorySummary();
         yearlyRecordsByYear = (Array.isArray(allCases) ? allCases : []).reduce((counts, record) => {
           if (String(record.record_status || record.status || "").trim().toLowerCase() !== "verified") return counts;
           const key = record.academic_year || record.school_year || "";
@@ -5911,7 +5911,7 @@
         showDatabaseLoading(yearlyBlocksTbody, 5, "Loading blocks...");
         const [result, cases] = await Promise.all([
           ApiClient.getStudentBlocks(yearlyRecordsNav.year),
-          ApiClient.getAllCasesForInstructor("", ""),
+          ApiClient.getInstructorCaseDirectorySummary(),
         ]);
         const blocks =
           result && result.ok && Array.isArray(result.blocks)
@@ -5938,7 +5938,7 @@
         showDatabaseLoading(yearlyStudentSummaryTbody, 4, "Loading students...");
         const [rosterResult, cases] = await Promise.all([
           ApiClient.getBlockStudents(yearlyRecordsNav.blockId, yearlyRecordsNav.year, yearlyRecordsNav.blockLabel),
-          ApiClient.getAllCasesForInstructor("", ""),
+          ApiClient.getInstructorCaseDirectorySummary(),
         ]);
         const students = rosterResult && rosterResult.ok && Array.isArray(rosterResult.students)
           ? rosterResult.students
@@ -6358,7 +6358,7 @@
         if (searchControl) searchControl.style.setProperty("display", selectedCurrentRecordsBlock ? "none" : "flex", "important");
         const [studentResult, cases] = await Promise.all([
           ApiClient.getAllAssignedStudents(),
-          ApiClient.getAllCasesForInstructor("", ""),
+          ApiClient.getInstructorCaseDirectorySummary(),
         ]);
         const allYears = await ApiClient.getSchoolYears();
         const defaultYear = allYears && allYears.ok && Array.isArray(allYears.school_years)
