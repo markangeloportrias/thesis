@@ -609,16 +609,14 @@
            MICRO-INTERACTIONS, TOASTS & PRELOADER JS
            ========================================================================== */
 
-      // Give the logo-first splash a brief moment before revealing the portal.
-      window.addEventListener("load", () => {
+      // Keep the splash markup available, but never delay access to the login form.
+      document.addEventListener("DOMContentLoaded", () => {
         const preloader = document.getElementById("preloader");
         if (preloader) {
+          preloader.classList.add("fade-out");
           setTimeout(() => {
-            preloader.classList.add("fade-out");
-            setTimeout(() => {
-              preloader.remove();
-            }, 450);
-          }, 2200);
+            preloader.remove();
+          }, 450);
         }
       });
 
