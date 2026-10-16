@@ -1275,6 +1275,68 @@ html body.role-student #chatTab :is(.chat-directory-header, .chat-conversation-h
 }
 
 /* Instructor photos in the student message directory use the standard round profile treatment. */
+/* Keep the feedback popup compact and focused on the current comment. */
+html body.role-student .option-pane.remarks-dialog {
+  width: min(480px, calc(100vw - 32px)) !important;
+  max-width: 480px !important;
+  padding: 24px !important;
+  border-radius: 12px !important;
+}
+html body.role-student .option-pane.remarks-dialog::before,
+html body.role-student .remarks-dialog .option-pane-icon,
+html body.role-student .remarks-dialog .option-pane-title::after,
+html body.role-student .remarks-dialog .feedback-author-avatar,
+html body.role-student .remarks-dialog .feedback-comments-empty > i {
+  display: none !important;
+}
+html body.role-student .remarks-dialog .option-pane-title {
+  padding-right: 30px;
+  font-size: 20px !important;
+}
+html body.role-student .remarks-dialog .option-pane-message {
+  margin: 16px 0 !important;
+}
+html body.role-student .remarks-dialog .feedback-review-card,
+html body.role-student .remarks-dialog .feedback-comment-item {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+html body.role-student .remarks-dialog .feedback-review-context {
+  padding: 0 0 12px;
+  background: transparent;
+}
+html body.role-student .remarks-dialog .feedback-stack-heading {
+  padding: 12px 0 8px;
+}
+html body.role-student .remarks-dialog .feedback-comment-list {
+  padding: 0;
+}
+html body.role-student .remarks-dialog .feedback-comment-header {
+  padding: 10px 0;
+  background: transparent;
+  flex-wrap: wrap;
+}
+html body.role-student .remarks-dialog .feedback-comment-body {
+  padding: 12px 0;
+  border: 0;
+  overflow-wrap: anywhere;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+html body.role-student .remarks-dialog .feedback-comments-empty {
+  min-height: 0;
+  padding: 20px 12px;
+  border: 0;
+  border-radius: 8px;
+}
+html body.role-student .remarks-dialog .option-pane-btn.primary {
+  min-width: 90px !important;
+  padding: 9px 18px !important;
+  box-shadow: none !important;
+}
+
 html body.role-student #chatTab :is(.chat-instructor-avatar, .chat-conversation-avatar) {
   border-radius: 50% !important;
   overflow: hidden;
