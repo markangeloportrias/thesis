@@ -851,7 +851,7 @@ try {
             $legacy = trim((string)($case['teacher_remarks'] ?? ''));
             $legacyExistsStmt = $pdo->prepare('SELECT id FROM case_comments WHERE record_scope=? AND comment_text=? LIMIT 1');
             $legacyExistsStmt->execute([$commentScope, $legacy]);
-            if ($uniqueCaseId && !$legacyExistsStmt->fetchColumn() && $legacy !== '' && !preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $legacy)) {
+            if ($uniqueCaseId && !$legacyExistsStmt->fetchColumn() && $legacy !== '' && !preg_match('/^(none|n\/?a|not applicable|null|undefined|-)$/i', $legacy) && !isSupersededCommentSource($pdo, $commentScope, 'legacy-case:'.$caseId)) {
                 $legacyStmt = $pdo->prepare("INSERT IGNORE INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,source_key,record_scope) VALUES (?,?,?,?,?,?,?)");
                 $legacyStmt->execute([$caseId,$case['instructor_uid'] ?: null,$case['instructor_name'] ?: 'Not assigned','instructor',$legacy,'legacy-case:'.$caseId,$commentScope]);
             }
@@ -876,9 +876,14 @@ try {
                 $existingRequestComment->execute([$commentScope, $remark, $request['rejected_at']]);
                 if ($existingRequestComment->fetchColumn() !== false) continue;
                 $requestSource = 'edit-request:'.$request['id'].':'.hash('sha256', $commentScope.json_encode($request));
+                if (isSupersededCommentSource($pdo, $commentScope, $requestSource)) continue;
                 $insertRequestComment->execute([$caseId,null,$case['instructor_name'] ?: 'Not assigned','instructor',$remark,$requestSource,$request['rejected_at'],$commentScope]);
             }
 
+            // Clean up existing multi-comment records as they are opened.
+            $pdo->beginTransaction();
+            pruneCaseFeedback($pdo, $case, $user);
+            $pdo->commit();
             $archived = ($_GET['archived'] ?? '0') === '1';
             $stmt = $pdo->prepare('SELECT id,case_id,author_uid,author_name,author_role,comment_text,created_at,archived_at FROM case_comments WHERE record_scope=? AND '.($archived ? 'archived_at IS NOT NULL' : 'archived_at IS NULL').' ORDER BY created_at DESC,id DESC');
             $stmt->execute([$commentScope]); respond(['ok'=>true,'comments'=>$stmt->fetchAll()]);
@@ -1283,13 +1288,10 @@ try {
             $stmt->execute(array_merge([$status, $data['remarks'] ?? null, $checkedBy, $instructorId, $instructorName], $reviewParams));
             if ($reviewRemarks !== '') {
                 $reviewCommentScope = caseCommentScope($reviewRecord);
-                $commentExists = $pdo->prepare('SELECT id FROM case_comments WHERE record_scope=? AND comment_text=? AND archived_at IS NULL LIMIT 1');
-                $commentExists->execute([$reviewCommentScope, $reviewRemarks]);
-                if (!$commentExists->fetchColumn()) {
-                    $commentAuthor = trim((string)($instructorName ?? '')) ?: trim((string)($reviewRecord['instructor_name'] ?? '')) ?: 'Not assigned';
-                    $commentStmt = $pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,record_scope) VALUES (?,?,?,?,?,?)');
-                    $commentStmt->execute([(string)$reviewRecord['id'], $user['user_uid'], $commentAuthor, $user['role'] === 'admin' ? 'admin' : 'instructor', $reviewRemarks, $reviewCommentScope]);
-                }
+                $commentAuthor = trim((string)($instructorName ?? '')) ?: trim((string)($reviewRecord['instructor_name'] ?? '')) ?: 'Not assigned';
+                $commentStmt = $pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,record_scope) VALUES (?,?,?,?,?,?)');
+                $commentStmt->execute([(string)$reviewRecord['id'], $user['user_uid'], $commentAuthor, $user['role'] === 'admin' ? 'admin' : 'instructor', $reviewRemarks, $reviewCommentScope]);
+                pruneCaseFeedback($pdo, $reviewRecord, $user);
             }
             $reviewStep = 'audit';
             audit($pdo, $user, 'review', 'case', $id, ['status' => $requested, 'remarks' => $data['remarks'] ?? null, 'record_identity' => array_intersect_key($reviewRecord, array_flip(['student_id', 'procedure_key', 'procedure_name', 'case_no', 'academic_year', 'created_at']))]);
@@ -1401,6 +1403,7 @@ try {
             $stmt=$pdo->prepare('INSERT INTO case_comments (case_id,author_uid,author_name,author_role,comment_text,record_scope) VALUES (?,?,?,?,?,?)');
             $stmt->execute([$id,$user['user_uid'],$authorName,$user['role']==='admin'?'admin':'instructor',$remarks,caseCommentScope($case)]);
             $commentId=(string)$pdo->lastInsertId();
+            pruneCaseFeedback($pdo, $case, $user);
             $pdo->prepare("UPDATE case_records SET teacher_remarks=? WHERE $commentWhere LIMIT 1")->execute(array_merge([$remarks], $commentParams));
             audit($pdo,$user,'comment','case',$id,['comment_id'=>$commentId,'remarks'=>$remarks,'record_identity'=>array_intersect_key($case, array_flip(['student_id','procedure_key','procedure_name','case_no','academic_year','created_at']))]);
             $pdo->commit();

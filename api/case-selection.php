@@ -10,6 +10,33 @@ function caseCommentScope(array $record): string
     ), JSON_THROW_ON_ERROR));
 }
 
+// Remove superseded feedback, retaining only the newest comment for this exact
+// record. Remember imported sources without retaining their comment text, so
+// loading feedback cannot recreate comments that were replaced.
+function pruneCaseFeedback(PDO $pdo, array $record, array $user): void
+{
+    $scope = caseCommentScope($record);
+    $stmt = $pdo->prepare('SELECT id,source_key,comment_text FROM case_comments WHERE record_scope=? ORDER BY created_at DESC,id DESC FOR UPDATE');
+    $stmt->execute([$scope]);
+    $comments = $stmt->fetchAll();
+    foreach (array_slice($comments, 1) as $comment) {
+        if (!empty($comment['source_key'])) {
+            audit($pdo, $user, 'supersede_comment_source', 'case_comment', hash('sha256', $scope . $comment['source_key']), []);
+        }
+        if (trim((string)($record['teacher_remarks'] ?? '')) === trim((string)$comment['comment_text'])) {
+            audit($pdo, $user, 'supersede_comment_source', 'case_comment', hash('sha256', $scope . 'legacy-case:' . $record['id']), []);
+        }
+        $pdo->prepare('DELETE FROM case_comments WHERE id=? AND record_scope=?')->execute([$comment['id'], $scope]);
+    }
+}
+
+function isSupersededCommentSource(PDO $pdo, string $scope, string $source): bool
+{
+    $stmt = $pdo->prepare("SELECT 1 FROM audit_trail WHERE entity_type='case_comment' AND entity_uid=? AND action_name='supersede_comment_source' LIMIT 1");
+    $stmt->execute([hash('sha256', $scope . $source)]);
+    return (bool)$stmt->fetchColumn();
+}
+
 // Reuse the exact predicate for the locked read and the write. An imported
 // database may lack the unique key that normally makes id sufficient.
 function caseMutationSelection(string $id, array $identity, ?string $owner = null, bool $archived = false): array
