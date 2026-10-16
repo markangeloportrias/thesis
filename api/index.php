@@ -353,6 +353,17 @@ try {
 
     if ($resource === 'sync-state' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor', 'student']);
+        if (($_GET['scope'] ?? '') === 'dashboard') {
+            // The dashboard counter refresh only depends on these tables. Keep
+            // this single compact check separate from the full portal sync.
+            $row = $pdo->query("SELECT
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM students) AS students,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM instructor_accounts) AS instructors,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM school_years) AS school_years,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM case_records) AS records,
+                (SELECT CONCAT(COUNT(*), ':', COALESCE(MAX(updated_at), '')) FROM edit_requests) AS pending_requests")->fetch();
+            respond(['ok' => true, 'version' => hash('sha256', implode('|', $row ?: []))]);
+        }
         $parts = [];
         foreach ([
             ['students', 'updated_at'],
@@ -376,16 +387,13 @@ try {
 
     if ($resource === 'dashboard-stats' && $method === 'GET') {
         currentUser($pdo, ['admin', 'instructor']);
-        $counts = [];
-        $queries = [
-            'students' => 'SELECT COUNT(*) FROM students WHERE archived_at IS NULL',
-            'instructors' => 'SELECT COUNT(*) FROM instructor_accounts WHERE archived_at IS NULL AND status = \'active\'',
-            'records' => 'SELECT COUNT(*) FROM case_records WHERE archived_at IS NULL',
-            'school_years' => 'SELECT COUNT(*) FROM school_years WHERE archived_at IS NULL',
-            'pending_requests' => 'SELECT COUNT(*) FROM edit_requests WHERE archived_at IS NULL AND reviewer_dismissed_at IS NULL AND student_dismissed_at IS NULL AND status = \'pending\'',
-        ];
-        foreach ($queries as $key => $sql) $counts[$key] = (int)$pdo->query($sql)->fetchColumn();
-        respond(['ok' => true, 'counts' => $counts]);
+        $counts = $pdo->query("SELECT
+            (SELECT COUNT(*) FROM students WHERE archived_at IS NULL) AS students,
+            (SELECT COUNT(*) FROM instructor_accounts WHERE archived_at IS NULL AND status = 'active') AS instructors,
+            (SELECT COUNT(*) FROM case_records WHERE archived_at IS NULL) AS records,
+            (SELECT COUNT(*) FROM school_years WHERE archived_at IS NULL) AS school_years,
+            (SELECT COUNT(*) FROM edit_requests WHERE archived_at IS NULL AND reviewer_dismissed_at IS NULL AND student_dismissed_at IS NULL AND status = 'pending') AS pending_requests")->fetch() ?: [];
+        respond(['ok' => true, 'counts' => array_map('intval', $counts)]);
     }
 
     if ($resource === 'instructor-directory' && $method === 'GET') {

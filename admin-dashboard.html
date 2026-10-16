@@ -2023,28 +2023,6 @@
           });
         }
 
-        ApiClient.getSchoolYears().then((result) => {
-          // getSchoolYears() initializes/migrates shared storage first, so read
-          // student totals here to keep the sidebar in sync with the year rows.
-          const currentStudents = readJson(STUDENTS_KEY, []);
-          const activeStudentCount = Array.isArray(currentStudents)
-            ? currentStudents.filter((student) => !student.archived).length
-            : 0;
-          if (sidebarCountStudents)
-            sidebarCountStudents.textContent = activeStudentCount;
-          const currentDashboardStudents = document.getElementById(
-            "dashboardStudentsValue",
-          );
-          if (currentDashboardStudents)
-            currentDashboardStudents.textContent = activeStudentCount;
-          const yearsArray =
-            result && result.ok && Array.isArray(result.school_years)
-              ? result.school_years.map((sy) => sy.label)
-              : [];
-          const registeredApiYearsSet = new Set(yearsArray.filter(Boolean));
-          if (sidebarCountYears) sidebarCountYears.textContent = registeredApiYearsSet.size;
-        });
-
         const activeStudents = Array.isArray(students)
           ? students.filter((student) => !student.archived)
           : [];
@@ -2086,16 +2064,6 @@
           dashboardRecordsValue.textContent = Array.isArray(cases)
             ? cases.length
             : 0;
-
-        ApiClient.getInstructorAccountSummaries().then((result) => {
-          const accounts = result && result.ok && Array.isArray(result.accounts)
-            ? result.accounts
-            : [];
-          if (dashboardInstructorsValue)
-            dashboardInstructorsValue.textContent = accounts.length;
-          if (sidebarCountInstructors)
-            sidebarCountInstructors.textContent = accounts.length;
-        });
 
         // Dashboard totals must reflect MySQL, never stale browser storage.
         ApiClient.request("dashboard-stats")
@@ -7005,7 +6973,7 @@
         if (document.hidden || adminLiveRefreshBusy) return;
         adminLiveRefreshBusy = true;
         try {
-          const sync = await ApiClient.getSyncState(initialLoad ? { globalLoading: true } : { silent: true });
+          const sync = await ApiClient.request("sync-state?scope=dashboard", initialLoad ? { globalLoading: true } : { silent: true });
           const nextVersion = sync?.ok ? String(sync.version || "") : "";
           if (!nextVersion || nextVersion === adminLiveVersion) return;
           const result = await ApiClient.request("dashboard-stats", initialLoad ? { globalLoading: true } : { silent: true });
@@ -7054,7 +7022,7 @@
           refreshAdminLiveData(true);
           loadAdminNotifications();
           loadAdminActivityLog();
-          setInterval(refreshAdminLiveData, 5000);
+          setInterval(refreshAdminLiveData, 30000);
           document.addEventListener("visibilitychange", () => {
             if (!document.hidden) refreshAdminLiveData();
           });
