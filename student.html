@@ -2263,6 +2263,15 @@
         startStudentChatUnreadRefresh(false);
       }
 
+      // Fetch the first dashboard records alongside account validation. Keep
+      // the result private until validation succeeds and consume it only once.
+      let initialDashboardRecordsRequest = null;
+      function prepareInitialDashboardRecords(studentId) {
+        if (!studentId) return;
+        initialDashboardRecordsRequest = ApiClient.getStudentDashboardCases(studentId, { silent: true })
+          .catch(() => null);
+      }
+
       // Start after the DOM is ready without waiting for images and other assets.
       document.addEventListener("DOMContentLoaded", async () => {
         // First try sessionStorage (fresh login)
@@ -2275,6 +2284,7 @@
               startRestoredStudentDashboard();
               return;
             }
+            prepareInitialDashboardRecords(storedStudent?.student_id);
             const verified = await ApiClient.getStudent(storedStudent?.student_id || "");
             const account = verified?.student;
             const paused = !account || account.archived_at || String(account.status || "").toLowerCase() !== "active";
@@ -2299,6 +2309,7 @@
         if (currentStudentId) {
           try {
             // Load full student data using the ID
+            prepareInitialDashboardRecords(currentStudentId);
             const studentData = await ApiClient.getStudent(currentStudentId);
             const account = studentData?.student;
             if (account && !account.archived_at && String(account.status || "active").toLowerCase() === "active") {
@@ -4573,8 +4584,12 @@
         }
 
         try {
+          const initialRequest = currentTab === "dashboard" && !forceRefresh
+            ? initialDashboardRecordsRequest : null;
+          initialDashboardRecordsRequest = null;
+          const initialCases = initialRequest ? await initialRequest : null;
           const cases = currentTab === "dashboard"
-            ? await ApiClient.getStudentDashboardCases(currentStudent.student_id, { silent: silentRefresh })
+            ? (initialCases ?? await ApiClient.getStudentDashboardCases(currentStudent.student_id, { silent: silentRefresh }))
             : await ApiClient.getJoinedCases(
               currentStudent.student_id,
               undefined, undefined, { silent: silentRefresh },
