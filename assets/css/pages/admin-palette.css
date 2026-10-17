@@ -720,8 +720,8 @@ html body.role-admin:has(#editRequestsCard) #editRequestsCard .mini-btn[data-act
   color: #003f88 !important;
 }
 html body.role-admin:has(#editRequestsCard) #editRequestsCard .mini-btn[data-action="delete-request"] {
-  border-color: #003f88 !important;
-  background: #003f88 !important;
+  border-color: #dc2626 !important;
+  background: #dc2626 !important;
   color: #ffffff !important;
 }
 html body.role-admin:has(#editRequestsCard) #editRequestsCard .edit-request-status {
