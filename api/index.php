@@ -764,14 +764,15 @@ try {
             $nextStatus = strtolower(trim((string)($data['status'] ?? '')));
             if (!in_array($nextStatus, ['active', 'inactive'], true)) respond(['ok' => false, 'message' => 'Invalid academic year status.'], 422);
             if ($nextStatus === 'inactive') {
-                $activeCount = (int)$pdo->query("SELECT COUNT(*) FROM school_years WHERE archived_at IS NULL AND status='active'")->fetchColumn();
-                $current = $pdo->prepare('SELECT status FROM school_years WHERE id=? AND archived_at IS NULL');
-                $current->execute([$id]);
-                if ($current->fetchColumn() === 'active' && $activeCount <= 1) respond(['ok' => false, 'message' => 'One academic year must remain active.'], 422);
-                $stmt = $pdo->prepare("UPDATE school_years SET status='inactive' WHERE id=? AND archived_at IS NULL");
-                $stmt->execute([$id]);
+                respond(['ok' => false, 'message' => 'One academic year must remain active. Activate another academic year to switch.'], 422);
             } else {
                 $pdo->beginTransaction();
+                // Serialize switches and validate the target before deactivating any year.
+                $years = $pdo->query('SELECT id FROM school_years WHERE archived_at IS NULL ORDER BY id FOR UPDATE')->fetchAll(PDO::FETCH_COLUMN);
+                if (!in_array((string)$id, array_map('strval', $years), true)) {
+                    $pdo->rollBack();
+                    respond(['ok' => false, 'message' => 'Academic year not found.'], 404);
+                }
                 $pdo->prepare("UPDATE school_years SET status='inactive' WHERE archived_at IS NULL AND status='active' AND id<>?")->execute([$id]);
                 $stmt = $pdo->prepare("UPDATE school_years SET status='active' WHERE id=? AND archived_at IS NULL");
                 $stmt->execute([$id]);

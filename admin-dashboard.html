@@ -2999,7 +2999,7 @@
           <td><span class="account-status-badge ${String(year.status || "inactive").toLowerCase() === "active" ? "active" : "inactive"}">${String(year.status || "inactive").toLowerCase() === "active" ? "Active" : "Inactive"}</span></td>
           <td class="action-cell">
             <button class="mini-btn" type="button" data-year-open="${year.label || ""}">Open</button>
-            <button class="mini-btn ${String(year.status || "inactive").toLowerCase() === "active" ? "danger" : "success"}" type="button" data-year-status="${year.id || ""}" data-next-status="${String(year.status || "inactive").toLowerCase() === "active" ? "inactive" : "active"}">${String(year.status || "inactive").toLowerCase() === "active" ? "Deactivate" : "Activate"}</button>
+            <button class="mini-btn success" type="button" data-year-status="${year.id || ""}" data-next-status="active" ${String(year.status || "inactive").toLowerCase() === "active" ? 'disabled title="Activate another academic year to switch."' : ''}>${String(year.status || "inactive").toLowerCase() === "active" ? "Active" : "Activate"}</button>
           </td>
         `;
           schoolYearsTbody.appendChild(tr);
