@@ -41,9 +41,9 @@
 
   const instructorMetricTargets = {
     totalRecords: "btn-my-records",
-    pendingRequests: "btn-nav-edit-requests",
-    approvedCases: "btn-my-records",
-    activeStudents: "btn-my-records"
+    pendingRequests: "btn-nav-to-review",
+    approvedCases: "btn-nav-student-summary",
+    activeStudents: "btn-nav-manage-students"
   };
   Object.keys(instructorMetricTargets).forEach(function (valueId) {
     const value = document.getElementById(valueId);

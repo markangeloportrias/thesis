@@ -1059,7 +1059,7 @@
               <div class="stat-icon"><i class="fas fa-stethoscope"></i></div>
               <div class="stat-label">Submitted records</div>
               <div class="stat-value" id="totalRecords">0</div>
-              <div class="stat-desc">Submitted and resubmitted</div>
+              <div class="stat-desc">All submitted records, including reviewed records</div>
             </div>
           </div>
           <div class="stat-card warning">
@@ -1085,7 +1085,7 @@
               <div class="stat-icon"><i class="fas fa-users"></i></div>
               <div class="stat-label">Active Students</div>
               <div class="stat-value" id="activeStudents">0</div>
-              <div class="stat-desc">Currently supervised</div>
+              <div class="stat-desc">Enrolled in the active academic year</div>
             </div>
           </div>
         </div>
@@ -3261,7 +3261,7 @@
         setTextById("approvedCases", cases.filter((record) => matchesDashboardMetric(record, "approvedCases")).length);
         const activeYear = yearsResult?.school_years?.find((year) => String(year.status || "").toLowerCase() === "active")?.label;
         const students = studentResult?.ok && Array.isArray(studentResult.students)
-          ? studentResult.students.filter((student) => !activeYear || String(student.registered_school_year || "") === String(activeYear))
+          ? studentResult.students.filter((student) => activeYear && String(student.registered_school_year || "") === String(activeYear))
           : null;
         setTextById("activeStudents", students && yearsResult?.ok
           ? new Set(students.map((student) => String(student.student_id || "")).filter(Boolean)).size
@@ -3307,18 +3307,20 @@
       };
       function matchesDashboardMetric(record, metric) {
         const status = getInstructorProcedureRecordReviewStatus(record) || "submitted";
-        if (metric === "totalRecords") return ["submitted", "resubmitted"].includes(status);
-        if (metric === "pendingRequests") return ["submitted", "resubmitted", "reviewed", "under_review"].includes(status);
+        if (metric === "totalRecords") return !["draft", "archived"].includes(status);
+        // Use the same assignment and status rules as the To Review queue.
+        if (metric === "pendingRequests") return isInstructorCaseAssigned(record) && status !== "verified";
         if (metric === "approvedCases") return status === "verified";
         return true;
       }
       window.openInstructorDashboardMetric = function (metric) {
-        if (metric === "activeStudents") {
-          setActiveSection("my-records");
-          return;
-        }
-        const filter = dashboardMetricFilter === metric ? "" : metric;
-        setActiveSection("dashboard", { dashboardMetric: filter });
+        const destinations = {
+          totalRecords: "my-records",
+          pendingRequests: "to-review",
+          approvedCases: "student-summary",
+          activeStudents: "students",
+        };
+        if (destinations[metric]) setActiveSection(destinations[metric]);
       };
 
       function renderDashboardRecentRecords(records) {
