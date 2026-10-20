@@ -554,9 +554,9 @@ html body.role-instructor #edit-requests-view .request-approve-btn {
   color: #00296b !important;
 }
 html body.role-instructor #edit-requests-view .request-reject-btn {
-  border-color: #00509d !important;
-  background: #ffffff !important;
-  color: #003f88 !important;
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
 }
 html body.role-instructor #edit-requests-view .request-view-btn {
   border-color: #00509d !important;
@@ -564,8 +564,8 @@ html body.role-instructor #edit-requests-view .request-view-btn {
   color: #ffffff !important;
 }
 html body.role-instructor #edit-requests-view .request-delete-btn {
-  border-color: #003f88 !important;
-  background: #003f88 !important;
+  border-color: #dc2626 !important;
+  background: #dc2626 !important;
   color: #ffffff !important;
 }
 html body.role-instructor #edit-requests-view .request-item-actions button:hover {

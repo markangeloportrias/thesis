@@ -8158,6 +8158,11 @@
             ? "Student List"
             : "Archived Students";
         }
+        if (instructorArchivedStudentsCount) {
+          // The value counts archived students; do not show it beside the
+          // Student List label, where it can be mistaken for the active count.
+          instructorArchivedStudentsCount.style.display = isOpening ? "none" : "";
+        }
         instructorToggleArchivedStudentsBtn.classList.toggle("btn-primary", isOpening);
         instructorToggleArchivedStudentsBtn.classList.toggle("btn-secondary", !isOpening);
         if (isOpening) {
