@@ -960,6 +960,7 @@ try {
             if (!$case) respond(['ok'=>false,'message'=>'Clinical record not found or access is denied.'],404);
 
             $commentScope = caseCommentScope($case);
+            requireUniqueFeedbackScope($pdo, $case);
             $commentStmt = $pdo->prepare('SELECT id,source_key FROM case_comments WHERE record_scope=? AND comment_text=? AND archived_at IS NULL');
             $commentStmt->execute([$commentScope,$commentText]);
             $matchingComments = $commentStmt->fetchAll();
@@ -967,19 +968,19 @@ try {
             try {
                 $changed = false;
                 foreach ($matchingComments as $matchingComment) {
-                    $deleteStmt = $pdo->prepare('DELETE FROM case_comments WHERE id=? AND archived_at IS NULL');
-                    $deleteStmt->execute([$matchingComment['id']]);
+                    $deleteStmt = $pdo->prepare('DELETE FROM case_comments WHERE id=? AND record_scope=? AND comment_text=? AND archived_at IS NULL');
+                    $deleteStmt->execute([$matchingComment['id'],$commentScope,$commentText]);
                     if (!$deleteStmt->rowCount()) continue;
                     $changed = true;
                     $sourceKey = (string)($matchingComment['source_key'] ?? '');
                     if (strpos($sourceKey, 'edit-request:') === 0) {
-                        $requestId = explode(':', $sourceKey)[1];
-                        $pdo->prepare('UPDATE edit_requests SET rejection_remarks=NULL WHERE id=? AND rejection_remarks=?')->execute([$requestId,$commentText]);
+                        // A legacy request may cover multiple cases. Suppress only
+                        // this record's imported comment, leaving other cases intact.
+                        audit($pdo,$user,'supersede_comment_source','case_comment',hash('sha256',$commentScope.$sourceKey),[]);
                     }
                 }
-                $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND teacher_remarks=?');
-                $clearCase->execute([$case['id'],$commentText]);
-                $changed = $changed || $clearCase->rowCount() > 0;
+                $mirrorCleared = clearCaseFeedbackMirror($pdo, $case, $commentText);
+                $changed = $changed || $mirrorCleared;
                 if ($changed) audit($pdo,$user,'delete_permanently','case_comment',(string)$case['id'],['comment_text'=>$commentText]);
                 $pdo->commit();
                 respond(['ok'=>$changed]);
@@ -996,7 +997,9 @@ try {
             $archiveFilter = $allowActiveDelete ? '' : ' AND m.archived_at IS NOT NULL';
             $ownerStmt=$pdo->prepare('SELECT m.* FROM case_comments m WHERE m.id=?'.$archiveFilter);
             $ownerStmt->execute([$id]);
-            $comment=$ownerStmt->fetch();
+            $commentMatches=$ownerStmt->fetchAll();
+            if (count($commentMatches) > 1) respond(['ok'=>false,'message'=>'Record identity is required to delete this comment.'],409);
+            $comment=$commentMatches[0] ?? false;
             if (!$comment) respond(['ok'=>false,'message'=>$allowActiveDelete ? 'Comment not found.' : 'Archived comment not found.'],404);
             // Imported cases may share an ID; authorize against the same scope
             // used when loading comments, never an arbitrary joined case.
@@ -1017,21 +1020,18 @@ try {
             $pdo->beginTransaction();
             try {
                 $deleteFilter = $allowActiveDelete ? '' : ' AND archived_at IS NOT NULL';
-                $stmt=$pdo->prepare('DELETE FROM case_comments WHERE id=?'.$deleteFilter);
-                $stmt->execute([$id]);
+                $stmt=$pdo->prepare('DELETE FROM case_comments WHERE id=? AND record_scope <=> ?'.$deleteFilter);
+                $stmt->execute([$id,$comment['record_scope']]);
                 $deleted = $stmt->rowCount() > 0;
                 $sourceKey = (string)($comment['source_key'] ?? '');
                 // Review comments are also mirrored in case_records.teacher_remarks.
                 // Clear the mirror when it contains the deleted comment so the GET
                 // endpoint cannot recreate that same comment after deletion.
                 if ($deleted && ($sourceKey === '' || strpos($sourceKey, 'legacy-case:') === 0)) {
-                    $clearCase = $pdo->prepare('UPDATE case_records SET teacher_remarks=NULL WHERE id=? AND student_id=? AND procedure_key <=> ? AND academic_year <=> ? AND created_at <=> ? AND teacher_remarks=?');
-                    $clearCase->execute([$commentCase['id'], $commentCase['student_id'], $commentCase['procedure_key'], $commentCase['academic_year'], $commentCase['created_at'], $comment['comment_text']]);
+                    clearCaseFeedbackMirror($pdo, $commentCase, (string)$comment['comment_text']);
                 }
                 if ($deleted && strpos($sourceKey, 'edit-request:') === 0) {
-                    $requestId = explode(':', $sourceKey)[1];
-                    $clearRequest = $pdo->prepare('UPDATE edit_requests SET rejection_remarks=NULL WHERE id=? AND rejection_remarks=?');
-                    $clearRequest->execute([$requestId, $comment['comment_text']]);
+                    audit($pdo,$user,'supersede_comment_source','case_comment',hash('sha256',caseCommentScope($commentCase).$sourceKey),[]);
                 }
                 if ($deleted) audit($pdo,$user,'delete_permanently','case_comment',$id);
                 $pdo->commit();

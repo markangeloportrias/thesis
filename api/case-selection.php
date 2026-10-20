@@ -10,11 +10,39 @@ function caseCommentScope(array $record): string
     ), JSON_THROW_ON_ERROR));
 }
 
+// Use the same complete identity as record mutations, not the imported ID
+// alone, when clearing the legacy copy of a deleted feedback comment.
+function clearCaseFeedbackMirror(PDO $pdo, array $record, string $text): bool
+{
+    [$where, $params] = caseMutationSelection(
+        (string)$record['id'], $record, (string)$record['student_id'],
+        !empty($record['archived_at'])
+    );
+    $stmt = $pdo->prepare("UPDATE case_records SET teacher_remarks=NULL WHERE $where AND teacher_remarks=?");
+    $stmt->execute(array_merge($params, [$text]));
+    return $stmt->rowCount() > 0;
+}
+
+// Old imports can also contain colliding feedback scopes. Never delete shared
+// feedback when its exact owner cannot be established.
+function requireUniqueFeedbackScope(PDO $pdo, array $record): void
+{
+    $stmt = $pdo->prepare('SELECT * FROM case_records WHERE id=?');
+    $stmt->execute([$record['id']]);
+    $scope = caseCommentScope($record);
+    $matches = array_filter($stmt->fetchAll(PDO::FETCH_ASSOC),
+        static fn($candidate) => caseCommentScope($candidate) === $scope);
+    if (count($matches) !== 1) {
+        throw new RuntimeException('This feedback has an ambiguous imported record identity. No comments were deleted.');
+    }
+}
+
 // Remove superseded feedback, retaining only the newest comment for this exact
 // record. Remember imported sources without retaining their comment text, so
 // loading feedback cannot recreate comments that were replaced.
 function pruneCaseFeedback(PDO $pdo, array $record, array $user): void
 {
+    requireUniqueFeedbackScope($pdo, $record);
     $scope = caseCommentScope($record);
     $stmt = $pdo->prepare('SELECT id,source_key,comment_text FROM case_comments WHERE record_scope=? ORDER BY created_at DESC,id DESC FOR UPDATE');
     $stmt->execute([$scope]);
