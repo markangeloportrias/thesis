@@ -1478,6 +1478,14 @@
             </select>
           </div>
 
+          <div id="recordsLoadingIndicator" role="status" aria-live="polite" hidden>
+            <span class="student-loading-spinner" aria-hidden="true"></span>
+            <span>Loading records...</span>
+          </div>
+          <style>
+            #recordsLoadingIndicator { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px 12px; color: #0054a6; font-size: 13px; }
+            #recordsLoadingIndicator[hidden] { display: none; }
+          </style>
           <div id="recordProcedureTables" aria-live="polite"></div>
 
         </section>
@@ -4391,6 +4399,7 @@
         }
       }
 
+      let recordsLoadingCount = 0;
       async function loadActiveWorkspaceRecords(silentRefresh = false) {
         if (!currentStudent || !currentStudent.student_id) {
           deliveryRecords = [];
@@ -4398,6 +4407,11 @@
           return;
         }
 
+        const loadingIndicator = document.getElementById("recordsLoadingIndicator");
+        if (!silentRefresh) {
+          recordsLoadingCount++;
+          if (loadingIndicator) loadingIndicator.hidden = false;
+        }
         try {
           const list = await ApiClient.getJoinedCases(
             currentStudent.student_id,
@@ -4453,6 +4467,11 @@
           renderDeliveryRecordsTable();
         } catch (error) {
           console.error("Error loading delivery-assisted records:", error);
+        } finally {
+          if (!silentRefresh) {
+            recordsLoadingCount--;
+            if (loadingIndicator) loadingIndicator.hidden = recordsLoadingCount === 0;
+          }
         }
       }
 
