@@ -537,6 +537,7 @@
                           <th style="width: 55px">No.</th>
                           <th>Student ID</th>
                           <th>Name</th>
+                           <th>Registered Year</th>
                           <th>Parent</th>
                           <th>Parent Contact</th>
                           <th>Contact</th>
@@ -3241,6 +3242,7 @@
             <td>${index + 1}</td>
             <td>${student.student_id || ""}</td>
             <td>${student.student_name || ""}</td>
+            <td>${student.registered_school_year || "â€”"}</td>
             <td>${student.parent_name || ""}</td>
             <td>${student.parent_contact || ""}</td>
             <td>${student.contact_number || ""}</td>
@@ -6785,6 +6787,7 @@
         const activeSearchRow = studentSearchInput?.closest(".row");
         const activeStudentsTable = studentsTbody?.closest(".table-wrap");
         archivedStudentsPanel.style.display = "block";
+        if (openAddStudentBtn) openAddStudentBtn.style.display = "none";
         if (activeSearchRow) activeSearchRow.style.display = "none";
         if (activeStudentsTable) activeStudentsTable.style.display = "none";
         if (studentsEmpty) studentsEmpty.style.display = "none";
@@ -6796,6 +6799,7 @@
 
       async function showActiveStudents() {
         archivedStudentsPanel.style.display = "none";
+        if (openAddStudentBtn) openAddStudentBtn.style.display = "";
         const activeSearchRow = studentSearchInput?.closest(".row");
         const activeStudentsTable = studentsTbody?.closest(".table-wrap");
         if (activeSearchRow) activeSearchRow.style.display = "";

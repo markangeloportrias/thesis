@@ -1719,6 +1719,7 @@
                             <th>No.</th>
                             <th>Student ID</th>
                             <th>Name</th>
+                             <th>Registered Year</th>
                             <th>Parent</th>
                             <th>Parent Contact</th>
                             <th>Contact</th>
@@ -7425,6 +7426,7 @@
             <td>${index + 1}</td>
             <td>${escapeHtml(student.student_id || "")}</td>
             <td>${escapeHtml(student.student_name || "")}</td>
+             <td>${escapeHtml(student.registered_school_year || "—")}</td>
             <td>${escapeHtml(student.parent_name || "")}</td>
             <td>${escapeHtml(student.parent_contact || "")}</td>
             <td>${escapeHtml(student.contact_number || "")}</td>
@@ -8146,6 +8148,9 @@
             "important",
           );
         }
+         if (instructorOpenAddStudentBtn) {
+           instructorOpenAddStudentBtn.style.display = isOpening ? "none" : "inline-flex";
+         }
         if (activeStudentsTable) activeStudentsTable.style.display = isOpening ? "none" : "";
         if (instructorBlockStudentsEmpty) instructorBlockStudentsEmpty.style.display = "none";
         if (instructorArchivedStudentsBtnLabel) {
