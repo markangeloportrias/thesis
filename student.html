@@ -1845,6 +1845,7 @@
       (() => {
         const expectedRole = "student";
         const redirectToLogin = () => {
+          clearStudentCaseDrafts();
           sessionStorage.removeItem("currentStudent");
           sessionStorage.removeItem("thesis_api_token");
           localStorage.removeItem("currentStudentId");
@@ -3784,6 +3785,53 @@
 
       }
 
+      const caseDraftFields = [
+        "inputPatientName", "inputPatientAddress", "inputCaseNo", "inputDateTime",
+        "inputDiagnosis", "inputFacilityName", "inputFacilityAddress", "inputFacilityContact",
+        "inputSupervisorName", "inputSupervisorContact", "inputSupervisorPosition",
+        "inputLicenseNo", "inputLicenseExpiry",
+      ];
+      let activeCaseDraftKey = null;
+
+      function saveStudentCaseDraft() {
+        if (!activeCaseDraftKey || deliveryEditingIndex >= 0) return;
+        try {
+          const values = Object.fromEntries(caseDraftFields.map(id => [id, document.getElementById(id).value]));
+          if (Object.values(values).some(value => value.trim())) {
+            sessionStorage.setItem(activeCaseDraftKey, JSON.stringify(values));
+          } else {
+            sessionStorage.removeItem(activeCaseDraftKey);
+          }
+        } catch (_) { /* Storage restrictions must not block the form. */ }
+      }
+
+      function restoreStudentCaseDraft() {
+        activeCaseDraftKey = null;
+        if (deliveryEditingIndex >= 0 || !getCurrentStudentId() || activeProcedureKey === "all-records") return;
+        activeCaseDraftKey = "student-case-draft:v1:" + encodeURIComponent(getCurrentStudentId()) + ":" + activeProcedureKey;
+        try {
+          const values = JSON.parse(sessionStorage.getItem(activeCaseDraftKey) || "{}");
+          caseDraftFields.forEach(id => {
+            document.getElementById(id).value = typeof values?.[id] === "string" ? values[id] : "";
+          });
+        } catch (_) { /* Missing or invalid drafts do not prevent entry. */ }
+      }
+
+      function discardStudentCaseDraft() {
+        try {
+          if (activeCaseDraftKey) sessionStorage.removeItem(activeCaseDraftKey);
+        } catch (_) {}
+        activeCaseDraftKey = null;
+      }
+
+      function clearStudentCaseDrafts() {
+        activeCaseDraftKey = null;
+        try {
+          Object.keys(sessionStorage).filter(key => key.startsWith("student-case-draft:v1:"))
+            .forEach(key => sessionStorage.removeItem(key));
+        } catch (_) {}
+      }
+
       function clearDeliveryFormInputs() {
         document.getElementById("inputPatientName").value = "";
         document.getElementById("inputPatientAddress").value = "";
@@ -3802,6 +3850,7 @@
       }
 
       function openDeliveryModal() {
+        restoreStudentCaseDraft();
         const modalTitle = document.getElementById("deliveryModalTitle");
         const recordType = document.getElementById("deliveryModalRecordType");
         const submitButton = document.getElementById("addRecordBtn");
@@ -3825,6 +3874,8 @@
       }
 
       function closeDeliveryModal() {
+        saveStudentCaseDraft();
+        activeCaseDraftKey = null;
         deliveryModalOverlay?.classList.remove("active");
         clearCaseRoleAvailability();
         if (deliveryEditingIndex >= 0 && deliveryEditingRecord) {
@@ -6370,6 +6421,19 @@
         closeDeliveryModal();
       });
 
+      caseDraftFields.forEach(id => {
+        const field = document.getElementById(id);
+        field?.addEventListener("input", saveStudentCaseDraft);
+        field?.addEventListener("change", saveStudentCaseDraft);
+      });
+      window.addEventListener("pagehide", saveStudentCaseDraft);
+      document.getElementById("clearFormBtn")?.addEventListener("click", () => {
+        const draftKey = activeCaseDraftKey;
+        discardStudentCaseDraft();
+        clearDeliveryFormInputs();
+        activeCaseDraftKey = draftKey;
+      });
+
       deliveryModalBackBtn?.addEventListener("click", () => {
         closeDeliveryModal();
       });
@@ -6427,6 +6491,7 @@
               return;
             }
             guard?.complete(true);
+            discardStudentCaseDraft();
 
             if (editingRequestKey) {
               const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
@@ -6701,6 +6766,7 @@
               label: "Yes",
               variant: "primary",
               onClick: async () => {
+                clearStudentCaseDrafts();
                 await ApiClient.logout();
                 sessionStorage.removeItem("currentStudent");
                 localStorage.removeItem("currentStudentId");
