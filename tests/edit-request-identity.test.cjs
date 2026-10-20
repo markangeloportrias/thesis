@@ -27,6 +27,11 @@ vm.runInContext(source.slice(source.indexOf('      function getCaseKey('), sourc
 assert.notEqual(context.getCaseKey(first), context.getCaseKey(second));
 assert.equal(context.getEditRequestStatus(first), 'requested');
 assert.equal(context.getEditRequestStatus(second), '');
+context.liveEditRequestsCache = [{ ...request, status: 'approved', consumed_at: '2026-10-20 12:00:00' }];
+assert.equal(context.getEditRequestStatus(first), '', 'Used approval cannot expose edit action');
+const correction = { ...first, status: 'needs_revision' };
+assert.equal(context.getEditRequestStatus(correction), 'accepted', 'Instructor-requested changes allow correction');
+assert.equal(context.getEditRequestStatus({ ...correction, checkedBy: 'Instructor' }), '', 'Verification lock takes precedence');
 assert.equal(context.getEditRequestStatus(locked), '');
 assert.equal(context.editRequestMatchesRecord({ ...request, record_identity: null }, first), false);
 context.setEditRequestStatus(second, 'requested');

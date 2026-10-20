@@ -160,6 +160,9 @@ function ensureStudentProfileFields(PDO $pdo): void
 
 function ensureEditRequestDismissalFields(PDO $pdo): void
 {
+    if (!columnExists($pdo, 'edit_requests', 'consumed_at')) {
+        $pdo->exec('ALTER TABLE edit_requests ADD COLUMN consumed_at DATETIME NULL');
+    }
     if (!columnExists($pdo, 'edit_requests', 'record_identity')) {
         $pdo->exec('ALTER TABLE edit_requests ADD COLUMN record_identity LONGTEXT NULL');
     }

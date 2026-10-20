@@ -3120,6 +3120,9 @@
       }
       function getEditRequestStatus(rec) {
         if (getProcedureRecordReviewStatus(rec) === 'verified' || rec.checkedBy || rec.checkedAt) return '';
+        // An instructor's Changes Requested review grants correction access
+        // for this record until it is resubmitted.
+        if (getProcedureRecordReviewStatus(rec) === 'needs_revision') return 'accepted';
         const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
         const localStatus = states[getCaseKey(rec)] || "";
         // One approved edit is consumed after it is saved. A denied request
@@ -3140,6 +3143,7 @@
           )
           .sort((a, b) => PhilippineTime.parse(b.requestedAt || 0) - PhilippineTime.parse(a.requestedAt || 0))[0];
         const sharedStatus = sharedRequest?.caseStatuses?.[String(rec.caseNo || '')] || sharedRequest?.status;
+        if (sharedRequest?.consumed_at) return '';
         if (["Allowed", "approved", "Approved"].includes(sharedStatus)) return "accepted";
         if (["Denied", "rejected", "Rejected"].includes(sharedStatus)) return "";
         if (["pending", "Requested"].includes(sharedStatus)) return "requested";

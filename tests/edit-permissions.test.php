@@ -23,3 +23,33 @@ permissionCheck(!hasClinicalEditPermission($db, 'S1', 'delivery-assisted'), 'Rej
 setClinicalEditPermission($db, 'S2', 'suturing', true);
 permissionCheck(hasClinicalEditPermission($db, 'S2', 'suturing'), 'New students must receive a permission row');
 echo "PASS: permission key variants, duplicate rows, ownership, consumption, reapproval and rejection\n";
+
+$db->exec('CREATE TABLE case_records (id INTEGER, student_id TEXT, procedure_key TEXT, case_no TEXT, patient_name TEXT, academic_year TEXT, archived_at TEXT)');
+$db->exec('CREATE TABLE edit_requests (id INTEGER, student_id TEXT, procedure_key TEXT, case_numbers TEXT, record_identity TEXT, status TEXT, requested_at TEXT, archived_at TEXT, consumed_at TEXT)');
+$first = ['id'=>0, 'student_id'=>'S3', 'procedure_key'=>'delivery handled', 'case_no'=>'001', 'patient_name'=>'First', 'academic_year'=>'2026-2027'];
+$second = array_merge($first, ['patient_name'=>'Second']);
+$caseInsert = $db->prepare('INSERT INTO case_records VALUES (?,?,?,?,?,?,NULL)');
+foreach ([$first, $second] as $record) $caseInsert->execute(array_values($record));
+$insertRequest = $db->prepare("INSERT INTO edit_requests VALUES (0,'S3','delivery handled','[\"001\"]',?,'approved',?,NULL,NULL)");
+$insertRequest->execute([json_encode(array_diff_key($first, ['id'=>true])), '2026-10-20 10:00:00']);
+$insertRequest->execute([json_encode(array_diff_key($second, ['id'=>true])), '2026-10-20 10:01:00']);
+// A consumed procedure-wide flag must not override either exact approval.
+setClinicalEditPermission($db, 'S3', 'delivery handled', false);
+$firstApproval = clinicalRecordEditApproval($db, $first);
+permissionCheck($firstApproval !== null, 'Exact approval must work despite stale procedure permission');
+permissionCheck(clinicalRecordEditApproval($db, $second) !== null, 'Second record has its own approval');
+$db->beginTransaction();
+consumeClinicalRecordEditApproval($db, $firstApproval);
+$db->rollBack();
+permissionCheck(clinicalRecordEditApproval($db, $first) !== null, 'Failed save rollback preserves approval');
+$db->beginTransaction();
+consumeClinicalRecordEditApproval($db, $firstApproval);
+$db->commit();
+permissionCheck(clinicalRecordEditApproval($db, $first) === null, 'Saved record cannot reuse approval');
+permissionCheck(clinicalRecordEditApproval($db, $second) !== null, 'Saving first record does not consume second approval with same ID and case number');
+permissionCheck(clinicalRecordEditApproval($db, array_merge($second, ['student_id'=>'OTHER'])) === null, 'No cross-student approval');
+permissionCheck(clinicalRecordEditApproval($db, array_merge($second, ['patient_name'=>'Third'])) === null, 'No cross-identity approval');
+$insertRequest->execute([json_encode(array_diff_key($second, ['id'=>true])), '2026-10-20 10:02:00']);
+$db->exec("UPDATE edit_requests SET status='rejected' WHERE requested_at='2026-10-20 10:02:00'");
+permissionCheck(clinicalRecordEditApproval($db, $second) === null, 'New rejection overrides previous exact approval');
+echo "PASS: record identity approvals, independent consumption, transaction rollback, ownership and newest decision\n";

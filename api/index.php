@@ -1210,7 +1210,7 @@ try {
                 if (strtolower(trim((string)$record['record_status'])) === 'verified' || !empty($record['checked_by']) || !empty($record['checked_at'])) {
                     respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot be edited.'], 409);
                 }
-                if (!hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'])) {
+                if ($record['record_status'] !== 'needs_revision' && !clinicalRecordEditApproval($pdo, $record)) {
                     respond(['ok' => false, 'message' => 'Instructor correction approval is required before editing this record.'], 403);
                 }
             }
@@ -1257,7 +1257,8 @@ try {
                     respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot be edited.'], 409);
                 }
                 $editStep = 'permission-lock';
-                if ($user['role'] === 'student' && !hasClinicalEditPermission($pdo, $user['user_uid'], $record['procedure_key'], true)) {
+                $recordApproval = $user['role'] === 'student' ? clinicalRecordEditApproval($pdo, $lockedRecords[0], true) : null;
+                if ($user['role'] === 'student' && $lockedRecords[0]['record_status'] !== 'needs_revision' && !$recordApproval) {
                     $pdo->rollBack();
                     throw new RuntimeException('The correction approval was already used or withdrawn.');
                 }
@@ -1275,10 +1276,9 @@ try {
                     $editStep = 'record-update';
                     $update = $pdo->prepare('UPDATE case_records SET ' . implode(',', $fields) . " WHERE $editWhere LIMIT 1");
                     $update->execute(array_merge($params, $recordParams));
-                    if ($user['role'] === 'student') {
+                    if ($user['role'] === 'student' && $recordApproval) {
                         $editStep = 'permission-consume';
-                        $consume = $pdo->prepare('UPDATE edit_permissions SET approved=0, updated_at=NOW() WHERE ' . EDIT_PERMISSION_MATCH);
-                        $consume->execute([$user['user_uid'], editPermissionProcedure($record['procedure_key'])]);
+                        consumeClinicalRecordEditApproval($pdo, $recordApproval);
                     }
                     $editStep = 'audit';
                     audit($pdo, $user, 'update', 'case', (string)$record['id'], ['fields' => array_values(array_intersect($editableFields, array_keys($data))), 'record_identity' => $identity]);
