@@ -2983,10 +2983,10 @@
     if (normalize(studentId)) query += '&student_id=' + encodeURIComponent(normalize(studentId));
     var result=await mysqlRequest(query);return result.cases||[];
   };
-  ApiClient.requestEditApproval = async function (studentId, procedureName, caseNumbers) {
+  ApiClient.requestEditApproval = async function (studentId, procedureName, caseNumbers, recordIdentity) {
     try {
       var key=canonicalProcedureName(procedureName);
-      var result=await mysqlRequest('edit-requests',{method:'POST',body:JSON.stringify({procedure_key:key,procedure_name:procedureName||key,case_numbers:Array.isArray(caseNumbers)?caseNumbers:[]})});
+      var result=await mysqlRequest('edit-requests',{method:'POST',body:JSON.stringify({procedure_key:key,procedure_name:procedureName||key,case_numbers:Array.isArray(caseNumbers)?caseNumbers:[],record_identity:recordIdentity || {}})});
       return {ok:!!result.ok,request_id:result.id,message:result.message};
     } catch(error) { return {ok:false,message:error.message}; }
   };

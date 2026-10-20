@@ -3091,17 +3091,42 @@
       }
 
       function getCaseKey(rec) {
+        if (rec.recordIdentity && Object.keys(rec.recordIdentity).length) {
+          return 'identity:' + JSON.stringify(Object.keys(rec.recordIdentity).sort().map((key) => [key, String(rec.recordIdentity[key] ?? '')]));
+        }
         return String(rec.id || `${rec.procedureKey || activeProcedureKey}-${rec.caseNo || rec.patientName || "case"}`);
       }
+      function editRequestMatchesRecord(request, rec) {
+        let identity = request.record_identity || request.recordIdentity;
+        if (typeof identity === 'string') {
+          try { identity = JSON.parse(identity); } catch (_) { return false; }
+        }
+        if (identity && Object.keys(identity).length) {
+          return getCaseKey({ recordIdentity: identity }) === getCaseKey(rec);
+        }
+        // Older requests have only a case number. Never apply an ambiguous
+        // legacy request to multiple records or to a verified record.
+        if (getProcedureRecordReviewStatus(rec) === 'verified' || rec.checkedBy || rec.checkedAt) return false;
+        const procedure = normalizeProcedureKey(request.type || request.procedure_key || request.procedure_name);
+        let numbers = request.caseNumbers || request.case_numbers || [];
+        if (typeof numbers === 'string') {
+          try { numbers = JSON.parse(numbers); } catch (_) { return false; }
+        }
+        if (!Array.isArray(numbers) || !numbers.map(String).includes(String(rec.caseNo || ''))) return false;
+        const matches = deliveryRecords.filter((record) =>
+          (record.procedureKey || activeProcedureKey) === procedure && String(record.caseNo || '') === String(rec.caseNo || '')
+        );
+        return matches.length === 1 && getCaseKey(matches[0]) === getCaseKey(rec);
+      }
       function getEditRequestStatus(rec) {
+        if (getProcedureRecordReviewStatus(rec) === 'verified' || rec.checkedBy || rec.checkedAt) return '';
         const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
         const localStatus = states[getCaseKey(rec)] || "";
         // One approved edit is consumed after it is saved. A denied request
         // should likewise let the student submit a new request for this case.
         if (localStatus === "edited") return "";
-        if (localStatus === "requested") return "requested";
+        if (localStatus === "requested" && !liveEditRequestsLoaded) return "requested";
         const studentId = String(getCurrentStudentId() || "");
-        const caseNo = String(rec.caseNo || "");
         const requestSource = liveEditRequestsLoaded
           ? liveEditRequestsCache
           : JSON.parse(localStorage.getItem("editRequests") || "[]");
@@ -3111,16 +3136,16 @@
             !request.archived_at &&
             String(request.studentId || "") === studentId &&
             normalizeProcedureKey(request.type || request.procedure_name) === (rec.procedureKey || activeProcedureKey) &&
-            (request.caseNumbers || []).map(String).includes(caseNo),
+            editRequestMatchesRecord(request, rec),
           )
           .sort((a, b) => PhilippineTime.parse(b.requestedAt || 0) - PhilippineTime.parse(a.requestedAt || 0))[0];
-        const sharedStatus = sharedRequest?.caseStatuses?.[caseNo] || sharedRequest?.status;
+        const sharedStatus = sharedRequest?.caseStatuses?.[String(rec.caseNo || '')] || sharedRequest?.status;
         if (["Allowed", "approved", "Approved"].includes(sharedStatus)) return "accepted";
         if (["Denied", "rejected", "Rejected"].includes(sharedStatus)) return "";
         if (["pending", "Requested"].includes(sharedStatus)) return "requested";
         return rec.editRequestStatus === "edited" || rec.editRequestStatus === "rejected"
           ? ""
-          : (rec.editRequestStatus || localStatus);
+          : (rec.editRequestStatus || (localStatus === 'requested' && liveEditRequestsLoaded ? '' : localStatus));
       }
       function setEditRequestStatus(rec, status) {
         const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
@@ -3152,8 +3177,7 @@
 
         deliveryRecords.forEach((record) => {
           if (
-            normalizeProcedureKey(record.procedureKey || activeProcedureKey) === procedureKey &&
-            String(record.caseNo || "") === caseNo
+            editRequestMatchesRecord(request, record)
           ) {
             delete states[getCaseKey(record)];
             record.editRequestStatus = "";
@@ -3186,23 +3210,15 @@
           liveEditRequestsCache = Array.isArray(liveRequests) ? liveRequests : [];
           liveEditRequestsLoaded = true;
           const studentId = String(getCurrentStudentId() || "");
-          const pendingCases = new Set();
-          (liveRequests || []).forEach((request) => {
-            if (String(request.studentId || request.student_id || "") !== studentId) return;
-            if (!['pending', 'Requested'].includes(request.status || 'pending')) return;
-            const procedureKey = normalizeProcedureKey(request.procedureKey || request.type || request.procedure_key);
-            const rawNumbers = request.caseNumbers || request.case_numbers || [];
-            const numbers = Array.isArray(rawNumbers)
-              ? rawNumbers
-              : (() => { try { return JSON.parse(rawNumbers || "[]"); } catch (_) { return []; } })();
-            numbers.forEach((caseNo) => pendingCases.add(`${procedureKey}::${String(caseNo)}`));
-          });
-
           const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
           deliveryRecords.forEach((record) => {
             const stateKey = getCaseKey(record);
-            const requestKey = `${normalizeProcedureKey(record.procedureKey || activeProcedureKey)}::${String(record.caseNo || "")}`;
-            if (states[stateKey] === "requested" && !pendingCases.has(requestKey)) {
+            const hasPendingRequest = liveEditRequestsCache.some((request) =>
+              String(request.studentId || request.student_id || '') === studentId &&
+              ['pending', 'Requested'].includes(request.status) &&
+              !request.archived_at && editRequestMatchesRecord(request, record)
+            );
+            if (states[stateKey] === "requested" && !hasPendingRequest) {
               delete states[stateKey];
               record.editRequestStatus = "";
             }
@@ -4208,7 +4224,7 @@
           }
           buttons[0]?.addEventListener("click", () => {
             openInstructorFeedback(rec, false);
-          });          buttons[1]?.addEventListener("click", () => {
+          });          buttons[1]?.addEventListener("click", async () => {
             if (requestStatus === "requested") return;
             if (requestStatus === "accepted") {
               if (rec.procedureKey && rec.procedureKey !== "all-records") setActiveProcedure(rec.procedureKey);
@@ -4233,40 +4249,29 @@
               openDeliveryModal();
               return;
             }
-            const requests = JSON.parse(localStorage.getItem("student_frontend_edit_requests") || "[]");
             const recordProcedureKey = rec.procedureKey || activeProcedureKey;
             const recordProcedureConfig = PROCEDURE_CONFIGS[recordProcedureKey] || activeProcedureConfig;
-            const frontendRequest = { caseKey: getCaseKey(rec), procedureKey: recordProcedureKey, caseNo: rec.caseNo || "Unnumbered case", procedure: recordProcedureConfig?.procedureName || rec.procedureName || "Case", status: "requested", requestedAt: new Date().toISOString() };
-            requests.unshift(frontendRequest);
-            localStorage.setItem("student_frontend_edit_requests", JSON.stringify(requests));
-            setEditRequestStatus(rec, "requested");
-            renderDeliveryRecordsTable();
-            showOptionPane({ title: "Edit Requested", message: "Your request is now pending instructor approval." });
-
-            // Also submit the edit request to the shared storage used by instructors/admins
-            (async () => {
-              try {
-                const studentId = getCurrentStudentId();
-                console.log('[EDIT_REQUEST_DEBUG] Creating shared edit request for student:', studentId);
-                if (typeof ApiClient !== 'undefined' && ApiClient.requestEditApproval) {
-                  const procName = recordProcedureConfig?.procedureName || frontendRequest.procedure || "Case";
-                  const caseNums = frontendRequest.caseNo ? [frontendRequest.caseNo] : [];
-                  console.log('[EDIT_REQUEST_DEBUG] Calling ApiClient.requestEditApproval with:', {studentId, procName, caseNums});
-                  const res = await ApiClient.requestEditApproval(studentId, procName, caseNums);
-                  console.log('[EDIT_REQUEST_DEBUG] ApiClient.requestEditApproval response:', res);
-                  if (res && res.ok) {
-                    console.log('[EDIT_REQUEST_DEBUG] Edit request saved successfully via ApiClient');
-                    // shared request saved by ApiClient — nothing else required here
-                  } else {
-                    showOptionPane({ title: "Database Unavailable", message: res?.message || "Start Apache and MySQL, then try again." });
-                  }
-                } else {
-                  console.warn('[EDIT_REQUEST_DEBUG] ApiClient not available or requestEditApproval not defined');
-                }
-              } catch (err) {
-                console.error('Error submitting shared edit request:', err);
-              }
-            })();
+            buttons[1].disabled = true;
+            try {
+              const res = await ApiClient.requestEditApproval(
+                getCurrentStudentId(), recordProcedureConfig?.procedureName || rec.procedureName,
+                [rec.caseNo || ''], rec.recordIdentity
+              );
+              if (!res?.ok) throw new Error(res?.message || 'The edit request could not be submitted.');
+              setEditRequestStatus(rec, 'requested');
+              // Refresh authoritative state before repainting, including any
+              // verification that occurred while this page was open.
+              await loadActiveWorkspaceRecords(true);
+              showOptionPane({ title: 'Edit Requested', message: 'Your request is now pending instructor approval.' });
+            } catch (error) {
+              const states = JSON.parse(localStorage.getItem('student_frontend_edit_states') || '{}');
+              delete states[getCaseKey(rec)];
+              localStorage.setItem('student_frontend_edit_states', JSON.stringify(states));
+              await loadActiveWorkspaceRecords(true);
+              showOptionPane({ title: 'Unable to Request Edit', message: error.message || 'Please try again.' });
+            } finally {
+              buttons[1].disabled = false;
+            }
           });
           buttons[2]?.addEventListener("click", async () => {
             showOptionPane({
@@ -5144,9 +5149,7 @@
             }
             const procedureKey = normalizeProcedureKey(request.procedureKey || request.type);
             if (!procedureKey) return;
-            const matches = deliveryRecords.filter((record) =>
-              normalizeProcedureKey(record.procedureKey) === procedureKey &&
-              String(record.caseNo) === String(request.caseNo));
+            const matches = deliveryRecords.filter((record) => editRequestMatchesRecord(request, record));
             focusedCaseKey = matches.length === 1 ? getCaseKey(matches[0]) : null;
             switchTab("procedure", procedureKey);
           });

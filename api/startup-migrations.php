@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 const PORTAL_STARTUP_KEY = 'portal_startup_version';
 // Bump this when adding a schema or credential migration.
-const PORTAL_STARTUP_VERSION = '2026-09-23-comment-scope-1';
+const PORTAL_STARTUP_VERSION = '2026-10-20-edit-request-identity-1';
 
 function runPortalStartup(PDO $pdo, callable $migrate): void
 {

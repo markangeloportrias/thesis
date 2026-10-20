@@ -62,6 +62,14 @@ function caseNumbersMatch(string $requested, string $stored): bool
 
 function instructorOwnsEditRequest(PDO $pdo, array $request, string $instructorUid): bool
 {
+    $identity = json_decode((string)($request['record_identity'] ?? ''), true);
+    if (is_array($identity) && $identity) {
+        [$where, $params] = caseMutationSelection('resolve', $identity, (string)$request['student_id']);
+        $stmt = $pdo->prepare("SELECT instructor_uid FROM case_records WHERE $where LIMIT 2");
+        $stmt->execute($params);
+        $matches = $stmt->fetchAll();
+        return count($matches) === 1 && (string)$matches[0]['instructor_uid'] === $instructorUid;
+    }
     $numbers = json_decode((string)($request['case_numbers'] ?? ''), true);
     if (!is_array($numbers) || !$numbers) return false;
     $numbers = array_unique(array_map('strval', $numbers));
@@ -1617,17 +1625,27 @@ try {
         }
         if ($method === 'POST' && $user['role'] === 'student') {
             requireFields($data, ['procedure_key', 'procedure_name']);
+            $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
+            if (!$identity) respond(['ok' => false, 'message' => 'Refresh the page and select the record again. Record identity is required.'], 422);
+            [$where, $params] = caseMutationSelection('resolve', $identity, (string)$user['user_uid']);
             $pdo->beginTransaction();
-            $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers) VALUES (?, ?, ?, ?)');
-            $caseNumbers = is_array($data['case_numbers'] ?? null) ? $data['case_numbers'] : [];
-            $lockedCases = $pdo->prepare("SELECT case_no FROM case_records WHERE student_id=? AND procedure_key=? AND archived_at IS NULL AND (LOWER(TRIM(record_status))='verified' OR NULLIF(TRIM(checked_by),'') IS NOT NULL OR checked_at IS NOT NULL) FOR UPDATE");
-            $lockedCases->execute([$user['user_uid'], $data['procedure_key']]);
-            $verifiedCaseNumbers = array_map('strval', $lockedCases->fetchAll(PDO::FETCH_COLUMN));
-            if ($verifiedCaseNumbers && (!$caseNumbers || array_intersect(array_map('strval', $caseNumbers), $verifiedCaseNumbers))) {
+            $selected = $pdo->prepare("SELECT * FROM case_records WHERE $where LIMIT 2 FOR UPDATE");
+            $selected->execute($params);
+            $matches = $selected->fetchAll();
+            if (count($matches) !== 1) {
+                $pdo->rollBack();
+                respond(['ok' => false, 'message' => 'The selected record changed or is ambiguous. Refresh and select it again.'], 409);
+            }
+            $record = $matches[0];
+            if (strtolower(trim((string)$record['record_status'])) === 'verified' || !empty($record['checked_by']) || !empty($record['checked_at'])) {
                 $pdo->rollBack();
                 respond(['ok' => false, 'message' => 'Verified clinical records are locked and cannot request edits.'], 409);
             }
-            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers)]);
+            $data['procedure_key'] = $record['procedure_key'];
+            $data['procedure_name'] = $record['procedure_name'];
+            $caseNumbers = [(string)$record['case_no']];
+            $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers, record_identity) VALUES (?, ?, ?, ?, ?)');
+            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers),json_encode($identity)]);
             $requestId = (string)$pdo->lastInsertId();
             $notice = $pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message) VALUES (?,?,?,?,?,?,?)');
             $notice->execute(['edit_request_submitted', $user['user_uid'], $data['procedure_key'], $data['procedure_name'], implode(', ', array_map('strval', $caseNumbers)), $requestId, 'A student submitted a clinical record edit request.']);
