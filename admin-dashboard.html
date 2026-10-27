@@ -3248,7 +3248,7 @@
             <td>${student.parent_contact || ""}</td>
             <td>${student.contact_number || ""}</td>
             <td>${archivedDate}</td>
-            <td><button class="mini-btn" type="button" data-restore-student="${student.student_id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button><button class="mini-btn danger" type="button" data-delete-archived-student="${student.student_id || ""}"><i class="fas fa-trash" aria-hidden="true"></i> Delete</button></td>
+            <td><button class="mini-btn" type="button" data-restore-student="${student.student_id || ""}"><i class="fas fa-rotate-left" aria-hidden="true"></i> Restore</button></td>
           `;
           archivedStudentsTbody.appendChild(tr);
         });
@@ -6814,13 +6814,9 @@
 
       toggleArchivedStudentsBtn?.addEventListener("click", showArchivedStudents);
       archivedStudentsTbody?.addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-restore-student], button[data-delete-archived-student]");
+        const btn = e.target.closest("button[data-restore-student]");
         if (!btn) return;
-        if (btn.hasAttribute("data-restore-student")) {
-          restoreArchivedStudent(btn.getAttribute("data-restore-student") || "");
-        } else {
-          deleteArchivedStudent(btn.getAttribute("data-delete-archived-student") || "", btn);
-        }
+        restoreArchivedStudent(btn.getAttribute("data-restore-student") || "");
       });
 
       refreshCasesBtn?.addEventListener("click", () => {
