@@ -3114,9 +3114,14 @@ html body.role-admin #instructorsCard .instructor-status-toggle {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 46px;
-  height: 24px;
-  padding: 2px;
+  box-sizing: border-box;
+  width: 46px !important;
+  min-width: 46px !important;
+  max-width: 46px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 4px !important;
   border: 1px solid #cbd5e1;
   border-radius: 999px;
   background: #e2e8f0;
@@ -3125,8 +3130,8 @@ html body.role-admin #instructorsCard .instructor-status-toggle {
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle > span {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(15, 23, 42, .26);
@@ -3139,7 +3144,7 @@ html body.role-admin #instructorsCard .instructor-status-toggle.is-active {
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span {
-  transform: translateX(20px);
+  transform: translateX(12px);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle:focus-visible {
