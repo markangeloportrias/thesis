@@ -3091,10 +3091,58 @@ html body.role-admin #instructorsCard table td.action-cell {
 
 html body.role-admin #instructorsCard .instructor-row-actions {
   display: grid;
-  grid-template-columns: 70px 42px 78px;
+  grid-template-columns: repeat(2, 38px) 46px;
   justify-content: end;
   align-items: center;
   gap: 7px;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 46px;
+  height: 24px;
+  padding: 2px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #e2e8f0;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle > span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .26);
+  transition: transform .16s ease;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle.is-active {
+  border-color: #15945b;
+  background: #15945b;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span {
+  transform: translateX(20px);
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle:focus-visible {
+  outline: 3px solid rgba(0, 80, 157, .35);
+  outline-offset: 2px;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .mini-btn {
