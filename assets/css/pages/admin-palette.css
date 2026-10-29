@@ -3081,18 +3081,20 @@ html body.role-admin #instructorsCard table td.action-cell {
 }
 
 html body.role-admin #instructorsCard table th:last-child {
-  padding-right: 14px !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
   text-align: center !important;
 }
 
 html body.role-admin #instructorsCard table td.action-cell {
-  padding-right: 11px !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions {
   display: grid;
   grid-template-columns: repeat(2, 38px) 46px;
-  justify-content: end;
+  justify-content: center;
   align-items: center;
   gap: 7px;
 }
