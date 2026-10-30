@@ -3108,6 +3108,37 @@ html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-a
   height: 34px !important;
   min-height: 34px !important;
   padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  box-shadow: 0 2px 5px rgba(15, 54, 102, .12);
+  transition: transform .16s ease, background .16s ease, color .16s ease, box-shadow .16s ease !important;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--view {
+  border-color: #b9d7ee !important;
+  background: #edf7ff !important;
+  color: #00509d !important;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--edit {
+  border-color: #f1ce67 !important;
+  background: #fff8df !important;
+  color: #946200 !important;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 10px rgba(15, 54, 102, .18);
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--view:hover {
+  background: #00509d !important;
+  color: #ffffff !important;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--edit:hover {
+  background: #ffd500 !important;
+  color: #00296b !important;
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle {
@@ -3124,9 +3155,10 @@ html body.role-admin #instructorsCard .instructor-status-toggle {
   padding: 4px !important;
   border: 1px solid #cbd5e1;
   border-radius: 999px;
-  background: #e2e8f0;
+  background: #edf2f7;
   cursor: pointer;
-  transition: background .16s ease, border-color .16s ease;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .08);
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle > span {
@@ -3139,8 +3171,9 @@ html body.role-admin #instructorsCard .instructor-status-toggle > span {
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active {
-  border-color: #15945b;
-  background: #15945b;
+  border-color: #07845a;
+  background: #07845a;
+  box-shadow: inset 0 1px 2px rgba(0, 76, 51, .2), 0 2px 5px rgba(7, 132, 90, .2);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span {
@@ -3150,6 +3183,15 @@ html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span
 html body.role-admin #instructorsCard .instructor-status-toggle:focus-visible {
   outline: 3px solid rgba(0, 80, 157, .35);
   outline-offset: 2px;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle:hover {
+  border-color: #8fa6bd;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle.is-active:hover {
+  border-color: #056b49;
+  background: #056b49;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .mini-btn {
