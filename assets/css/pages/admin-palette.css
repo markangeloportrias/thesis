@@ -3171,7 +3171,7 @@ html body.role-admin #instructorsCard .instructor-status-toggle {
   height: 32px !important;
   min-height: 32px !important;
   max-height: 32px !important;
-  padding: 3px !important;
+  padding: 4px !important;
   border: none !important;
   border-radius: 999px;
   background: #e5e7eb !important;
@@ -3187,6 +3187,7 @@ html body.role-admin #instructorsCard .instructor-status-toggle > span {
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
   transition: transform .2s cubic-bezier(.4, 0, .2, 1);
+  transform: translateX(0);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active {
