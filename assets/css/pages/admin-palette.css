@@ -290,49 +290,19 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .account-status-badg
   background: rgba(253, 197, 0, 0.16) !important;
   color: #00296b !important;
 }
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) thead th {
-  height: 48px !important;
-  min-height: 48px !important;
-  padding: 0 16px !important;
-  font-size: 13px !important;
-  line-height: 1.3 !important;
-  letter-spacing: 0.04em !important;
+html body.role-admin:has(#instructorsCard) #instructorsCard #addInstructorBtn,
+html body.role-admin:has(#instructorsCard) #instructorsCard #refreshInstructorBtn {
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 0 18px !important;
+  border-radius: 12px !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
   font-weight: 700 !important;
 }
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody tr {
-  height: 58px !important;
-  min-height: 58px !important;
-}
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td {
-  height: 58px !important;
-  min-height: 58px !important;
-  padding: 10px 16px !important;
+html body.role-admin:has(#instructorsCard) #instructorsCard #addInstructorBtn i,
+html body.role-admin:has(#instructorsCard) #instructorsCard #refreshInstructorBtn i {
   font-size: 14px !important;
-  line-height: 1.4 !important;
-  font-weight: 500 !important;
-}
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td > strong {
-  font-size: 14px !important;
-  line-height: 1.4 !important;
-}
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td:first-child {
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #54719a !important;
-}
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) .account-status-badge {
-  min-height: 26px !important;
-  height: 26px !important;
-  padding: 0 12px !important;
-  font-size: 12px !important;
-  line-height: 24px !important;
-  font-weight: 700 !important;
-  border-radius: 999px !important;
-  letter-spacing: 0.04em !important;
-}
-html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) td.action-cell {
-  padding: 8px 12px !important;
-  font-size: inherit !important;
 }
 
 /* Student Management uses the same action and status hierarchy as Instructor Management. */
@@ -2230,6 +2200,51 @@ html body.role-admin:has(:is(
   padding: 0 7px !important;
   font-size: 8px !important;
   line-height: 18px !important;
+}
+
+/* Instructor Management only: larger table type and roomier rows. Action buttons stay compact. */
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) thead th {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 0 18px !important;
+  font-size: 15px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody tr {
+  height: 64px !important;
+  min-height: 64px !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td {
+  height: 64px !important;
+  min-height: 64px !important;
+  padding: 12px 18px !important;
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td > strong {
+  font-size: 16px !important;
+  line-height: 1.4 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td:first-child {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #54719a !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) .account-status-badge {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 0 14px !important;
+  font-size: 13px !important;
+  line-height: 26px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.04em !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) td.action-cell {
+  padding: 8px 12px !important;
 }
 
 /* Keep header and body joined: only the outer table owns the corner radius. */
