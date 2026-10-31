@@ -290,6 +290,50 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .account-status-badg
   background: rgba(253, 197, 0, 0.16) !important;
   color: #00296b !important;
 }
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) thead th {
+  height: 48px !important;
+  min-height: 48px !important;
+  padding: 0 16px !important;
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody tr {
+  height: 58px !important;
+  min-height: 58px !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td {
+  height: 58px !important;
+  min-height: 58px !important;
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td > strong {
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td:first-child {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #54719a !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) .account-status-badge {
+  min-height: 26px !important;
+  height: 26px !important;
+  padding: 0 12px !important;
+  font-size: 12px !important;
+  line-height: 24px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.04em !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) td.action-cell {
+  padding: 8px 12px !important;
+  font-size: inherit !important;
+}
 
 /* Student Management uses the same action and status hierarchy as Instructor Management. */
 html body.role-admin:has(#studentsCard) #studentsCard {
