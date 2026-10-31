@@ -3093,52 +3093,75 @@ html body.role-admin #instructorsCard table td.action-cell {
 
 html body.role-admin #instructorsCard .instructor-row-actions {
   display: grid;
-  grid-template-columns: repeat(2, 38px) 46px;
+  grid-template-columns: repeat(2, 40px) 48px;
   justify-content: center;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action {
   display: inline-flex !important;
   align-items: center;
   justify-content: center;
-  width: 38px !important;
-  min-width: 38px !important;
-  height: 34px !important;
-  min-height: 34px !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 36px !important;
+  min-height: 36px !important;
   padding: 0 !important;
-  border: 1px solid transparent !important;
-  border-radius: 9px !important;
-  box-shadow: 0 2px 5px rgba(15, 54, 102, .12);
-  transition: transform .16s ease, background .16s ease, color .16s ease, box-shadow .16s ease !important;
+  border: 1.5px solid transparent !important;
+  border-radius: 10px !important;
+  box-shadow: 0 3px 8px rgba(15, 54, 102, .15), 0 1px 3px rgba(15, 54, 102, .1);
+  transition: all .2s cubic-bezier(.4, 0, .2, 1) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .4) 0%, rgba(255, 255, 255, 0) 100%);
+  opacity: 0;
+  transition: opacity .2s ease;
+  pointer-events: none;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action:hover::before {
+  opacity: 1;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--view {
-  border-color: #b9d7ee !important;
-  background: #edf7ff !important;
-  color: #00509d !important;
+  border-color: #a8c9e8 !important;
+  background: linear-gradient(135deg, #e8f4ff 0%, #d0e8ff 100%) !important;
+  color: #004a8f !important;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--edit {
-  border-color: #f1ce67 !important;
-  background: #fff8df !important;
-  color: #946200 !important;
+  border-color: #e8c85a !important;
+  background: linear-gradient(135deg, #fff4d6 0%, #ffe9b0 100%) !important;
+  color: #8a5a00 !important;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 5px 10px rgba(15, 54, 102, .18);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 14px rgba(15, 54, 102, .22), 0 2px 5px rgba(15, 54, 102, .15);
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--view:hover {
-  background: #00509d !important;
+  background: linear-gradient(135deg, #00509d 0%, #003f88 100%) !important;
   color: #ffffff !important;
+  border-color: #003f88 !important;
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action--edit:hover {
-  background: #ffd500 !important;
+  background: linear-gradient(135deg, #ffd500 0%, #ffc800 100%) !important;
   color: #00296b !important;
+  border-color: #e6b900 !important;
+}
+
+html body.role-admin #instructorsCard .instructor-row-actions .instructor-icon-action:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 5px rgba(15, 54, 102, .15);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle {
@@ -3146,52 +3169,80 @@ html body.role-admin #instructorsCard .instructor-status-toggle {
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
-  width: 46px !important;
-  min-width: 46px !important;
-  max-width: 46px !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  max-height: 34px !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   padding: 4px !important;
-  border: 1px solid #cbd5e1;
+  border: 1.5px solid #c8d5e0;
   border-radius: 999px;
-  background: #edf2f7;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf2 100%);
   cursor: pointer;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .08);
-  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, .12), inset 0 1px 2px rgba(255, 255, 255, .8);
+  transition: all .2s cubic-bezier(.4, 0, .2, 1);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle > span {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, .26);
-  transition: transform .16s ease;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 2px 5px rgba(15, 23, 42, .2), 0 1px 2px rgba(255, 255, 255, .9);
+  transition: transform .2s cubic-bezier(.4, 0, .2, 1), box-shadow .2s ease;
+  position: relative;
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle > span::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .9) 0%, rgba(255, 255, 255, 0) 100%);
+  opacity: 0;
+  transition: opacity .2s ease;
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active {
-  border-color: #07845a;
-  background: #07845a;
-  box-shadow: inset 0 1px 2px rgba(0, 76, 51, .2), 0 2px 5px rgba(7, 132, 90, .2);
+  border-color: #06a068;
+  background: linear-gradient(135deg, #06a068 0%, #048a58 100%);
+  box-shadow: 0 3px 8px rgba(6, 160, 104, .3), inset 0 1px 2px rgba(255, 255, 255, .15);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span {
   transform: translateX(12px);
+  box-shadow: 0 3px 8px rgba(6, 160, 104, .4), 0 1px 2px rgba(255, 255, 255, .6);
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle.is-active > span::after {
+  opacity: 1;
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle:focus-visible {
-  outline: 3px solid rgba(0, 80, 157, .35);
-  outline-offset: 2px;
+  outline: 3px solid rgba(0, 80, 157, .4);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 1px #00509d, 0 0 0 5px rgba(0, 80, 157, .15);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle:hover {
-  border-color: #8fa6bd;
+  border-color: #9fb8c8;
+  background: linear-gradient(135deg, #fafbfc 0%, #f0f4f8 100%);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, .15), inset 0 1px 2px rgba(255, 255, 255, .9);
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle:hover > span {
+  box-shadow: 0 3px 8px rgba(15, 23, 42, .25), 0 1px 2px rgba(255, 255, 255, .95);
 }
 
 html body.role-admin #instructorsCard .instructor-status-toggle.is-active:hover {
-  border-color: #056b49;
-  background: #056b49;
+  border-color: #058a57;
+  background: linear-gradient(135deg, #058a57 0%, #047048 100%);
+  box-shadow: 0 4px 10px rgba(6, 160, 104, .4), inset 0 1px 2px rgba(255, 255, 255, .2);
+}
+
+html body.role-admin #instructorsCard .instructor-status-toggle:active {
+  transform: scale(0.96);
 }
 
 html body.role-admin #instructorsCard .instructor-row-actions .mini-btn {
