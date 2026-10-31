@@ -290,6 +290,35 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .account-status-badg
   background: rgba(253, 197, 0, 0.16) !important;
   color: #00296b !important;
 }
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) thead th {
+  height: 44px !important;
+  min-height: 44px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.02em !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td {
+  height: 52px !important;
+  min-height: 52px !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) tbody td > strong {
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+html body.role-admin:has(#instructorsCard) #instructorsCard table:not(.clinical-form-table):not(.procedure-records-table) .account-status-badge {
+  min-height: 24px !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+  border-radius: 999px !important;
+}
 
 /* Student Management uses the same action and status hierarchy as Instructor Management. */
 html body.role-admin:has(#studentsCard) #studentsCard {
@@ -3075,8 +3104,8 @@ html body.role-admin:has(#yearlyReportsCard) #yearlyYearPanel #yearlyYearSearchI
 /* Instructor Management Actions: polished, evenly aligned control cluster. */
 html body.role-admin:has(#instructorsCard) #instructorsCard table th:last-child,
 html body.role-admin:has(#instructorsCard) #instructorsCard table td.action-cell {
-  width: 168px !important;
-  min-width: 168px !important;
+  width: 188px !important;
+  min-width: 188px !important;
   white-space: nowrap !important;
 }
 
@@ -3095,7 +3124,7 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-row-acti
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
 }
 
@@ -3103,18 +3132,18 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-row-acti
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 34px !important;
-  min-width: 34px !important;
-  max-width: 34px !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  max-height: 34px !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  max-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   margin: 0 !important;
   padding: 0 !important;
   border: 1px solid transparent !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   line-height: 1 !important;
-  font-size: 13px !important;
+  font-size: 15px !important;
   background: #f3f7fc !important;
   color: #00509d !important;
   box-shadow: 0 1px 2px rgba(0, 41, 107, 0.08) !important;
@@ -3122,7 +3151,7 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-row-acti
 }
 
 html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-row-actions .instructor-icon-action i {
-  font-size: 13px !important;
+  font-size: 15px !important;
   line-height: 1 !important;
   transition: transform 0.18s ease;
 }
@@ -3174,28 +3203,31 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-t
   display: inline-flex;
   align-items: center;
   box-sizing: border-box;
-  width: 46px !important;
-  min-width: 46px !important;
-  max-width: 46px !important;
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
+  width: 54px !important;
+  min-width: 54px !important;
+  max-width: 54px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   margin: 0 !important;
   padding: 3px !important;
   border: 1px solid rgba(0, 41, 107, 0.08) !important;
-  border-radius: 999px;
+  border-radius: 999px !important;
   background: #e6ebf2 !important;
   cursor: pointer;
   box-shadow: inset 0 1px 2px rgba(0, 41, 107, 0.08);
   transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  overflow: hidden;
 }
 
 html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-toggle > span {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  border-radius: 50% !important;
   background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 41, 107, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 41, 107, 0.22);
   transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(0);
 }
@@ -3207,7 +3239,7 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-t
 }
 
 html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-toggle.is-active > span {
-  transform: translateX(18px);
+  transform: translateX(22px);
 }
 
 html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-toggle:focus-visible {
@@ -3228,7 +3260,7 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-status-t
 }
 
 html body.role-admin:has(#instructorsCard) #instructorsCard .instructor-row-actions .mini-btn {
-  width: 34px !important;
+  width: 36px !important;
   margin: 0 !important;
   text-align: center !important;
   vertical-align: middle !important;
