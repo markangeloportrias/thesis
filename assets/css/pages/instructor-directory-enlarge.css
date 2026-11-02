@@ -1,0 +1,180 @@
+/* Slightly larger instructor directory screens. Clinical Progress procedure tables stay unchanged. */
+
+html body.role-instructor #yearly-report-view #yearlyYearPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) thead th,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) thead th,
+html body.role-instructor #yearly-report-view #yearlyStudentSummaryPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) thead th {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  font-weight: 700 !important;
+}
+
+html body.role-instructor #yearly-report-view #yearlyYearPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody tr,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody tr,
+html body.role-instructor #yearly-report-view #yearlyStudentSummaryPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+
+html body.role-instructor #yearly-report-view #yearlyYearPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody td,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody td,
+html body.role-instructor #yearly-report-view #yearlyStudentSummaryPanel > .table-wrap > table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody td {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+
+html body.role-instructor #yearly-report-view #yearlyYearPanel .admin-directory-action,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel .admin-directory-action,
+html body.role-instructor #yearly-report-view #yearlyStudentSummaryPanel .admin-directory-action,
+html body.role-instructor #yearly-report-view #yearlyYearPanel .mini-btn,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel .mini-btn,
+html body.role-instructor #yearly-report-view #yearlyStudentSummaryPanel .mini-btn {
+  min-width: 72px !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
+  font-weight: 700 !important;
+}
+
+html body.role-instructor #edit-requests-view .edit-requests-table-header {
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+}
+
+html body.role-instructor #edit-requests-view .edit-requests-list .request-item-content {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 8px 16px !important;
+}
+
+html body.role-instructor #edit-requests-view .request-item-title {
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+html body.role-instructor #edit-requests-view .request-item-meta > div {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+html body.role-instructor #edit-requests-view .request-status {
+  min-height: 24px !important;
+  padding: 0 10px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+}
+
+html body.role-instructor #edit-requests-view .request-item-actions button {
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+html body.role-instructor #instructor-request-filters button {
+  min-height: 34px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-student-header {
+  padding: 12px 16px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-student-header .instructor-to-review-student strong {
+  font-size: 15px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-student-header .instructor-to-review-student small {
+  font-size: 12px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-student-header .instructor-to-review-count {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-diagnosis {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-field-label {
+  margin-bottom: 4px !important;
+  font-size: 11px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-procedure-badge {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-status {
+  padding: 4px 10px !important;
+  font-size: 11px !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-details {
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+}
+
+html body.role-instructor .content-section:has(#instructorStudentProcedureTables.to-review-table-view) #refreshRecordsBtn {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) thead th {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+}
+
+html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody td {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+}
+
+html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) .registered-blocks-action {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+}
+
+html body.role-instructor .content-section:has(#currentRecordsStudentRoster.showing-block-students) #currentRecordsBackToBlocks {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
