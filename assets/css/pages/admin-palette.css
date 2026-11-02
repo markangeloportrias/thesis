@@ -2251,6 +2251,68 @@ html body.role-admin:has(#instructorsCard) #instructorsCard .table-wrap table:no
   padding: 6px 10px !important;
 }
 
+/* Student Management only: slightly taller rows, larger type, and larger row/toolbar buttons. */
+html body.role-admin:has(#studentsCard) #studentsCard #refreshSchoolYearsBtn {
+  min-height: 38px !important;
+  height: 38px !important;
+  min-width: 118px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard #refreshSchoolYearsBtn i {
+  font-size: 13px !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) thead th {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td > strong {
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) tbody td:first-child {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) .account-status-badge {
+  min-height: 24px !important;
+  height: 24px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.04em !important;
+}
+html body.role-admin:has(#studentsCard) #studentsCard .table-wrap table:not(.clinical-form-table):not(.procedure-records-table) .mini-btn {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
+  font-weight: 700 !important;
+}
+
 /* Keep header and body joined: only the outer table owns the corner radius. */
 html body.role-admin:has(:is(
   #instructorsCard,
