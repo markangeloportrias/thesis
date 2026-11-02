@@ -6972,3 +6972,99 @@ html .section-header-actions #currentRecordsSearchResults .current-records-searc
   html body.role-instructor #currentRecordsStudentRoster .current-records-navigator { align-items: stretch; flex-direction: column; }
   html body.role-instructor #currentRecordsStudentRoster .current-records-search { width: auto; }
 }
+
+/* Instructor directory tables only. Do not restyle Clinical Progress procedure records. */
+html body.role-instructor .content-section:has(#students-view[style*="display: block"]) #students-view #instructorRefreshSchoolYearsBtn {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+html body.role-instructor .content-section:has(#students-view[style*="display: block"]) #students-view #instructorRefreshSchoolYearsBtn i {
+  font-size: 13px !important;
+}
+html body.role-instructor #students-view :is(#instructorOpenAddStudentBtn, #instructorToggleArchivedStudentsBtn) {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 16px !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table thead th,
+html body.role-instructor #students-view #instructorStudentsBlockPanel #instructor-blocks-table.admin-premium-table thead th,
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table.admin-premium-table thead th {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody tr,
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody tr:nth-child(odd),
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody tr:nth-child(even),
+html body.role-instructor #students-view #instructorStudentsBlockPanel #instructor-blocks-table.admin-premium-table tbody tr,
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table.admin-premium-table tbody tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody td,
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody tr:nth-child(odd) td,
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table tbody tr:nth-child(even) td,
+html body.role-instructor #students-view #instructorStudentsBlockPanel #instructor-blocks-table.admin-premium-table tbody td,
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table.admin-premium-table tbody td {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+html body.role-instructor #students-view #instructorStudentsYearPanel #instructor-school-years-table.admin-premium-table .mini-btn.admin-directory-action.school-year-open,
+html body.role-instructor #students-view #instructorStudentsBlockPanel #instructor-blocks-table :is(.block-edit-action, .block-open-action),
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table .mini-btn {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
+  font-weight: 700 !important;
+}
+
+html body.role-instructor #yearly-report-view :is(#yearlyYearPanel, #yearlyBlockPanel, #yearlyStudentSummaryPanel) > .table-wrap > table thead th {
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
+}
+html body.role-instructor #yearly-report-view :is(#yearlyYearPanel, #yearlyBlockPanel, #yearlyStudentSummaryPanel) > .table-wrap > table tbody tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+html body.role-instructor #yearly-report-view :is(#yearlyYearPanel, #yearlyBlockPanel, #yearlyStudentSummaryPanel) > .table-wrap > table tbody td,
+html body.role-instructor #yearly-report-view #yearlyBlockPanel > .table-wrap > table > tbody > tr > td {
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
+}
+html body.role-instructor #yearly-report-view :is(#yearlyYearPanel, #yearlyBlockPanel, #yearlyStudentSummaryPanel) :is(.mini-btn, .admin-directory-action) {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
+  font-weight: 700 !important;
+}
