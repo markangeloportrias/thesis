@@ -4947,17 +4947,29 @@ html body.role-admin .sidebar #adminLogoutBtn:hover {
 }
 /* Keep Edit Requests readable at the standard desktop table scale. */
 html body.role-admin #editRequestsCard #editRequestsTbody > tr > td {
-  height: 60px !important;
-  padding: 12px 14px !important;
-  font-size: 13px !important;
+  height: 66px !important;
+  padding: 14px 16px !important;
+  font-size: 14px !important;
   line-height: 1.35 !important;
 }
 
+html body.role-admin #editRequestsCard table thead th {
+  height: 46px !important;
+  padding: 10px 16px !important;
+  font-size: 11px !important;
+}
+
 html body.role-admin #editRequestsCard #editRequestsTbody > tr > td.action-cell .mini-btn {
-  min-height: 38px !important;
-  height: 38px !important;
-  padding: 0 14px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 0 16px !important;
   border-radius: 7px !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
   font-weight: 700 !important;
+}
+
+html body.role-admin #editRequestsCard #editRequestsTbody .edit-request-status {
+  min-height: 30px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
 }
