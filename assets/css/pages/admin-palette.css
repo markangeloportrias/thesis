@@ -4928,3 +4928,15 @@ html body.role-admin #systemToolsCard > .audit-panel {
     padding: 15px !important;
   }
 }
+/* Admin logout uses a calm steel-blue treatment. */
+html body.role-admin .sidebar #adminLogoutBtn {
+  border-color: #4682b4 !important;
+  background: #4682b4 !important;
+  color: #ffffff !important;
+}
+
+html body.role-admin .sidebar #adminLogoutBtn:hover {
+  border-color: #356a92 !important;
+  background: #356a92 !important;
+  color: #ffffff !important;
+}
