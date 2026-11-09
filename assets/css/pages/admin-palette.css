@@ -4945,31 +4945,43 @@ html body.role-admin .sidebar #adminLogoutBtn:hover {
   background: #356a92 !important;
   color: #ffffff !important;
 }
-/* Keep Edit Requests readable at the standard desktop table scale. */
+/* Match Edit Requests to the Student Management table scale. */
 html body.role-admin #editRequestsCard #editRequestsTbody > tr > td {
-  height: 74px !important;
-  padding: 16px 18px !important;
-  font-size: 16px !important;
-  line-height: 1.35 !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  font-weight: 500 !important;
 }
 
 html body.role-admin #editRequestsCard table thead th {
-  height: 52px !important;
-  padding: 12px 18px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 16px !important;
   font-size: 12px !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.04em !important;
+  font-weight: 700 !important;
 }
 
 html body.role-admin #editRequestsCard #editRequestsTbody > tr > td.action-cell .mini-btn {
-  min-height: 46px !important;
-  height: 46px !important;
-  padding: 0 18px !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
   border-radius: 8px !important;
-  font-size: 14px !important;
+  font-size: 11px !important;
+  line-height: 30px !important;
   font-weight: 700 !important;
 }
 
 html body.role-admin #editRequestsCard #editRequestsTbody .edit-request-status {
-  min-height: 34px !important;
-  padding: 0 13px !important;
-  font-size: 12px !important;
+  min-height: 24px !important;
+  height: 24px !important;
+  padding: 0 11px !important;
+  font-size: 11px !important;
+  line-height: 22px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.04em !important;
 }
