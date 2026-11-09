@@ -722,6 +722,11 @@ html body.role-admin:has(#editRequestsCard) #editRequestsCard table :is(tbody tr
 }
 html body.role-admin:has(#editRequestsCard) #editRequestsCard table tbody tr:hover td { background: #edf6ff !important; }
 html body.role-admin:has(#editRequestsCard) #editRequestsCard .mini-btn {
+  min-height: 36px !important;
+  padding: 0 13px !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
   border: 1px solid #00509d !important;
   background: #00509d !important;
   color: #ffffff !important;
