@@ -1342,6 +1342,18 @@ html body.role-student #chatTab :is(.chat-instructor-avatar, .chat-conversation-
   overflow: hidden;
 }
 
+html body.role-student .sidebar #studentSidebarLogoutBtn {
+  border-color: #4682b4 !important;
+  background: #4682b4 !important;
+  color: #ffffff !important;
+}
+
+html body.role-student .sidebar #studentSidebarLogoutBtn:hover {
+  border-color: #356a92 !important;
+  background: #356a92 !important;
+  color: #ffffff !important;
+}
+
 html body.role-student #chatTab :is(.chat-instructor-avatar, .chat-conversation-avatar) > img {
   width: 100% !important;
   height: 100% !important;
