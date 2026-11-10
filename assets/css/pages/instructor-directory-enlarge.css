@@ -156,11 +156,11 @@ html body.role-instructor #currentRecordsStudentRoster.showing-block-students ta
   font-size: 12px !important;
 }
 
-html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody td {
+html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) tbody tr:not(.recent-records-empty-row) > td {
   height: 52px !important;
   min-height: 52px !important;
   padding: 10px 16px !important;
-  font-size: 13px !important;
+  font-size: 12px !important;
 }
 
 html body.role-instructor #currentRecordsStudentRoster.showing-block-students table#currentRecordsStudentsTable.registered-blocks-table:not(.clinical-form-table):not(.procedure-records-table):not(.prc-source-table) .registered-blocks-action {
