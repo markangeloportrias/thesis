@@ -7059,6 +7059,18 @@ html body.role-instructor #yearly-report-view #yearlyBlockPanel > .table-wrap > 
   line-height: 1.4 !important;
   font-weight: 500 !important;
 }
+html body.role-instructor .sidebar #sidebarLogoutBtn {
+  border-color: #4682b4 !important;
+  background: #4682b4 !important;
+  color: #ffffff !important;
+}
+
+html body.role-instructor .sidebar #sidebarLogoutBtn:hover {
+  border-color: #356a92 !important;
+  background: #356a92 !important;
+  color: #ffffff !important;
+}
+
 html body.role-instructor #yearly-report-view :is(#yearlyYearPanel, #yearlyBlockPanel, #yearlyStudentSummaryPanel) :is(.mini-btn, .admin-directory-action) {
   min-height: 32px !important;
   height: 32px !important;
