@@ -318,13 +318,13 @@ html body.role-student .edit-requests-table .delete-edit-notification {
 html body.role-student .edit-requests-table .delete-edit-notification:hover { background: #e9f4fb; }
 
 html body.role-student #editRequestsTab .edit-requests-table .delete-edit-notification {
-  border-color: #dc3042 !important;
-  background: #dc3042 !important;
+  border-color: #4682b4 !important;
+  background: #4682b4 !important;
   color: #fff !important;
 }
 html body.role-student #editRequestsTab .edit-requests-table .delete-edit-notification:hover {
-  border-color: #b91c2d !important;
-  background: #b91c2d !important;
+  border-color: #356a92 !important;
+  background: #356a92 !important;
   color: #fff !important;
 }
 
