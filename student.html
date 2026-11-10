@@ -4267,7 +4267,7 @@
             <div class="case-actions">
               <button class="case-action-btn feedback-action ${remarksAvailable && !remarksRead ? "has-remarks" : ""}" type="button" title="${feedbackTitle}" aria-label="${feedbackTitle}" aria-live="polite"><i class="fas ${feedbackIcon}"></i></button>
               <button class="case-action-btn" type="button" title="${requestTitle}" aria-label="${requestTitle}"><i class="fas ${requestIcon}"></i></button>
-              <button class="case-action-btn trash" type="button" title="Move to trash" aria-label="Move to trash"><i class="fas fa-trash-can"></i></button>
+              <button class="case-action-btn trash" type="button" title="Archive record" aria-label="Archive record"><i class="fas fa-box-archive" aria-hidden="true"></i></button>
             </div>`;
           row.appendChild(actions);
           procedureTable.body.appendChild(row);
