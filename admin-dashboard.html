@@ -487,6 +487,11 @@
                   >
                     Add Student
                   </button>
+                  <span id="studentCsvActions" style="display: inline-flex; gap: 8px; flex-wrap: wrap">
+                    <a class="btn btn-secondary" href="assets/templates/students-import.csv" download="students-import.csv">CSV Template</a>
+                    <button class="btn btn-secondary" id="importStudentsCsvBtn" type="button"><i class="fas fa-file-import" aria-hidden="true"></i> Import CSV</button>
+                    <input id="studentsCsvFile" type="file" accept=".csv,text/csv" hidden />
+                  </span>
                   <button
                     class="btn btn-secondary"
                     id="toggleArchivedStudentsBtn"
@@ -1179,6 +1184,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
+    <script src="assets/js/admin-student-import.js?v=20261110-1"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -6736,6 +6742,23 @@
         if (action === "delete") deleteStudentBlock(blockId);
       });
       openAddStudentBtn?.addEventListener("click", showAddStudentModal);
+      const csvReport = document.createElement('div');
+      csvReport.id = 'studentsCsvReport';
+      csvReport.hidden = true;
+      csvReport.setAttribute('role', 'status');
+      csvReport.style.cssText = 'white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;margin:12px 0';
+      document.getElementById('studentCsvActions').closest('.row').after(csvReport);
+      AdminStudentImport.mount({
+        getContext: () => ({ ...studentsNav }),
+        confirm: showOptionPane,
+        create: (context, payload) => ApiClient.registerStudentInBlock(context.blockId, context.schoolYear, payload),
+        refresh: async (context) => {
+          if (String(studentsNav.blockId) === String(context.blockId)) await renderBlockStudents();
+          await renderStudentBlocks();
+          await renderSchoolYears();
+          refreshOverview();
+        },
+      });
       openAssignStudentBtn?.addEventListener("click", showAssignStudentModal);
       studentsAddCancelBtn?.addEventListener("click", closeStudentsAddModal);
       studentsAddOverlay
@@ -6789,6 +6812,8 @@
         const activeStudentsTable = studentsTbody?.closest(".table-wrap");
         archivedStudentsPanel.style.display = "block";
         if (openAddStudentBtn) openAddStudentBtn.style.display = "none";
+        document.getElementById('studentCsvActions').style.display = 'none';
+        csvReport.hidden = true;
         if (activeSearchRow) activeSearchRow.style.display = "none";
         if (activeStudentsTable) activeStudentsTable.style.display = "none";
         if (studentsEmpty) studentsEmpty.style.display = "none";
@@ -6801,6 +6826,7 @@
       async function showActiveStudents() {
         archivedStudentsPanel.style.display = "none";
         if (openAddStudentBtn) openAddStudentBtn.style.display = "";
+        document.getElementById('studentCsvActions').style.display = 'inline-flex';
         const activeSearchRow = studentSearchInput?.closest(".row");
         const activeStudentsTable = studentsTbody?.closest(".table-wrap");
         if (activeSearchRow) activeSearchRow.style.display = "";
