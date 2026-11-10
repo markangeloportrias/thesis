@@ -2863,9 +2863,9 @@
             {
               id: "modalStudentPassword",
               key: "password",
-              label: "Initial Password",
-              type: "password",
-              placeholder: "Create an initial password",
+              label: "Initial Password (Automatic)",
+              type: "text",
+              placeholder: "Generated from the 6-digit student ID",
             },
           ],
           onSubmit: async (values) => {
@@ -2885,6 +2885,17 @@
             return result;
           },
         });
+        const studentIdInput = document.getElementById('modalStudentId');
+        const passwordInput = document.getElementById('modalStudentPassword');
+        passwordInput.readOnly = true;
+        passwordInput.autocomplete = 'off';
+        studentIdInput.inputMode = 'numeric';
+        const updateInitialPassword = () => {
+          const id = studentIdInput.value.trim();
+          passwordInput.value = /^\d{6}$/.test(id) ? `midwife${id}` : '';
+        };
+        studentIdInput.addEventListener('input', updateInitialPassword);
+        updateInitialPassword();
       }
 
       async function showAssignStudentModal() {
@@ -3356,10 +3367,11 @@
         if (!blockContext.blockId || !blockContext.schoolYear) {
           return { ok: false, message: "Open a block first." };
         }
-        const initialPassword = String(payload.password || "").trim();
-        if (!initialPassword) {
-          return { ok: false, message: "Create an initial password for the student." };
+        const studentId = String(payload.student_id || "").trim();
+        if (!/^\d{6}$/.test(studentId)) {
+          return { ok: false, message: "Student ID must be exactly 6 digits." };
         }
+        payload = { ...payload, student_id: studentId, password: `midwife${studentId}` };
         const result = await ApiClient.registerStudentInBlock(
           blockContext.blockId,
           blockContext.schoolYear,
