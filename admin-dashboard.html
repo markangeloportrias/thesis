@@ -2271,12 +2271,10 @@
         showCard(state.adminCard || "dashboardCard", false, true);
       });
 
+      const instructorInfoAccounts = new Map();
       async function viewInstructorInfo(accountId) {
         try {
-          const result = await ApiClient.getInstructorAccounts();
-          const account = result?.ok && Array.isArray(result.accounts)
-            ? result.accounts.find((item) => String(item.id || "") === String(accountId || ""))
-            : null;
+          const account = instructorInfoAccounts.get(String(accountId || ""));
           if (!account) { await showMessageDialog("Instructor account not found.", "Instructor Information"); return; }
           const status = String(account.status || "active").replace(/^./, (letter) => letter.toUpperCase());
           const created = account.created_at ? PhilippineTime.parse(account.created_at).toLocaleString("en-PH", { timeZone: "Asia/Manila" }) : "Not available";
@@ -2290,6 +2288,7 @@
       let instructorAccountsLoadVersion = 0;
       async function renderInstructorAccounts() {
         const version = ++instructorAccountsLoadVersion;
+        instructorInfoAccounts.clear();
         renderAdminRows(instructorsTbody, [], () => null);
         instructorsTbody.innerHTML = "";
         instructorsEmpty.style.display = "block";
@@ -2304,6 +2303,7 @@
           instructorsTbody.innerHTML = "";
           instructorsEmpty.style.display = list.length ? "none" : "block";
           sidebarCountInstructors.textContent = list.length;
+          list.forEach((account) => instructorInfoAccounts.set(String(account.id || ""), account));
 
           renderAdminRows(instructorsTbody, list, (acc, index) => {
             const tr = document.createElement("tr");
