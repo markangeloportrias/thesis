@@ -35,7 +35,6 @@
     }
     if (!rows.length) throw new Error('Add students below the CSV header before importing.');
     if (rows.length > 100) throw new Error('Import up to 100 students per CSV file.');
-    const seen = new Set();
     return rows.map((cells, index) => {
       const location = `Student row ${index + 1}`;
       if (cells.length !== 2) throw new Error(`${location}: expected exactly two columns. Quote names containing commas.`);
@@ -43,10 +42,19 @@
       const student_name = cells[1].trim();
       if (!/^\d{6}$/.test(student_id)) throw new Error(`${location}: student ID must contain exactly 6 digits. Keep leading zeros.`);
       if (!student_name || student_name.length > 255 || /[\x00-\x1f\x7f]/.test(student_name)) throw new Error(`${location}: enter a valid student name (up to 255 characters).`);
-      if (seen.has(student_id)) throw new Error(`${location}: duplicate student ID ${student_id} in this file.`);
-      seen.add(student_id);
       return { student_id, student_name, password: `midwife${student_id}` };
     });
+  }
+
+  function shortReason(message) {
+    const text = String(message || '').toLowerCase();
+    if (/already exists|duplicate/.test(text)) return 'Already exists';
+    if (/access denied|forbidden|unauthorized/.test(text)) return 'Access denied';
+    if (/session|log.?in|authentication/.test(text)) return 'Session expired';
+    if (/block.*unavailable/.test(text)) return 'Block unavailable';
+    if (/network|fetch|timeout|connection/.test(text)) return 'Check connection';
+    if (/invalid|required|must contain/.test(text)) return 'Invalid data';
+    return 'Request failed';
   }
 
   function mount(options) {
@@ -78,19 +86,28 @@
         );
         if (!confirmed) return;
         const failures = [];
+        const successes = [];
+        const seen = new Set();
         let imported = 0;
         for (let i = 0; i < students.length; i++) {
           const student = students[i];
+          const label = `${student.student_id} - ${student.student_name}`;
+          if (seen.has(student.student_id)) {
+            failures.push(`${label}: Duplicate ID`);
+            continue;
+          }
+          seen.add(student.student_id);
           show(`Importing ${i + 1} of ${students.length} students…`);
           try {
             const result = await options.create(context, student);
             if (!result?.ok) throw new Error(result?.message || 'Unable to create this student.');
             imported++;
+            successes.push(`${label}: Added`);
           } catch (error) {
-            failures.push(`${student.student_id}: ${error.message || 'Request failed. Check the roster before retrying.'}`);
+            failures.push(`${label}: ${shortReason(error.message)}`);
           }
         }
-        show(`Imported: ${imported}. Not imported: ${failures.length}.` + (failures.length ? '\n' + failures.join('\n') : ''));
+        show(`Imported: ${imported}. Not imported: ${failures.length}.\n\nSuccessfully added\n${successes.join('\n') || 'None'}\n\nNot added\n${failures.join('\n') || 'None'}`);
         if (imported) {
           try { await options.refresh(context); }
           catch (_) { report.textContent += '\nAccounts were created, but the roster could not refresh. Refresh the list to view them.'; }

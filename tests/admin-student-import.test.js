@@ -15,7 +15,6 @@ test('CSV rejects invalid files before any account is created', () => {
     'student_id,student_name\n12345,Ana',
     'student_id,student_name\n123456,',
     'student_id,student_name\n123456,Ana,Extra',
-    'student_id,student_name\n123456,Ana\n123456,Other',
     'student_id,student_name\n123456,"Ana',
     'student_id,student_name\n123456,"Ana"oops',
     'student_id,student_name\n' + Array.from({ length: 101 }, (_, i) => `${100000 + i},Student`).join('\n'),
@@ -40,15 +39,18 @@ test('import snapshots the block, continues after duplicate failure, and refresh
     },
     refresh: async () => { refreshes++; },
   });
-  elements.studentsCsvFile.files = [{ name: 'students.csv', size: 100, text: async () => 'student_id,student_name\n123456,Ana\n001234,Bea' }];
+  elements.studentsCsvFile.files = [{ name: 'students.csv', size: 100, text: async () => 'student_id,student_name\n123456,Ana\n001234,Bea\n001234,Bea Again' }];
   try {
     await elements.studentsCsvFile.listeners.change();
     assert.equal(calls.length, 2);
     assert.ok(calls.every(([block]) => block === 'block-a'));
     assert.equal(calls[1][1].password, 'midwife001234');
     assert.equal(refreshes, 1);
-    assert.match(elements.studentsCsvReport.textContent, /Imported: 1. Not imported: 1/);
-    assert.match(elements.studentsCsvReport.textContent, /123456: That record already exists/);
+    assert.match(elements.studentsCsvReport.textContent, /Imported: 1. Not imported: 2/);
+    assert.match(elements.studentsCsvReport.textContent, /123456 - Ana: Already exists/);
+    assert.match(elements.studentsCsvReport.textContent, /001234 - Bea: Added/);
+    assert.match(elements.studentsCsvReport.textContent, /001234 - Bea Again: Duplicate ID/);
+    assert.equal(elements.studentsCsvReport.hidden, false);
     assert.equal(elements.importStudentsCsvBtn.disabled, false);
   } finally { delete global.document; }
 });
