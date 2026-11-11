@@ -1849,7 +1849,8 @@
 <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
+    <script src="assets/js/api-client.js?v=20261111-required-password-1"></script>
+    <script src="assets/js/student-first-password.js?v=20261111-1"></script>
     <script>
       (() => {
         const expectedRole = "student";
@@ -1860,10 +1861,12 @@
           localStorage.removeItem("currentStudentId");
           window.location.replace("login");
         };
-        ApiClient.getSession()
-          .then((session) => {
+        window.studentAccountReady = ApiClient.getSession()
+          .then(async (session) => {
             if (!session?.ok || session.role !== expectedRole) return redirectToLogin();
+            await requireStudentPasswordChange(session);
             document.documentElement.classList.remove("portal-auth-pending");
+            return true;
           })
           .catch(redirectToLogin);
         window.addEventListener("portal-session-expired", redirectToLogin);
@@ -2284,6 +2287,7 @@
 
       // Start after the DOM is ready without waiting for images and other assets.
       document.addEventListener("DOMContentLoaded", async () => {
+        if (!await window.studentAccountReady) return;
         // First try sessionStorage (fresh login)
         let stored = sessionStorage.getItem("currentStudent");
         if (stored) {

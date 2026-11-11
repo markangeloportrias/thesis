@@ -469,6 +469,7 @@ try {
     if ($resource === 'auth' && $id === 'session' && $method === 'GET') {
         $user = currentUser($pdo, ['admin', 'instructor', 'student'], true);
         $payload = ['ok' => true, 'role' => $user['role'], 'user_uid' => $user['user_uid'], 'expires_at' => $user['expires_at']];
+        if ($user['role'] === 'student') $payload['must_change_password'] = (bool)$user['must_change_password'];
         if ($user['role'] === 'admin') {
             $admin = $pdo->prepare('SELECT must_change_pin FROM admins WHERE id=? AND archived_at IS NULL');
             $admin->execute([$user['user_uid']]);
@@ -497,6 +498,29 @@ try {
         $sessions->execute([$user['user_uid'], hash('sha256', bearerToken())]);
         audit($pdo, $user, 'change_pin', 'admin', (string)$user['user_uid']);
         respond(['ok' => true]);
+    }
+
+    if ($resource === 'auth' && $id === 'student-password' && $method === 'PATCH') {
+        $user = currentUser($pdo, ['student'], true);
+        requireFields($data, ['current_password', 'new_password']);
+        $newPassword = (string)$data['new_password'];
+        if (!credentialIsStrong($newPassword, 6)) respond(['ok'=>false,'message'=>'New password must contain at least 6 characters.'],422);
+        if ($newPassword === 'midwife' . $user['user_uid']) respond(['ok'=>false,'message'=>'Choose a password different from your default password.'],422);
+        $pdo->beginTransaction();
+        $credential = $pdo->prepare('SELECT password FROM students WHERE student_id=? AND archived_at IS NULL FOR UPDATE');
+        $credential->execute([$user['user_uid']]);
+        if (!passwordMatches((string)$data['current_password'], (string)$credential->fetchColumn())) {
+            $pdo->rollBack();
+            respond(['ok'=>false,'message'=>'Current password is incorrect.'],403);
+        }
+        $update = $pdo->prepare('UPDATE students SET password=? WHERE student_id=? AND archived_at IS NULL');
+        $update->execute([password_hash($newPassword, PASSWORD_DEFAULT), $user['user_uid']]);
+        $tokenHash = hash('sha256', bearerToken());
+        $pdo->prepare('UPDATE api_sessions SET must_change_password=0 WHERE token_hash=?')->execute([$tokenHash]);
+        $pdo->prepare("UPDATE api_sessions SET revoked_at=NOW() WHERE role='student' AND user_uid=? AND token_hash<>? AND revoked_at IS NULL")->execute([$user['user_uid'], $tokenHash]);
+        audit($pdo, $user, 'change_password', 'student', (string)$user['user_uid']);
+        $pdo->commit();
+        respond(['ok'=>true]);
     }
 
     if ($resource === 'auth' && $id === 'instructor-password' && $method === 'PATCH') {
@@ -691,6 +715,7 @@ try {
             if(!empty($data['password'])){
                 $newPassword = (string)$data['password'];
                 if (!credentialIsStrong($newPassword, 6)) respond(['ok'=>false,'message'=>'New password must contain at least 6 characters.'],422);
+                if ($user['role'] === 'student' && $newPassword === 'midwife' . $id) respond(['ok'=>false,'message'=>'Choose a password different from your default password.'],422);
                 if ($user['role'] === 'student') {
                     requireFields($data, ['current_password']);
                     $credentialStmt = $pdo->prepare('SELECT password FROM students WHERE student_id=? AND archived_at IS NULL');

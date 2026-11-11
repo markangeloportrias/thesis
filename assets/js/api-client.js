@@ -2569,6 +2569,12 @@
   ApiClient.getSession = async function () {
     return mysqlRequest('auth/session');
   };
+  ApiClient.changeStudentInitialPassword = async function (currentPassword, newPassword) {
+    return mysqlRequest('auth/student-password', {
+      method: 'PATCH',
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+    });
+  };
   ApiClient.logout = async function () {
     try {
       return await mysqlRequest('auth/logout', { method: 'POST', body: '{}' });

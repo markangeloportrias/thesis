@@ -457,11 +457,33 @@ function currentUser(PDO $pdo, array $roles = [], bool $allowPendingAdminPin = f
     $token = bearerToken();
     if ($token === '') respond(['ok' => false, 'message' => 'Authentication required.'], 401);
     $hash = hash('sha256', $token);
-    $stmt = $pdo->prepare('SELECT role, user_uid, expires_at FROM api_sessions WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > NOW()');
+    $stmt = $pdo->prepare('SELECT * FROM api_sessions WHERE token_hash = ? AND revoked_at IS NULL AND expires_at > NOW()');
     $stmt->execute([$hash]);
     $user = $stmt->fetch();
     if (!$user) respond(['ok' => false, 'message' => 'Session is invalid or expired.'], 401);
     if ($roles && !in_array($user['role'], $roles, true)) respond(['ok' => false, 'message' => 'Access denied.'], 403);
+    if ($user['role'] === 'student') {
+        // Nullable supports sessions created before this feature. Verify the
+        // credential once per session, not on every dashboard request.
+        if (!array_key_exists('must_change_password', $user)) {
+            try {
+                $pdo->exec('ALTER TABLE api_sessions ADD COLUMN must_change_password TINYINT(1) NULL DEFAULT NULL');
+            } catch (PDOException $error) {
+                if ((int)($error->errorInfo[1] ?? 0) !== 1060) throw $error;
+            }
+            $user['must_change_password'] = null;
+        }
+        if ($user['must_change_password'] === null) {
+            $credential = $pdo->prepare('SELECT password FROM students WHERE student_id=? AND archived_at IS NULL');
+            $credential->execute([$user['user_uid']]);
+            $user['must_change_password'] = passwordMatches('midwife' . $user['user_uid'], (string)$credential->fetchColumn());
+            $update = $pdo->prepare('UPDATE api_sessions SET must_change_password=? WHERE token_hash=? AND must_change_password IS NULL');
+            $update->execute([(int)$user['must_change_password'], $hash]);
+        }
+        if ($user['must_change_password'] && !$allowPendingAdminPin) {
+            respond(['ok' => false, 'must_change_password' => true, 'message' => 'Change your default password before continuing.'], 403);
+        }
+    }
     if ($user['role'] === 'admin' && !$allowPendingAdminPin) {
         $admin = $pdo->prepare('SELECT must_change_pin FROM admins WHERE id=? AND archived_at IS NULL');
         $admin->execute([$user['user_uid']]);
