@@ -1886,7 +1886,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261016-instructor-directory-1"></script>
-    <script src="assets/js/admin-student-import.js?v=20261111-results-1"></script>
+    <script src="assets/js/admin-student-import.js?v=20261111-popup-1"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <link rel="stylesheet" href="assets/css/pages/instructor-directory-enlarge.css?v=20261110-annual-size-1" />
     <script src="assets/js/instructor-activity.js?v=20260928-comment-label-1"></script>
@@ -8084,6 +8084,13 @@
       instructorCsvReport.style.cssText = "white-space: pre-wrap; max-height: 240px; overflow: auto; margin: 12px 0;";
       instructorOpenAddStudentBtn.closest(".student-panel-toolbar").after(instructorCsvReport);
       AdminStudentImport.mount({
+        showResults: (message) => {
+          showOptionMessage("Student Import Results", message);
+          const results = document.createElement("div");
+          results.style.cssText = "white-space: pre-wrap; max-height: 50vh; overflow-y: auto; text-align: left; overflow-wrap: anywhere;";
+          results.textContent = message;
+          globalOptionPaneMessage.replaceChildren(results);
+        },
         getContext: () => ({ ...instructorStudentsNav }),
         confirm: (message, options) => showOptionConfirm(options.title, message, options.confirmLabel, "Cancel"),
         create: (context, student) => ApiClient.registerStudentInBlock(context.blockId, context.schoolYear, student),

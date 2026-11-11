@@ -30,6 +30,7 @@ test('import snapshots the block, continues after duplicate failure, and refresh
   const context = { blockId: 'block-a', schoolYear: '2025-2026', blockLabel: 'Block A' };
   const calls = [];
   let refreshes = 0;
+  let popupMessage = '';
   mount({
     getContext: () => context,
     confirm: async () => { context.blockId = 'block-b'; return true; },
@@ -38,6 +39,7 @@ test('import snapshots the block, continues after duplicate failure, and refresh
       return { ok: student.student_id !== '123456', message: 'That record already exists.' };
     },
     refresh: async () => { refreshes++; },
+    showResults: async (message) => { popupMessage = message; },
   });
   elements.studentsCsvFile.files = [{ name: 'students.csv', size: 100, text: async () => 'student_id,student_name\n123456,Ana\n001234,Bea\n001234,Bea Again' }];
   try {
@@ -50,7 +52,8 @@ test('import snapshots the block, continues after duplicate failure, and refresh
     assert.match(elements.studentsCsvReport.textContent, /123456 - Ana: Already exists/);
     assert.match(elements.studentsCsvReport.textContent, /001234 - Bea: Added/);
     assert.match(elements.studentsCsvReport.textContent, /001234 - Bea Again: Duplicate ID/);
-    assert.equal(elements.studentsCsvReport.hidden, false);
+    assert.equal(elements.studentsCsvReport.hidden, true);
+    assert.equal(popupMessage, elements.studentsCsvReport.textContent);
     assert.equal(elements.importStudentsCsvBtn.disabled, false);
   } finally { delete global.document; }
 });

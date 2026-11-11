@@ -112,6 +112,11 @@
           try { await options.refresh(context); }
           catch (_) { report.textContent += '\nAccounts were created, but the roster could not refresh. Refresh the list to view them.'; }
         }
+        if (options.showResults) {
+          const summary = report.textContent;
+          report.hidden = true;
+          await options.showResults(summary);
+        }
       } catch (error) { show(error.message || 'Unable to read the CSV file.'); }
       finally { busy = false; button.disabled = false; input.value = ''; }
     });
