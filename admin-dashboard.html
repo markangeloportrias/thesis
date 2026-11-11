@@ -2860,13 +2860,6 @@
               label: "Full Name",
               placeholder: "Student name",
             },
-            {
-              id: "modalStudentPassword",
-              key: "password",
-              label: "Initial Password (Automatic)",
-              type: "text",
-              placeholder: "Generated from the 6-digit student ID",
-            },
           ],
           onSubmit: async (values) => {
             if (needsBlockSelection) {
@@ -2886,16 +2879,7 @@
           },
         });
         const studentIdInput = document.getElementById('modalStudentId');
-        const passwordInput = document.getElementById('modalStudentPassword');
-        passwordInput.readOnly = true;
-        passwordInput.autocomplete = 'off';
         studentIdInput.inputMode = 'numeric';
-        const updateInitialPassword = () => {
-          const id = studentIdInput.value.trim();
-          passwordInput.value = /^\d{6}$/.test(id) ? `midwife${id}` : '';
-        };
-        studentIdInput.addEventListener('input', updateInitialPassword);
-        updateInitialPassword();
       }
 
       async function showAssignStudentModal() {
