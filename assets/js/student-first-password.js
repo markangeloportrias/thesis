@@ -4,9 +4,25 @@
     if (!session.must_change_password) return Promise.resolve();
     return new Promise((resolve) => {
       const panel = document.createElement('dialog');
+      panel.setAttribute('id', 'studentFirstPasswordPanel');
       panel.setAttribute('aria-labelledby', 'firstPasswordTitle');
-      panel.style.cssText = 'width:min(460px,90vw);box-sizing:border-box;border:1px solid #bdd3ed;border-radius:18px;padding:28px;color:#123663;background:white;box-shadow:0 20px 80px #12366355;';
+      panel.style.cssText = 'position:fixed;inset:0;margin:auto;width:min(480px,calc(100vw - 32px));max-height:calc(100dvh - 32px);height:fit-content;overflow-y:auto;box-sizing:border-box;border:1px solid #bdd3ed;border-radius:20px;padding:28px;color:#123663;background:white;box-shadow:0 24px 80px #092b6355;';
       panel.innerHTML = `
+        <style>
+          #studentFirstPasswordPanel::backdrop { background:rgba(9,30,65,.52); backdrop-filter:blur(4px); }
+          #studentFirstPasswordPanel form { margin:0; }
+          #studentFirstPasswordPanel h2 { font-size:24px !important; line-height:1.25; margin:0 0 12px; color:#123663; }
+          #studentFirstPasswordPanel p { font-size:15px; line-height:1.5; margin:0 0 18px; color:#456080; }
+          #studentFirstPasswordPanel label { font-size:14px !important; font-weight:700; color:#123663; }
+          #studentFirstPasswordPanel input { font-size:16px !important; line-height:1.4; min-height:46px; background:#f8fbff; color:#123663; box-shadow:none; }
+          #studentFirstPasswordPanel input:focus { outline:2px solid #4682b4; outline-offset:2px; }
+          #studentFirstPasswordPanel small { display:block; margin-top:8px; font-size:13px; line-height:1.45; color:#456080; }
+          #studentFirstPasswordPanel [role="alert"] { margin:12px 0 0; color:#9b241c; }
+          #studentFirstPasswordPanel [role="alert"]:empty { display:none; }
+          #studentFirstPasswordPanel button { margin-top:22px; min-height:48px; font-size:16px !important; background:#084c91 !important; color:white !important; }
+          #studentFirstPasswordPanel button:disabled { opacity:.65; cursor:wait; }
+          @media (max-width:480px) { #studentFirstPasswordPanel { padding:22px !important; } }
+        </style>
         <form>
           <h2 id="firstPasswordTitle" style="margin:0 0 12px;font-size:24px">Change your default password</h2>
           <p style="line-height:1.5">For your account security, set a new password before continuing to your dashboard.</p>
