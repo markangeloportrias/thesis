@@ -122,6 +122,35 @@
     });
   }
 
-  if (typeof module !== 'undefined' && module.exports) module.exports = { parseStudentsCsv, mount };
-  else root.AdminStudentImport = { parseStudentsCsv, mount };
+  function renderResults(message) {
+    const container = document.createElement('div');
+    container.style.cssText = 'max-height:50vh;overflow-y:auto;text-align:left;overflow-wrap:anywhere;color:#16365d;font-size:16px;font-weight:600;line-height:1.6;';
+    String(message).split('\n\n').forEach((section, index) => {
+      const card = document.createElement('section');
+      const success = index === 1;
+      card.style.cssText = `margin:0 0 12px;padding:12px 14px;border-radius:10px;border:1px solid ${index === 0 ? '#b9d4ef' : success ? '#a7dfbe' : '#efd17b'};background:${index === 0 ? '#edf5ff' : success ? '#effaf3' : '#fff8df'};`;
+      section.split('\n').forEach((line, lineIndex) => {
+        const row = document.createElement('div');
+        row.textContent = line;
+        row.style.cssText = lineIndex === 0
+          ? `font-weight:800;color:${index === 0 ? '#123f70' : success ? '#166534' : '#785000'};margin-bottom:6px;`
+          : 'margin-top:6px;';
+        const separator = line.lastIndexOf(': ');
+        if (lineIndex > 0 && separator > 0) {
+          const label = document.createElement('strong');
+          label.textContent = line.slice(0, separator);
+          const badge = document.createElement('span');
+          badge.textContent = line.slice(separator + 2);
+          badge.style.cssText = `display:inline-block;margin-left:8px;padding:2px 8px;border-radius:6px;font-size:13px;font-weight:800;background:${success ? '#d1f0dc' : '#ffe89a'};color:${success ? '#14532d' : '#694400'};`;
+          row.replaceChildren(label, badge);
+        }
+        card.appendChild(row);
+      });
+      container.appendChild(card);
+    });
+    return container;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { parseStudentsCsv, mount, renderResults };
+  else root.AdminStudentImport = { parseStudentsCsv, mount, renderResults };
 })(typeof window !== 'undefined' ? window : globalThis);

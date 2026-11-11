@@ -1184,7 +1184,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
-    <script src="assets/js/admin-student-import.js?v=20261111-popup-1"></script>
+    <script src="assets/js/admin-student-import.js?v=20261111-popup-2"></script>
     <script>
       (() => {
         const redirectToLogin = () => {
@@ -6749,9 +6749,7 @@
         confirm: showOptionPane,
         showResults: (message) => {
           const closed = showOptionPane(message, { title: "Student Import Results", confirmLabel: "OK", hideCancel: true });
-          const results = document.createElement("div");
-          results.style.cssText = "white-space: pre-wrap; max-height: 50vh; overflow-y: auto; text-align: left; overflow-wrap: anywhere;";
-          results.textContent = message;
+          const results = AdminStudentImport.renderResults(message);
           optionPaneMessage.replaceChildren(results);
           return closed;
         },
