@@ -2371,14 +2371,7 @@
       }
 
       async function editInstructorAccount(accountId) {
-        const result = await ApiClient.getInstructorAccounts();
-        const list =
-          result && result.ok && Array.isArray(result.accounts)
-            ? result.accounts
-            : [];
-        const target = list.find(
-          (a) => String(a.id || "") === String(accountId || ""),
-        );
+        const target = instructorInfoAccounts.get(String(accountId || ""));
         if (!target) return;
 
         openInstructorsAddModal({
@@ -3189,7 +3182,9 @@
         );
       }
 
+      const studentEditAccounts = new Map();
       async function renderBlockStudents() {
+        studentEditAccounts.clear();
         if (!studentsNav.blockId || !studentsNav.schoolYear) return;
         showDatabaseLoading(studentsTbody, 8, "Loading students...");
         const result = await ApiClient.getBlockStudents(
@@ -3202,6 +3197,7 @@
             ? result.students
             : [];
         const filtered = getBlockStudentsFiltered(students);
+        students.forEach((student) => studentEditAccounts.set(String(student.student_id || ""), student));
         if (studentsTbody) studentsTbody.innerHTML = "";
         if (studentsEmpty) {
           const showingArchived = archivedStudentsPanel?.style.display !== "none";
@@ -3427,11 +3423,10 @@
       }
 
       async function editStudent(studentId) {
-        const studentResult = await ApiClient.getStudent(studentId);
-        const target = studentResult?.ok ? studentResult.student : null;
+        const target = studentEditAccounts.get(String(studentId || ""));
         if (!target) {
           showStudentsNavMessage(
-            studentResult?.message || "Student account not found.",
+            "Student account not found in the loaded list. Refresh the list and try again.",
             "error",
           );
           return;
