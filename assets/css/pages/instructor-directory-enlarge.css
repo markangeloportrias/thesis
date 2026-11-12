@@ -171,13 +171,18 @@ html body.role-instructor #instructorStudentProcedureTables .review-case-actions
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-date strong,
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-facility strong,
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-supervisor strong {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
 }
 
 html body.role-instructor #instructorStudentProcedureTables .review-case-card small {
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-case-code {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
 }
 
 @media (max-width: 1450px) {
