@@ -130,37 +130,12 @@ html body.role-instructor #instructorStudentProcedureTables .review-student-head
 }
 
 html body.role-instructor #instructorStudentProcedureTables .review-case-card {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-template-areas:
-    "procedure case date date status action"
-    "diagnosis diagnosis diagnosis diagnosis diagnosis diagnosis"
-    "facility facility facility supervisor supervisor supervisor";
+  grid-template-columns: minmax(100px, 1fr) minmax(65px, .65fr) minmax(180px, 2.3fr) minmax(100px, .9fr) minmax(130px, 1.5fr) minmax(130px, 1.3fr) minmax(140px, 1fr) 100px;
   align-items: start;
   gap: 16px;
   padding: 16px !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
-}
-
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(1) { grid-area: procedure; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(2) { grid-area: case; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(3) { grid-area: diagnosis; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(4) { grid-area: date; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(5) { grid-area: facility; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(6) { grid-area: supervisor; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(7) { grid-area: status; }
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > :nth-child(8) { grid-area: action; }
-
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > .instructor-to-review-diagnosis {
-  padding: 12px 14px;
-  border: 1px solid #deE8f3;
-  border-radius: 8px;
-  background: #f5f9fe;
-}
-
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > .instructor-to-review-facility,
-html body.role-instructor #instructorStudentProcedureTables .review-case-card > .instructor-to-review-supervisor {
-  padding-top: 4px;
 }
 
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-diagnosis > div:not(.review-field-label) {
@@ -212,32 +187,22 @@ html body.role-instructor #instructorStudentProcedureTables .review-case-card .i
 
 @media (max-width: 1450px) {
   html body.role-instructor #instructorStudentProcedureTables .review-case-card {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-areas:
-      "procedure case date"
-      "diagnosis diagnosis diagnosis"
-      "facility facility supervisor"
-      "status status action";
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
   html body.role-instructor #instructorStudentProcedureTables .review-case-card {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      "procedure case"
-      "date status"
-      "diagnosis diagnosis"
-      "facility facility"
-      "supervisor supervisor"
-      "action action";
+  }
+  html body.role-instructor #instructorStudentProcedureTables .review-case-card > .instructor-to-review-diagnosis {
+    grid-column: 1 / -1;
   }
 }
 
 @media (max-width: 420px) {
   html body.role-instructor #instructorStudentProcedureTables .review-case-card {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "procedure" "case" "date" "status" "diagnosis" "facility" "supervisor" "action";
   }
   html body.role-instructor #instructorStudentProcedureTables .review-case-actions {
     justify-content: flex-start;
