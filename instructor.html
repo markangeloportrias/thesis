@@ -6222,6 +6222,53 @@
         showInstructorAddStudentModal();
       }
 
+      function resetInstructorStudentPassword(studentId, trigger) {
+        if (trigger.disabled) return;
+        trigger.disabled = true;
+        const panel = document.createElement("dialog");
+        panel.setAttribute("aria-labelledby", "instructorStudentResetTitle");
+        panel.style.cssText = "position:fixed;inset:0;margin:auto;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #bed2eb;border-radius:18px;padding:28px;background:white;color:#123663;box-shadow:0 24px 80px #12366355;";
+        panel.innerHTML = `<h2 id="instructorStudentResetTitle" style="margin:0 0 16px;font-size:22px">Reset Student Password?</h2><p style="font-size:16px;line-height:1.6"></p><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:22px"><button type="button" class="btn btn-secondary" data-reset-no>No</button><button type="button" class="btn btn-primary" data-reset-yes>Yes</button></div>`;
+        const message = panel.querySelector("p");
+        message.textContent = `Reset student ${studentId}'s password to midwife${studentId}? Their current sessions will end, and they must change this default password on their next login. Other student details will not be changed.`;
+        const yes = panel.querySelector("[data-reset-yes]");
+        const no = panel.querySelector("[data-reset-no]");
+        let busy = false;
+        let finished = false;
+        const close = () => { panel.close(); panel.remove(); trigger.disabled = false; trigger.focus(); };
+        panel.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          if (!busy) close();
+        });
+        no.addEventListener("click", close);
+        yes.addEventListener("click", async () => {
+          if (busy) return;
+          if (finished) { close(); return; }
+          busy = true;
+          yes.disabled = no.disabled = true;
+          yes.textContent = "Resetting…";
+          try {
+            const result = await ApiClient.updateStudent(studentId, { password: `midwife${studentId}` });
+            if (!result?.ok) throw new Error(result?.message || "Unable to reset the password.");
+            panel.querySelector("h2").textContent = "Password Reset Successfully";
+            message.textContent = `Student ${studentId}'s password is now midwife${studentId}. The student must change it on their next login.`;
+          } catch (error) {
+            panel.querySelector("h2").textContent = "Password Reset Failed";
+            message.textContent = error.message || "Unable to reset the password. Please try again.";
+          } finally {
+            busy = false;
+            finished = true;
+            no.hidden = true;
+            yes.disabled = false;
+            yes.textContent = "OK";
+            yes.focus();
+          }
+        });
+        document.body.appendChild(panel);
+        panel.showModal();
+        no.focus();
+      }
+
       async function editInstructorBlockStudent(studentId) {
         const result = await ApiClient.getStudent(studentId);
         const target = result && result.ok ? result.student : null;
@@ -6261,13 +6308,6 @@
               placeholder: "11-digit contact number",
               value: target.parent_contact || "",
             },
-            {
-              id: "instructorModalEditStudentPassword",
-              key: "password",
-              label: "New Password (optional)",
-              type: "password",
-              placeholder: "Leave blank to keep the current password",
-            },
           ],
           onSubmit: async (values) => {
             if (!values.student_name) {
@@ -6291,7 +6331,6 @@
               contact_number: values.contact_number,
               parent_contact: values.parent_contact,
             };
-            if (values.password) payload.password = values.password;
             const updateResult = await ApiClient.updateStudent(
               studentId,
               payload,
@@ -6313,6 +6352,12 @@
             return { ok: true };
           },
         });
+        const resetButton = document.createElement("button");
+        resetButton.type = "button";
+        resetButton.className = "btn btn-secondary";
+        resetButton.textContent = "Reset Password";
+        resetButton.addEventListener("click", () => resetInstructorStudentPassword(studentId, resetButton));
+        instructorStudentsAddBody.appendChild(resetButton);
       }
 
       async function renderCurrentRecordsSearchResults() {
