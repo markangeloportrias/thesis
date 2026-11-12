@@ -138,8 +138,8 @@ html body.role-instructor #instructorStudentProcedureTables .review-case-card {
   line-height: 1.4 !important;
 }
 
-html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-diagnosis {
-  font-size: 13px !important;
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-diagnosis > div:not(.review-field-label) {
+  font-size: 12px !important;
   line-height: 1.4 !important;
 }
 
