@@ -3379,6 +3379,53 @@
         showAddStudentModal();
       }
 
+      async function resetStudentPassword(studentId, trigger) {
+        if (trigger.disabled) return;
+        trigger.disabled = true;
+        const panel = document.createElement("dialog");
+        panel.setAttribute("aria-labelledby", "studentResetTitle");
+        panel.style.cssText = "position:fixed;inset:0;margin:auto;width:min(440px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #bed2eb;border-radius:18px;padding:28px;background:white;color:#123663;box-shadow:0 24px 80px #12366355;";
+        panel.innerHTML = `<h2 id="studentResetTitle" style="margin:0 0 16px;font-size:22px">Reset Student Password?</h2><p style="font-size:16px;line-height:1.6"></p><div style="display:flex;justify-content:flex-end;gap:12px;margin-top:22px"><button type="button" class="btn btn-secondary" data-reset-no>No</button><button type="button" class="btn btn-primary" data-reset-yes>Yes</button></div>`;
+        const message = panel.querySelector("p");
+        message.textContent = `Reset student ${studentId}'s password to midwife${studentId}? Their current sessions will end, and they must change this default password on their next login. Other student details will not be changed.`;
+        const yes = panel.querySelector("[data-reset-yes]");
+        const no = panel.querySelector("[data-reset-no]");
+        let busy = false;
+        let finished = false;
+        const close = () => { panel.close(); panel.remove(); trigger.disabled = false; trigger.focus(); };
+        panel.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          if (!busy) close();
+        });
+        no.addEventListener("click", close);
+        yes.addEventListener("click", async () => {
+          if (busy) return;
+          if (finished) { close(); return; }
+          busy = true;
+          yes.disabled = no.disabled = true;
+          yes.textContent = "Resetting…";
+          try {
+            const result = await ApiClient.updateStudent(studentId, { password: `midwife${studentId}` });
+            if (!result?.ok) throw new Error(result?.message || "Unable to reset the password.");
+            panel.querySelector("h2").textContent = "Password Reset Successfully";
+            message.textContent = `Student ${studentId}'s password is now midwife${studentId}. The student must change it on their next login.`;
+          } catch (error) {
+            panel.querySelector("h2").textContent = "Password Reset Failed";
+            message.textContent = error.message || "Unable to reset the password. Please try again.";
+          } finally {
+            busy = false;
+            finished = true;
+            no.hidden = true;
+            yes.disabled = false;
+            yes.textContent = "OK";
+            yes.focus();
+          }
+        });
+        document.body.appendChild(panel);
+        panel.showModal();
+        no.focus();
+      }
+
       async function editStudent(studentId) {
         const studentResult = await ApiClient.getStudent(studentId);
         const target = studentResult?.ok ? studentResult.student : null;
@@ -3401,8 +3448,11 @@
             <label>Parent/Guardian name<input name="parentName" type="text" value="${escapeHtml(target.parent_name || "")}" autocomplete="name" required></label>
           <label>Contact number<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
             <label>Parent/Guardian contact<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
-            <label>New password <span class="muted">(leave blank to keep current)</span><input name="studentPassword" type="password" autocomplete="new-password" minlength="6"></label>
+            <div><button type="button" class="btn btn-secondary" id="resetStudentPasswordBtn"><i class="fas fa-key" aria-hidden="true"></i> Reset Password</button></div>
           </form>`;
+        document.getElementById("resetStudentPasswordBtn").addEventListener("click", (event) => {
+          void resetStudentPassword(studentId, event.currentTarget);
+        });
         const accepted = await response;
         if (!accepted) return;
         const form = document.getElementById("studentEditForm");
@@ -3410,7 +3460,6 @@
         const nextParent = form?.querySelector("[name='parentName']")?.value.trim() || "";
         const nextContact = form?.querySelector("[name='contactNumber']")?.value.trim() || "";
         const nextParentContact = form?.querySelector("[name='parentContact']")?.value.trim() || "";
-        const nextPassword = form?.querySelector("[name='studentPassword']")?.value.trim() || "";
         if (!nextName || !nextParent) {
           showStudentsNavMessage("Student and parent names are required.", "error");
           return;
@@ -3430,7 +3479,6 @@
           contact_number: nextContact.trim(),
           parent_contact: nextParentContact,
         };
-        if (nextPassword.trim()) update.password = nextPassword.trim();
 
         const result = await ApiClient.updateStudent(studentId, update);
         if (!result?.ok) {
