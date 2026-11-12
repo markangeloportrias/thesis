@@ -130,7 +130,10 @@ html body.role-instructor #instructorStudentProcedureTables .review-student-head
 }
 
 html body.role-instructor #instructorStudentProcedureTables .review-case-card {
-  padding: 10px 14px !important;
+  grid-template-columns: minmax(100px, 1fr) minmax(65px, .65fr) minmax(180px, 2.3fr) minmax(100px, .9fr) minmax(130px, 1.5fr) minmax(130px, 1.3fr) minmax(140px, 1fr) 100px;
+  align-items: start;
+  gap: 16px;
+  padding: 16px !important;
   font-size: 13px !important;
   line-height: 1.4 !important;
 }
@@ -153,6 +156,52 @@ html body.role-instructor #instructorStudentProcedureTables .review-case-card .i
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-status {
   padding: 4px 10px !important;
   font-size: 11px !important;
+  box-sizing: border-box;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.4;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-actions {
+  align-self: center;
+  justify-content: flex-end;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-date strong,
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-facility strong,
+html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-supervisor strong {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+html body.role-instructor #instructorStudentProcedureTables .review-case-card small {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1450px) {
+  html body.role-instructor #instructorStudentProcedureTables .review-case-card {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  html body.role-instructor #instructorStudentProcedureTables .review-case-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  html body.role-instructor #instructorStudentProcedureTables .review-case-card > .instructor-to-review-diagnosis {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  html body.role-instructor #instructorStudentProcedureTables .review-case-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html body.role-instructor #instructorStudentProcedureTables .review-case-actions {
+    justify-content: flex-start;
+  }
 }
 
 html body.role-instructor #instructorStudentProcedureTables .review-case-card .instructor-to-review-details {
