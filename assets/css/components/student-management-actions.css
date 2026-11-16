@@ -1,3 +1,16 @@
+/* Instructor student-row Archive buttons only. */
+html body.role-instructor #instructorStudentsListPanel button.mini-btn[data-student-action="archive"] {
+  background: #4682b4 !important;
+  border-color: #4682b4 !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 5px #4682b433 !important;
+}
+
+html body.role-instructor #instructorStudentsListPanel button.mini-btn[data-student-action="archive"]:hover {
+  background: #356a92 !important;
+  border-color: #356a92 !important;
+}
+
 /* Scope equal-sized actions to the two student-management toolbars. */
 html body:has(#studentsCsvFile) :is(#studentsCard, #instructorStudentsListPanel) :is(
   #openAddStudentBtn, #instructorOpenAddStudentBtn,
