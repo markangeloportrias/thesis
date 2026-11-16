@@ -1,0 +1,66 @@
+/* Scope equal-sized actions to the two student-management toolbars. */
+html body:has(#studentsCsvFile) :is(#studentsCard, #instructorStudentsListPanel) :is(
+  #openAddStudentBtn, #instructorOpenAddStudentBtn,
+  #studentCsvActions > a, #instructorStudentCsvActions > a,
+  #importStudentsCsvBtn, #toggleArchivedStudentsBtn, #instructorToggleArchivedStudentsBtn
+) {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 210px !important;
+  min-width: 210px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  border: 1px solid var(--student-action-border) !important;
+  border-radius: 10px !important;
+  background: var(--student-action-bg) !important;
+  color: var(--student-action-text) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 5px #00296b14 !important;
+}
+
+:is(#openAddStudentBtn, #instructorOpenAddStudentBtn) {
+  --student-action-bg: #ffd000;
+  --student-action-border: #efbf00;
+  --student-action-text: #00296b;
+}
+:is(#studentCsvActions, #instructorStudentCsvActions) > a {
+  --student-action-bg: #edf5ff;
+  --student-action-border: #a4c6ec;
+  --student-action-text: #004a91;
+}
+#importStudentsCsvBtn {
+  --student-action-bg: #e8f7ee;
+  --student-action-border: #9fd4b4;
+  --student-action-text: #17623b;
+}
+:is(#toggleArchivedStudentsBtn, #instructorToggleArchivedStudentsBtn) {
+  --student-action-bg: #f2edff;
+  --student-action-border: #c7b8eb;
+  --student-action-text: #593b8a;
+}
+
+html body:has(#studentsCsvFile) :is(#studentsCard, #instructorStudentsListPanel) :is(
+  #openAddStudentBtn, #instructorOpenAddStudentBtn,
+  #studentCsvActions > a, #instructorStudentCsvActions > a,
+  #importStudentsCsvBtn, #toggleArchivedStudentsBtn, #instructorToggleArchivedStudentsBtn
+):hover {
+  filter: brightness(0.96);
+}
+
+html body:has(#studentsCsvFile) :is(#studentsCard, #instructorStudentsListPanel) :is(
+  #openAddStudentBtn, #instructorOpenAddStudentBtn,
+  #studentCsvActions > a, #instructorStudentCsvActions > a,
+  #importStudentsCsvBtn, #toggleArchivedStudentsBtn, #instructorToggleArchivedStudentsBtn
+):focus-visible {
+  outline: 3px solid #4682b4 !important;
+  outline-offset: 3px !important;
+}
