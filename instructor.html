@@ -1889,7 +1889,7 @@
     <script src="assets/js/admin-student-import.js?v=20261111-popup-2"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <link rel="stylesheet" href="assets/css/pages/instructor-directory-enlarge.css?v=20261112-review-body-centered-7" />
-    <link rel="stylesheet" href="assets/css/components/student-management-actions.css?v=20261116-3" />
+    <link rel="stylesheet" href="assets/css/components/student-management-actions.css?v=20261116-5" />
     <script src="assets/js/instructor-activity.js?v=20260928-comment-label-1"></script>
     <script>
       (() => {
@@ -6183,7 +6183,7 @@
             <td>${escapeHtml(s.contact_number || "")}</td>
             <td class="action-cell">
               <button class="mini-btn" type="button" data-student-action="edit" data-id="${escapeHtml(s.student_id || "")}"><i class="fas fa-pen" aria-hidden="true"></i> Edit</button>
-              <button class="mini-btn danger" type="button" data-student-action="archive" data-id="${escapeHtml(s.student_id || "")}"><i class="fas fa-box-archive" aria-hidden="true"></i> Archive</button>
+              <button class="mini-btn student-archive-action" type="button" data-student-action="archive" data-id="${escapeHtml(s.student_id || "")}"><i class="fas fa-archive" aria-hidden="true"></i> Archive</button>
             </td>
           `;
           instructorBlockStudentsTbody.appendChild(tr);

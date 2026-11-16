@@ -1,6 +1,6 @@
 /* Student-row Archive buttons only; leave toolbar and other actions unchanged. */
 html body.role-admin:has(#studentsCard) #studentsCard #studentsTbody button.mini-btn[data-action="archive"],
-html body.role-instructor #instructorStudentsListPanel button.mini-btn[data-student-action="archive"] {
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table button.mini-btn[data-student-action="archive"] {
   background: #4682b4 !important;
   border-color: #4682b4 !important;
   color: #ffffff !important;
@@ -8,7 +8,7 @@ html body.role-instructor #instructorStudentsListPanel button.mini-btn[data-stud
 }
 
 html body.role-admin:has(#studentsCard) #studentsCard #studentsTbody button.mini-btn[data-action="archive"]:hover,
-html body.role-instructor #instructorStudentsListPanel button.mini-btn[data-student-action="archive"]:hover {
+html body.role-instructor #students-view #instructorStudentsListPanel #instructor-block-students-table button.mini-btn[data-student-action="archive"]:hover {
   background: #356a92 !important;
   border-color: #356a92 !important;
 }
