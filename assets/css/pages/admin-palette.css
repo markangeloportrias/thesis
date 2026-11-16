@@ -4946,7 +4946,7 @@ html body.role-admin .sidebar #adminLogoutBtn:hover {
   color: #ffffff !important;
 }
 /* Match the instructor Edit Requests typography and control dimensions. */
-html body.role-admin #editRequestsCard #editRequestsTbody > tr > td {
+html body.role-admin:has(#editRequestsCard) #editRequestsCard #editRequestsTbody > tr > td {
   height: 52px !important;
   min-height: 52px !important;
   padding: 8px 16px !important;
@@ -4955,7 +4955,7 @@ html body.role-admin #editRequestsCard #editRequestsTbody > tr > td {
   font-weight: 500 !important;
 }
 
-html body.role-admin #editRequestsCard table thead th {
+html body.role-admin:has(#editRequestsCard) #editRequestsCard table:has(#editRequestsTbody) thead th {
   height: 42px !important;
   min-height: 42px !important;
   padding: 0 16px !important;
@@ -4965,7 +4965,7 @@ html body.role-admin #editRequestsCard table thead th {
   font-weight: 700 !important;
 }
 
-html body.role-admin #editRequestsCard #editRequestsTbody > tr > td.action-cell .mini-btn {
+html body.role-admin:has(#editRequestsCard) #editRequestsCard #editRequestsTbody > tr > td.action-cell .mini-btn {
   min-height: 32px !important;
   height: 32px !important;
   padding: 0 12px !important;
@@ -4975,7 +4975,7 @@ html body.role-admin #editRequestsCard #editRequestsTbody > tr > td.action-cell 
   font-weight: 700 !important;
 }
 
-html body.role-admin #editRequestsCard #editRequestsTbody .edit-request-status {
+html body.role-admin:has(#editRequestsCard) #editRequestsCard #editRequestsTbody .edit-request-status {
   min-height: 24px !important;
   height: 24px !important;
   padding: 0 10px !important;
@@ -4998,6 +4998,20 @@ html body.role-admin #editRequestsCard #refreshEditRequestsBtn {
   font-size: 11px !important;
 }
 
-html body.role-admin #editRequestsCard .workspace-title {
+html body.role-admin:has(#editRequestsCard) #editRequestsCard .workspace-title {
   font-size: 18px !important;
+}
+
+html body.role-admin:has(#editRequestsCard) #editRequestsCard #editRequestsTbody > tr {
+  height: 52px !important;
+  min-height: 52px !important;
+}
+
+html body.role-admin:has(#editRequestsCard) #editRequestsCard .workspace-subtitle {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+html body.role-admin:has(#editRequestsCard) #editRequestsCard {
+  padding: 20px !important;
 }
