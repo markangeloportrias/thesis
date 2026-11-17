@@ -4582,7 +4582,7 @@
       }
 
       function buildInstructorAnnualXlsx(yearLabel, records, selectedProcedure = "all") {
-        const headers = ["No.", "Academic Year", "Student ID", "Student Name", "Procedure", "Patient Name", "Patient Address", "Case No.", "Complete Diagnosis", "Date & Time Performed", "Facility Name", "Facility Address", "Facility Contact Number", "Supervisor Printed Name", "Supervisor Contact Number", "Supervisor Position / Designation", "Supervisor License No.", "Supervisor License Expiry Date", "Checked By"];
+        const headers = ["No.", "Academic Year", "Student ID", "Student Name", "Procedure", "Patient Name", "Patient Address", "Case No.", "Complete Diagnosis", "Date & Time Performed", "Facility Name", "Facility Address", "Facility Contact Number", "Supervisor Printed Name", "Supervisor Contact Number", "Supervisor Position / Designation", "Supervisor License No.", "Supervisor License Expiry Date", "Assigned Instructor"];
         const procedureBlocks = [
           { key: "delivery-handled", rows: 20 },
           { key: "delivery-assisted", rows: 10 },
@@ -4624,7 +4624,7 @@
             ["Student ID", first.student_id || ""],
             ["Student Name", first.student_name || ""],
             ...studentRecords.map((record, index) => [
-              index + 1, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
+              index + 1, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, (String(record.instructor_name || "").trim() || "Not assigned"),
             ]),
           ];
           const columns = headers.map((_, columnIndex) => {
@@ -4638,7 +4638,7 @@
             );
             const rows = procedureRecords.map((record) => {
               return row([
-                recordNumber++, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
+                recordNumber++, record.academic_year || record.school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, (String(record.instructor_name || "").trim() || "Not assigned"),
               ]);
             });
             return rows;
