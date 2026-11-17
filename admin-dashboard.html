@@ -5493,7 +5493,7 @@
           .replace(/\r?\n/g, "&#10;");
       }
 
-      function buildAdminAnnualXlsx(yearLabel, records) {
+      function buildAdminAnnualXlsx(yearLabel, records, selectedProcedure = "all") {
         const headers = ["No.", "Academic Year", "Student ID", "Student Name", "Procedure", "Patient Name", "Patient Address", "Case No.", "Complete Diagnosis", "Date & Time Performed", "Facility Name", "Facility Address", "Facility Contact Number", "Supervisor Printed Name", "Supervisor Contact Number", "Supervisor Position / Designation", "Supervisor License No.", "Supervisor License Expiry Date", "Checked By"];
         const procedureBlocks = [
           { key: "delivery-handled", rows: 20 },
@@ -5501,7 +5501,7 @@
           { key: "suturing", rows: 5 },
           { key: "iv-insertion", rows: 5 },
           { key: "internal-exam", rows: 20 },
-        ];
+        ].filter((block) => selectedProcedure === "all" || block.key === selectedProcedure);
         const grouped = new Map();
         records.forEach((record) => {
           const key = String(record.student_id || record.student_name || "Unknown Student").trim() || "Unknown Student";
@@ -5576,24 +5576,61 @@
         return new Blob([createZipBlob(files)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       }
 
+      function chooseAdminAnnualExportProcedure(yearLabel) {
+        return new Promise((resolve) => {
+          const dialog = document.createElement("dialog");
+          dialog.style.cssText = "border:1px solid #cbdcf0;border-radius:16px;padding:28px;width:min(460px,90vw);color:#00296b;box-shadow:0 16px 60px #00296b33";
+          dialog.setAttribute("aria-labelledby", "adminAnnualExportTitle");
+          dialog.innerHTML = `
+            <form method="dialog">
+              <h3 id="adminAnnualExportTitle" style="margin:0 0 12px">Download Annual Records</h3>
+              <p>Academic year ${escapeHtml(yearLabel)}. Only verified records will be downloaded.</p>
+              <label for="adminAnnualExportProcedure">Records to include</label>
+              <select id="adminAnnualExportProcedure" style="display:block;width:100%;margin:10px 0 24px;padding:12px;border:1px solid #b8cde8;border-radius:8px">
+                <option value="all">All Records</option>
+                <option value="delivery-handled">Delivery Handled</option>
+                <option value="delivery-assisted">Delivery Assisted</option>
+                <option value="suturing">Perineal Suturing</option>
+                <option value="iv-insertion">IV Insertion</option>
+                <option value="internal-exam">Internal Examination</option>
+              </select>
+              <div style="display:flex;justify-content:flex-end;gap:10px">
+                <button class="btn btn-secondary" value="cancel">Cancel</button>
+                <button class="btn btn-primary" value="download">Download</button>
+              </div>
+            </form>`;
+          dialog.addEventListener("close", () => {
+            const selection = dialog.returnValue === "download" ? dialog.querySelector("select").value : null;
+            dialog.remove();
+            resolve(selection);
+          }, { once: true });
+          document.body.appendChild(dialog);
+          dialog.showModal();
+          dialog.querySelector("select").focus();
+        });
+      }
+
       async function exportAdminAnnualYearToExcel(yearLabel, button) {
         if (!yearLabel) return;
         if (button) button.disabled = true;
         try {
+          const selectedProcedure = await chooseAdminAnnualExportProcedure(yearLabel);
+          if (!selectedProcedure) return;
           const result = await ApiClient.getJoinedCases("", "", "");
           const records = Array.isArray(result) ? result : [];
           const yearRecords = records.filter((record) =>
-            String(record.record_status || record.status || "").trim().toLowerCase() === "verified" && recordMatchesSchoolYear(record, yearLabel),
+            String(record.record_status || record.status || "").trim().toLowerCase() === "verified" && recordMatchesSchoolYear(record, yearLabel) &&
+            (selectedProcedure === "all" || normalizeProcedureKey(record.procedure_key || record.procedure_name) === selectedProcedure),
           );
 
           if (!yearRecords.length) {
-            showMessageDialog(`No clinical records are available for academic year ${yearLabel}.`, "No Records");
+            showMessageDialog(`No verified records match your selection for academic year ${yearLabel}.`, "No Records");
             return;
           }
 
-          const blob = buildAdminAnnualXlsx(yearLabel, yearRecords);
+          const blob = buildAdminAnnualXlsx(yearLabel, yearRecords, selectedProcedure);
           downloadBlobFile(
-            `annual-records-${String(yearLabel).replace(/[^a-z0-9]+/gi, "-")}.xlsx`,
+            `annual-records-${String(yearLabel).replace(/[^a-z0-9]+/gi, "-")}${selectedProcedure === "all" ? "" : `-${selectedProcedure}`}.xlsx`,
             blob,
           );
         } catch (error) {
