@@ -785,17 +785,25 @@
       }
     </style>
     <style>
+      html body.role-instructor #yearly-report-view #yearlyYearPanel table:has(#yearlyYearsTbody) thead th:last-child,
       html body.role-instructor #yearly-report-view #yearlyYearPanel #yearlyYearsTbody td.action-cell {
+        box-sizing: border-box !important;
+        width: 200px !important;
+        min-width: 200px !important;
+        text-align: center !important;
         padding-left: 16px !important;
         padding-right: 20px !important;
       }
       html body.role-instructor #yearly-report-view #yearlyYearPanel #yearlyYearsTbody .yearly-year-actions {
         left: 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
         justify-content: center !important;
         gap: 6px !important;
       }
       html body.role-instructor #yearly-report-view #yearlyYearPanel #yearlyYearsTbody .yearly-year-actions > button {
         width: auto !important;
+        flex: 0 0 auto !important;
         margin: 0 !important;
       }
     </style>
