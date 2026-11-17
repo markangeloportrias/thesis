@@ -5544,20 +5544,16 @@
             const longest = Math.max(...columnValues.map((values) => String(values[columnIndex] ?? "").split(/\r?\n/).reduce((length, line) => Math.max(length, line.length), 0)));
             return `<col min="${columnIndex + 1}" max="${columnIndex + 1}" width="${Math.min(50, Math.max(10, longest + 2))}" bestFit="1" customWidth="1"/>`;
           }).join("");
-          const blankRow = Array(headers.length).fill("");
           let recordNumber = 1;
-          const dataRows = procedureBlocks.flatMap((block, blockIndex) => {
+          const dataRows = procedureBlocks.flatMap((block) => {
             const procedureRecords = studentRecords.filter((record) =>
               normalizeProcedureKey(record.procedure_key || record.procedure_name) === block.key,
             );
-            const reservedRows = Math.max(block.rows, procedureRecords.length);
-            const rows = Array.from({ length: reservedRows }, (_, index) => {
-              const record = procedureRecords[index];
-              return row(record ? [
+            const rows = procedureRecords.map((record) => {
+              return row([
                 recordNumber++, record.academic_year || record.school_year || record.assigned_school_year || yearLabel, record.student_id, record.student_name, record.procedure_name || record.procedure_key, record.patient_name, record.patient_address, record.case_no, record.complete_diagnosis, record.date_time_performed, record.facility_name, record.facility_address, record.facility_contact_number, record.supervisor_printed_name, record.supervisor_contact_number, record.supervisor_position_designation, record.supervisor_license_no, record.supervisor_license_expiry_date, record.checked_by,
-              ] : blankRow);
+              ]);
             });
-            if (blockIndex < procedureBlocks.length - 1) rows.push(...Array.from({ length: 5 }, () => row(blankRow)));
             return rows;
           }).join("");
           return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>${columns}</cols><sheetData>${row(["Student ID", first.student_id || ""])}${row(["Student Name", first.student_name || ""])}${row([])}${row(headers)}${dataRows}</sheetData></worksheet>`;
