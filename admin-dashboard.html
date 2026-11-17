@@ -3442,9 +3442,9 @@
         optionPaneMessage.innerHTML = `
           <form class="admin-settings-edit-form" id="studentEditForm">
             <label>Student name<input name="studentName" type="text" value="${escapeHtml(target.student_name || "")}" autocomplete="name" required></label>
-            <label>Parent/Guardian name<input name="parentName" type="text" value="${escapeHtml(target.parent_name || "")}" autocomplete="name" required></label>
-          <label>Contact number<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
-            <label>Parent/Guardian contact<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
+            <label>Parent/Guardian name (optional)<input name="parentName" type="text" value="${escapeHtml(target.parent_name || "")}" autocomplete="name"></label>
+          <label>Contact number (optional)<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
+            <label>Parent/Guardian contact (optional)<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
             <div><button type="button" class="btn btn-secondary" id="resetStudentPasswordBtn"><i class="fas fa-key" aria-hidden="true"></i> Reset Password</button></div>
           </form>`;
         document.getElementById("resetStudentPasswordBtn").addEventListener("click", (event) => {
@@ -3457,8 +3457,8 @@
         const nextParent = form?.querySelector("[name='parentName']")?.value.trim() || "";
         const nextContact = form?.querySelector("[name='contactNumber']")?.value.trim() || "";
         const nextParentContact = form?.querySelector("[name='parentContact']")?.value.trim() || "";
-        if (!nextName || !nextParent) {
-          showStudentsNavMessage("Student and parent names are required.", "error");
+        if (!nextName) {
+          showStudentsNavMessage("Student name is required.", "error");
           return;
         }
         const invalidContact = [

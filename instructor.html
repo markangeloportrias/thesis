@@ -6327,19 +6327,19 @@
             {
               id: "instructorModalEditStudentParent",
               key: "parent_name",
-              label: "Parent/Guardian",
+              label: "Parent/Guardian (optional)",
               value: target.parent_name || "",
             },
             {
               id: "instructorModalEditStudentContact",
               key: "contact_number",
-              label: "Contact",
+              label: "Contact (optional)",
               value: target.contact_number || "",
             },
             {
               id: "instructorModalEditStudentParentContact",
               key: "parent_contact",
-              label: "Parent/Guardian Contact",
+              label: "Parent/Guardian Contact (optional)",
               placeholder: "11-digit contact number",
               value: target.parent_contact || "",
             },
@@ -6348,13 +6348,7 @@
             if (!values.student_name) {
               return { ok: false, message: "Enter the student's full name." };
             }
-            if (!values.parent_name) {
-              return { ok: false, message: "Enter the parent or guardian name." };
-            }
-            if (!values.contact_number) {
-              return { ok: false, message: "Enter the student's contact number." };
-            }
-            if (!/^\d{11}$/.test(values.contact_number)) {
+            if (values.contact_number && !/^\d{11}$/.test(values.contact_number)) {
               return { ok: false, message: "Contact number must contain exactly 11 digits." };
             }
             if (values.parent_contact && !/^\d{11}$/.test(values.parent_contact)) {
