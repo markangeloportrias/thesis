@@ -78,6 +78,7 @@
     <link rel="stylesheet" href="assets/css/components/manage-students-summary.css?v=2" />
     <script src="assets/js/manage-students-summary.js?v=2"></script>
     <link rel="stylesheet" href="assets/css/components/student-management-actions.css?v=20261116-4" />
+    <link rel="stylesheet" href="assets/css/components/annual-export-dialog.css?v=20261117-1" />
   </head>
   <body>
     <div class="mobile-access-block" role="alert"><div class="mobile-access-block__content"><div class="mobile-access-block__icon"><i class="fas fa-desktop" aria-hidden="true"></i></div><h1>Desktop access only</h1><p>Please use a desktop or laptop computer to access the Clinical Portal.</p></div></div>
@@ -5579,7 +5580,7 @@
       function chooseAdminAnnualExportProcedure(yearLabel) {
         return new Promise((resolve) => {
           const dialog = document.createElement("dialog");
-          dialog.style.cssText = "position:fixed;inset:0;margin:auto;box-sizing:border-box;height:fit-content;max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid #cbdcf0;border-radius:16px;padding:28px;width:min(460px,90vw);color:#00296b;box-shadow:0 16px 60px #00296b33";
+          dialog.className = "annual-export-dialog";
           dialog.setAttribute("aria-labelledby", "adminAnnualExportTitle");
           dialog.innerHTML = `
             <form method="dialog">

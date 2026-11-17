@@ -1,0 +1,52 @@
+/* Shared only by the Admin and Instructor annual download filters. */
+dialog.annual-export-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  width: min(460px, 90vw);
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, .85);
+  border-radius: 20px;
+  color: #00296b;
+  background: rgba(245, 250, 255, .92);
+  box-shadow: 0 24px 70px rgba(0, 41, 107, .26), inset 0 1px 0 #fff;
+}
+
+dialog.annual-export-dialog::backdrop {
+  background: rgba(15, 35, 65, .3);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  dialog.annual-export-dialog {
+    background: linear-gradient(135deg, rgba(255, 255, 255, .88), rgba(230, 242, 255, .76));
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+dialog.annual-export-dialog p {
+  color: #304d70;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+dialog.annual-export-dialog select {
+  background-color: rgba(255, 255, 255, .8) !important;
+  color: #00296b !important;
+}
+
+dialog.annual-export-dialog select option {
+  background: #fff;
+  color: #00296b;
+}
+
+dialog.annual-export-dialog select:focus-visible {
+  outline: 2px solid #4682b4;
+  outline-offset: 2px;
+}
