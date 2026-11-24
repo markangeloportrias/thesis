@@ -94,19 +94,23 @@ handoff does not guarantee inbox delivery. Transport failures are logged in the
 server PHP error log without exposing reset tokens.
 
 Admins register the recovery email when adding or editing an instructor. It is
-only returned to admins, and changing it invalidates outstanding reset links.
-`email_verified_at` stays NULL until the owner successfully uses an emailed link;
+only returned to admins, and changing it invalidates outstanding recovery codes.
+`email_verified_at` stays NULL until the owner completes a password reset;
 prior verification is not required for an admin-registered address. Existing
 accounts continue to sign in without an email, but cannot recover by email until
 an admin registers one. Duplicate recovery addresses are rejected.
 
-Instructor login includes Forgot Password. Active accounts can request a
-single-use link valid for 30 minutes. The database stores only its SHA-256 hash.
-Requests have an IP limit and an account cooldown, and registered/unregistered
-addresses receive the same public response. Completing a reset changes the
-hashed password, consumes outstanding links, and revokes instructor sessions.
+Instructor login includes Forgot Password: enter email, enter the emailed
+8-digit code, then choose a new password. Codes expire in 10 minutes. Verifying
+a code consumes it and grants 10 minutes to finish resetting the password.
+The existing token_hash column stores a hash of the code, then a hash of the
+reset permission. No additional SQL migration is needed. Requests have an IP
+limit, an account cooldown, and at most five code attempts per account in a
+15-minute window across all IPs. Registered/unregistered addresses receive the
+same public response. Completing a reset changes the hashed password, consumes
+outstanding reset permissions, and revokes instructor sessions.
 
-Deployment check: register a test instructor email, request a link, open it,
+Deployment check: register a test instructor email, request a code, verify it,
 reset the password, confirm old-password login fails and new-password login
-works, then confirm that reusing the same link is rejected. Also check expired
-links and changing the recovery email before using a previously issued link.
+works, then confirm that reusing the code is rejected. Also check expired
+codes and changing the recovery email before using a previously issued code.

@@ -2987,6 +2987,10 @@
     try { return await mysqlRequest('auth/instructor-reset-password', { method: 'POST', body: JSON.stringify({token: token, password: password}) }); }
     catch (error) { return {ok: false, message: error.message}; }
   };
+  ApiClient.verifyInstructorRecoveryCode = async function (email, code) {
+    try { return await mysqlRequest('auth/instructor-verify-code', { method: 'POST', body: JSON.stringify({email: email, code: code}) }); }
+    catch (error) { return {ok: false, message: error.message}; }
+  };
   ApiClient.setInstructorStatus = async function (accountId, status) {
     var next=normalize(status).toLowerCase();
     if (next!=='active'&&next!=='inactive') return {ok:false,message:'Invalid instructor status.'};

@@ -28,6 +28,10 @@ vm.runInContext(source.slice(start, source.indexOf('  ApiClient.setInstructorSta
   assert.equal(calls[3].path, 'auth/instructor-reset-password');
   assert.equal(calls[3].body.token, token);
   assert.equal(calls[3].body.password, 'NewPassword123');
+  await context.ApiClient.verifyInstructorRecoveryCode('teacher@example.com', '00123456');
+  assert.equal(calls[4].path, 'auth/instructor-verify-code');
+  assert.equal(calls[4].body.email, 'teacher@example.com');
+  assert.equal(calls[4].body.code, '00123456');
   failure = true;
   const result = await context.ApiClient.requestInstructorPasswordReset('teacher@example.com');
   assert.equal(result.ok, false);

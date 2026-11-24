@@ -16,6 +16,11 @@
           <input id="instructorRecoveryEmail" type="email" autocomplete="email" maxlength="254" placeholder=" " required>
           <label for="instructorRecoveryEmail">Recovery Email</label>
         </div></div>
+        <div class="input-container recovery-code" hidden><div class="input-field-wrapper">
+          <i class="fas fa-key input-icon" aria-hidden="true"></i>
+          <input id="instructorRecoveryCode" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" minlength="8" maxlength="8" placeholder=" ">
+          <label for="instructorRecoveryCode">8-digit Recovery Code</label>
+        </div></div>
         <div class="recovery-passwords" hidden>
           <div class="input-container"><div class="input-field-wrapper">
             <i class="fas fa-lock input-icon" aria-hidden="true"></i>
@@ -29,35 +34,49 @@
           </div></div>
         </div>
         <p class="message" role="status" aria-live="polite" hidden></p>
-        <button type="submit" class="btn btn-primary modal-btn">Send Reset Link</button>
+        <button type="submit" class="btn btn-primary modal-btn">Send Recovery Code</button>
+        <button type="button" class="btn modal-btn recovery-restart" hidden>Request another code</button>
       </form>
     </section>`;
   document.body.appendChild(overlay);
   const form = overlay.querySelector('form');
   const email = overlay.querySelector('input[type=email]');
+  const code = overlay.querySelector('#instructorRecoveryCode');
+  const restart = overlay.querySelector('.recovery-restart');
   const password = overlay.querySelector('#instructorRecoveryPassword');
   const confirm = overlay.querySelector('#instructorRecoveryConfirm');
   const submit = overlay.querySelector('[type=submit]');
   const message = overlay.querySelector('[role=status]');
   let token = '';
   let busy = false;
+  let step = 'email';
+  function showStep(next) {
+    step = next;
+    const titles = {email: 'Forgot Instructor Password', code: 'Verify Recovery Code', password: 'Reset Instructor Password', done: 'Password Reset Complete'};
+    const descriptions = {email: 'Enter the recovery email registered by your administrator.', code: 'Enter the 8-digit code sent to ' + email.value.trim() + '. It expires in 10 minutes.', password: 'Code verified. Choose a new password with at least 8 characters.', done: 'You can now sign in to your instructor account with your new password.'};
+    overlay.querySelector('h2').textContent = titles[step];
+    overlay.querySelector('.recovery-description').textContent = descriptions[step];
+    overlay.querySelector('.recovery-email').hidden = step !== 'email';
+    email.disabled = step !== 'email';
+    overlay.querySelector('.recovery-code').hidden = step !== 'code';
+    code.disabled = step !== 'code';
+    code.required = step === 'code';
+    overlay.querySelector('.recovery-passwords').hidden = step !== 'password';
+    password.disabled = confirm.disabled = step !== 'password';
+    password.required = confirm.required = step === 'password';
+    submit.textContent = {email:'Send Recovery Code',code:'Verify Code',password:'Reset Password',done:'Back to Sign In'}[step];
+    submit.disabled = false;
+    restart.hidden = step === 'email' || step === 'done';
+    ({email, code, password, done:submit}[step]).focus();
+  }
   function open(resetToken = '') {
     token = resetToken;
     form.reset();
     message.hidden = true;
     message.style.display = 'none';
-    overlay.querySelector('h2').textContent = token ? 'Reset Instructor Password' : 'Forgot Instructor Password';
-    overlay.querySelector('.recovery-description').textContent = token ? 'Choose a new password with at least 8 characters (maximum 72 bytes).' : 'Enter the recovery email registered by your administrator.';
-    overlay.querySelector('.recovery-email').hidden = !!token;
-    email.disabled = !!token;
-    overlay.querySelector('.recovery-passwords').hidden = !token;
-    password.required = confirm.required = !!token;
-    password.disabled = confirm.disabled = !token;
-    submit.disabled = false;
-    submit.textContent = token ? 'Reset Password' : 'Send Reset Link';
     document.getElementById('instructorModal').classList.remove('active');
     overlay.classList.add('active');
-    (token ? password : email).focus();
+    showStep(token ? 'password' : 'email');
   }
   function close() {
     if (busy) return;
@@ -68,6 +87,14 @@
     document.getElementById('instructorUsernameInput').focus();
   }
   link.addEventListener('click', event => { event.preventDefault(); open(); });
+  restart.addEventListener('click', () => {
+    if (busy) return;
+    token = '';
+    code.value = password.value = confirm.value = '';
+    message.hidden = true;
+    message.style.display = 'none';
+    showStep('email');
+  });
   overlay.querySelector('.modal-close').addEventListener('click', close);
   overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
   overlay.addEventListener('keydown', event => {
@@ -82,6 +109,7 @@
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
+    if (step === 'done') { close(); return; }
     message.hidden = false;
     message.style.display = 'block';
     message.className = 'message error';
@@ -91,15 +119,25 @@
     submit.disabled = true;
     message.textContent = token ? 'Resetting password…' : 'Sending request…';
     try {
-      const result = token
+      const result = step === 'password'
         ? await ApiClient.resetInstructorPassword(token, password.value)
-        : await ApiClient.requestInstructorPasswordReset(email.value.trim());
+        : step === 'code'
+          ? await ApiClient.verifyInstructorRecoveryCode(email.value.trim(), code.value.trim())
+          : await ApiClient.requestInstructorPasswordReset(email.value.trim());
       message.textContent = result.message || 'Unable to complete the request. Please try again.';
       message.className = result.ok ? 'message success' : 'message error';
       if (result.ok) {
-        token = '';
-        form.reset();
-        submit.textContent = 'Request Complete';
+        if (step === 'email') showStep('code');
+        else if (step === 'code') {
+          if (!/^[a-f0-9]{64}$/.test(result.token || '')) throw new Error('Invalid reset response');
+          token = result.token;
+          code.value = '';
+          showStep('password');
+        } else {
+          token = '';
+          form.reset();
+          showStep('done');
+        }
       } else submit.disabled = false;
     } catch (_) {
       message.textContent = 'Unable to connect. Please try again.';
@@ -111,6 +149,6 @@
     const resetToken = hash.get('instructor-reset');
     history.replaceState(null, '', location.pathname + location.search);
     if (/^[a-f0-9]{64}$/.test(resetToken)) open(resetToken);
-    else { open(); message.hidden = false; message.style.display = 'block'; message.textContent = 'Invalid reset link. Request a new link below.'; }
+    else { open(); message.hidden = false; message.style.display = 'block'; message.textContent = 'Invalid reset link. Request a recovery code below.'; }
   }
 })();

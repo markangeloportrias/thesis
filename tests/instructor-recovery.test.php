@@ -33,7 +33,8 @@ function requestRecovery(string $action, array $data, int $expected=200, ?callab
     throw new RuntimeException('No response');
 }
 function clearLimits(): void { global $pdo; $pdo->exec('DELETE FROM auth_login_attempts'); }
-function lastToken(): string { global $mail; preg_match('/#instructor-reset=([a-f0-9]{64})/', end($mail)['body'], $match); return $match[1]; }
+function lastCode(): string { global $mail; preg_match('/recovery code is: ([0-9]{8})/', end($mail)['body'], $match); return $match[1]; }
+function lastToken(): string { return requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>lastCode()])['token']; }
 $_SERVER['REMOTE_ADDR']='127.0.0.1';
 $pdo->prepare("INSERT INTO instructor_accounts (account_uid,email,password,status) VALUES ('test','teacher@example.com',?,'active')")->execute([password_hash('Old-password-123',PASSWORD_DEFAULT)]);
 $pdo->exec("INSERT INTO api_sessions VALUES ('instructor','test',NULL),('student','test',NULL)");
@@ -42,7 +43,11 @@ $unknown=requestRecovery('instructor-forgot-password',['email'=>'unknown@example
 $known=requestRecovery('instructor-forgot-password',['email'=>' TEACHER@example.com ']);
 check($known===$unknown,'Account enumeration response');
 check(count($mail)===1,'Exactly one mail');
+check($pdo->query('SELECT token_hash FROM instructor_password_resets')->fetchColumn()===instructorRecoveryCodeHash('test',lastCode()),'Only code hash stored');
+$wrongCode=lastCode()==='00000000'?'11111111':'00000000';
+requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>$wrongCode],422);
 $token=lastToken();
+requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>lastCode()],422);
 check($pdo->query('SELECT token_hash FROM instructor_password_resets')->fetchColumn()===hash('sha256',$token),'Only hashed token stored');
 requestRecovery('instructor-forgot-password',['email'=>'teacher@example.com']);
 check(count($mail)===1,'Cooldown blocks repeat mail');
@@ -74,5 +79,20 @@ check((int)$pdo->query('SELECT COUNT(*) FROM instructor_password_resets')->fetch
 clearLimits();
 for ($i=0;$i<5;$i++) requestRecovery('instructor-forgot-password',['email'=>'unknown@example.com']);
 requestRecovery('instructor-forgot-password',['email'=>'different@example.com'],429);
+clearLimits();
+$pdo->exec('UPDATE instructor_password_resets SET created_at=DATE_SUB(NOW(),INTERVAL 3 MINUTE)');
+requestRecovery('instructor-forgot-password',['email'=>'teacher@example.com']);
+$code=lastCode();
+$pdo->exec('UPDATE instructor_password_resets SET expires_at=DATE_SUB(NOW(),INTERVAL 1 MINUTE)');
+requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>$code],422);
+clearLimits();
+$pdo->exec('UPDATE instructor_password_resets SET expires_at=DATE_ADD(NOW(),INTERVAL 10 MINUTE)');
+$wrongCode=$code==='00000000'?'11111111':'00000000';
+for ($i=0;$i<5;$i++) {
+    $_SERVER['REMOTE_ADDR']='127.0.0.'.($i+2);
+    requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>$wrongCode],422);
+}
+$_SERVER['REMOTE_ADDR']='127.0.0.9';
+requestRecovery('instructor-verify-code',['email'=>'teacher@example.com','code'=>$code],429);
 check(instructorRecoveryPassword(str_repeat('a',72)) && !instructorRecoveryPassword(str_repeat('a',73)), 'Bcrypt length boundary');
-echo "Instructor recovery tests passed: issuance, privacy, cooldown, hashing, reset, replay, expiry, sessions, inactive accounts, mail failure, throttling.\n";
+echo "Instructor recovery tests passed: emailed codes, code verification, replay prevention, expiry, account-wide attempt limit, reset, sessions, privacy, cooldown and mail failure.\n";

@@ -346,7 +346,7 @@ $data = input();
 
 try {
     if ($resource === 'health') respond(['ok' => true, 'service' => 'MIDWIFE Clinical Portal API']);
-    if ($resource === 'auth' && $method === 'POST' && $action === '' && in_array($id, ['instructor-forgot-password', 'instructor-reset-password'], true)) {
+    if ($resource === 'auth' && $method === 'POST' && $action === '' && in_array($id, ['instructor-forgot-password', 'instructor-verify-code', 'instructor-reset-password'], true)) {
         handleInstructorRecovery($pdo, $config, $id, $data);
     }
 
