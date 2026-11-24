@@ -5,6 +5,7 @@ require __DIR__ . '/record-validation.php';
 require __DIR__ . '/case-selection.php';
 require __DIR__ . '/block-identities.php';
 require __DIR__ . '/edit-permissions.php';
+require __DIR__ . '/instructor-recovery.php';
 
 function validateContactNumberInput($value, string $label = 'Contact number'): void
 {
@@ -345,6 +346,9 @@ $data = input();
 
 try {
     if ($resource === 'health') respond(['ok' => true, 'service' => 'MIDWIFE Clinical Portal API']);
+    if ($resource === 'auth' && $method === 'POST' && $action === '' && in_array($id, ['instructor-forgot-password', 'instructor-reset-password'], true)) {
+        handleInstructorRecovery($pdo, $config, $id, $data);
+    }
 
     if ($resource === 'backup') {
         $user = currentUser($pdo, ['admin']);
@@ -529,13 +533,21 @@ try {
         $currentPassword = (string)$data['current_password'];
         $newPassword = (string)$data['new_password'];
         if (!credentialIsStrong($newPassword, 6)) respond(['ok' => false, 'message' => 'New password must contain at least 6 characters.'], 422);
-        $credential = $pdo->prepare("SELECT password FROM instructor_accounts WHERE account_uid=? AND archived_at IS NULL AND status='active'");
+        $pdo->beginTransaction();
+        $credential = $pdo->prepare("SELECT password FROM instructor_accounts WHERE account_uid=? AND archived_at IS NULL AND status='active' FOR UPDATE");
         $credential->execute([$user['user_uid']]);
-        if (!passwordMatches($currentPassword, (string)$credential->fetchColumn())) respond(['ok' => false, 'message' => 'Current password is incorrect.'], 403);
+        if (!passwordMatches($currentPassword, (string)$credential->fetchColumn())) {
+            $pdo->rollBack();
+            respond(['ok' => false, 'message' => 'Current password is incorrect.'], 403);
+        }
         $update = $pdo->prepare("UPDATE instructor_accounts SET password=? WHERE account_uid=? AND archived_at IS NULL AND status='active'");
         $update->execute([password_hash($newPassword, PASSWORD_DEFAULT), $user['user_uid']]);
         $sessions = $pdo->prepare("UPDATE api_sessions SET revoked_at=NOW() WHERE role='instructor' AND user_uid=? AND token_hash<>? AND revoked_at IS NULL");
         $sessions->execute([$user['user_uid'], hash('sha256', bearerToken())]);
+        if (portalTableExists($pdo, 'instructor_password_resets')) {
+            $pdo->prepare('UPDATE instructor_password_resets SET used_at=NOW() WHERE instructor_uid=? AND used_at IS NULL')->execute([$user['user_uid']]);
+        }
+        $pdo->commit();
         audit($pdo, $user, 'change_password', 'instructor', (string)$user['user_uid']);
         respond(['ok' => true]);
     }
@@ -743,15 +755,22 @@ try {
                 ? 'account_uid AS id, username, display_name, status, created_at'
                 : 'account_uid AS id, username, display_name, contact_number, profile_photo, role_title AS role, status, archived_at, created_at';
             $rows = $pdo->query("SELECT $columns FROM instructor_accounts WHERE archived_at IS NULL ORDER BY display_name")->fetchAll();
+            if ($user['role'] === 'admin' && columnExists($pdo, 'instructor_accounts', 'email')) {
+                $emails = $pdo->query('SELECT account_uid,email FROM instructor_accounts')->fetchAll(PDO::FETCH_KEY_PAIR);
+                foreach ($rows as &$row) $row['email'] = $emails[$row['id']] ?? '';
+                unset($row);
+            }
             respond(['ok' => true, 'accounts' => $rows]);
         }
         if ($method === 'POST' && $id === '') {
             if ($user['role'] !== 'admin') respond(['ok'=>false,'message'=>'Access denied.'],403);
             requireFields($data, ['username', 'password', 'display_name']);
+            try { $email = instructorRecoveryEmail($data['email'] ?? ''); }
+            catch (InvalidArgumentException $error) { respond(['ok'=>false,'message'=>$error->getMessage()],422); }
             validateContactNumberInput($data['contact_number'] ?? null);
             $uid = 'ins_' . bin2hex(random_bytes(8));
-            $stmt = $pdo->prepare('INSERT INTO instructor_accounts (account_uid, username, password, display_name, contact_number, role_title) VALUES (?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$uid, $data['username'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['display_name'], $data['contact_number'] ?? null, $data['role'] ?? 'Clinical Instructor']);
+            $stmt = $pdo->prepare('INSERT INTO instructor_accounts (account_uid, username, password, display_name, contact_number, role_title, email) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$uid, $data['username'], password_hash((string)$data['password'], PASSWORD_DEFAULT), $data['display_name'], $data['contact_number'] ?? null, $data['role'] ?? 'Clinical Instructor', $email]);
             audit($pdo, $user, 'create', 'instructor', $uid);
             respond(['ok' => true, 'id' => $uid], 201);
         }
@@ -759,6 +778,13 @@ try {
             $fields=[];$params=[];
             if ($user['role'] === 'instructor' && $user['user_uid'] !== $id) respond(['ok'=>false,'message'=>'Access denied.'],403);
             if ($user['role'] === 'student') respond(['ok'=>false,'message'=>'Access denied.'],403);
+            $resetRecovery = $user['role'] === 'admin' && (array_key_exists('email', $data) || array_key_exists('status', $data) || !empty($data['password']));
+            if ($user['role'] === 'admin' && array_key_exists('email', $data)) {
+                try { $email = instructorRecoveryEmail($data['email']); }
+                catch (InvalidArgumentException $error) { respond(['ok'=>false,'message'=>$error->getMessage()],422); }
+                $fields[]='email=?'; $params[]=$email;
+                $fields[]='email_verified_at=NULL';
+            }
             $allowedFields = $user['role'] === 'admin'
                 ? ['username'=>'username','display_name'=>'display_name','contact_number'=>'contact_number','profile_photo'=>'profile_photo','role'=>'role_title','status'=>'status']
                 : ['contact_number'=>'contact_number','profile_photo'=>'profile_photo'];
@@ -768,7 +794,12 @@ try {
             }
             if ($user['role'] === 'admin' && !empty($data['password'])) {$fields[]='password=?';$params[]=password_hash((string)$data['password'],PASSWORD_DEFAULT);}
             if (!$fields) respond(['ok'=>false,'message'=>'No instructor changes supplied.'],422);
+            $pdo->beginTransaction();
             $params[]=$id;$stmt=$pdo->prepare('UPDATE instructor_accounts SET '.implode(',',$fields).' WHERE account_uid=? AND archived_at IS NULL');$stmt->execute($params);
+            if ($resetRecovery && portalTableExists($pdo, 'instructor_password_resets')) {
+                $pdo->prepare('UPDATE instructor_password_resets SET used_at=NOW() WHERE instructor_uid=? AND used_at IS NULL')->execute([$id]);
+            }
+            $pdo->commit();
             audit($pdo,$user,'update','instructor',$id);respond(['ok'=>$stmt->rowCount()>=0]);
         }
     }

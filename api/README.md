@@ -70,3 +70,43 @@ The API never accepts HTTP `DELETE`. Archive endpoints use
 the workflow supports it. Permanent removal is available only through
 role-protected `PATCH /api/{resource}/{id}/delete` actions, and only for
 records that are already archived.
+
+## Instructor email password recovery
+
+Apply the instructor email columns and password-reset table from `database/add.sql`
+once before using recovery or registering instructor emails. Do not re-import
+existing columns/tables. The student edit-request migration is independent.
+
+In GitHub repository Actions secrets, set:
+
+- `THESIS_MAIL_FROM`: a real sender mailbox on your hosted domain, for example
+  `noreply@your-domain.example`. Configure that mailbox/domain for sending on the host.
+- `THESIS_RECOVERY_LOGIN_URL`: the full HTTPS login page URL, for this deployment
+  `https://midwife.dcsbisu.com/login` (no query string or fragment).
+
+The existing deployment builds these values into the server-side PHP config.
+For a manual deployment, set the equivalent environment variables or the
+`instructor_recovery` values in `api/config.php`. Sending uses PHP `mail()`;
+the hosting account must have a working PHP mail transport. SMTP credentials
+are not used by this implementation. Confirm delivery to an actual instructor
+mailbox, including the spam folder, after deployment. A successful PHP mail
+handoff does not guarantee inbox delivery. Transport failures are logged in the
+server PHP error log without exposing reset tokens.
+
+Admins register the recovery email when adding or editing an instructor. It is
+only returned to admins, and changing it invalidates outstanding reset links.
+`email_verified_at` stays NULL until the owner successfully uses an emailed link;
+prior verification is not required for an admin-registered address. Existing
+accounts continue to sign in without an email, but cannot recover by email until
+an admin registers one. Duplicate recovery addresses are rejected.
+
+Instructor login includes Forgot Password. Active accounts can request a
+single-use link valid for 30 minutes. The database stores only its SHA-256 hash.
+Requests have an IP limit and an account cooldown, and registered/unregistered
+addresses receive the same public response. Completing a reset changes the
+hashed password, consumes outstanding links, and revokes instructor sessions.
+
+Deployment check: register a test instructor email, request a link, open it,
+reset the password, confirm old-password login fails and new-password login
+works, then confirm that reusing the same link is rejected. Also check expired
+links and changing the recovery email before using a previously issued link.

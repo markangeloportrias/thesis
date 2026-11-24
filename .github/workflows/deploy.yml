@@ -21,6 +21,8 @@ jobs:
       - name: Build database configuration from GitHub secret
         env:
           THESIS_DB_PASSWORD: ${{ secrets.THESIS_DB_PASSWORD }}
+          THESIS_MAIL_FROM: ${{ secrets.THESIS_MAIL_FROM }}
+          THESIS_RECOVERY_LOGIN_URL: ${{ secrets.THESIS_RECOVERY_LOGIN_URL }}
         run: |
           php <<'PHP'
           <?php

@@ -2971,13 +2971,21 @@
       }
     }
   };
-  ApiClient.createInstructorAccount = async function (username, password, displayName) {
-    try { return await mysqlRequest('instructors', { method: 'POST', body: JSON.stringify({ username: username, password: password, display_name: displayName }) }); }
+  ApiClient.createInstructorAccount = async function (username, password, displayName, email) {
+    try { return await mysqlRequest('instructors', { method: 'POST', body: JSON.stringify({ username: username, password: password, display_name: displayName, email: email }) }); }
     catch (error) { return { ok: false, message: error.message }; }
   };
   ApiClient.updateInstructorAccount = async function (accountId, payload) {
     try { return await mysqlRequest('instructors/' + encodeURIComponent(accountId), { method: 'PATCH', body: JSON.stringify(payload || {}) }); }
     catch (error) { return { ok: false, message: error.message }; }
+  };
+  ApiClient.requestInstructorPasswordReset = async function (email) {
+    try { return await mysqlRequest('auth/instructor-forgot-password', { method: 'POST', body: JSON.stringify({email: email}) }); }
+    catch (error) { return {ok: false, message: error.message}; }
+  };
+  ApiClient.resetInstructorPassword = async function (token, password) {
+    try { return await mysqlRequest('auth/instructor-reset-password', { method: 'POST', body: JSON.stringify({token: token, password: password}) }); }
+    catch (error) { return {ok: false, message: error.message}; }
   };
   ApiClient.setInstructorStatus = async function (accountId, status) {
     var next=normalize(status).toLowerCase();

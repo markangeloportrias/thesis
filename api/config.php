@@ -11,6 +11,11 @@ return [
         'password' => getenv('THESIS_DB_PASSWORD') ?: '',
     ],
     'session_hours' => 12,
+    // Configure these on the server or through the deployment secrets.
+    'instructor_recovery' => [
+        'login_url' => getenv('THESIS_RECOVERY_LOGIN_URL') ?: '',
+        'from_email' => getenv('THESIS_MAIL_FROM') ?: '',
+    ],
     // Leave empty for same-origin XAMPP use. Set this when the browser app is
     // hosted on a different trusted origin.
     'allowed_origin' => getenv('THESIS_ALLOWED_ORIGIN') ?: '',

@@ -1186,7 +1186,7 @@
     <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261016-first-load-icon-1"></script>
+    <script src="assets/js/api-client.js?v=20261123-instructor-recovery-1"></script>
     <script src="assets/js/admin-student-import.js?v=20261111-popup-2"></script>
     <script>
       (() => {
@@ -2338,7 +2338,9 @@
       async function addInstructorAccount(values) {
         const username = (values.username || "").trim();
         const displayName = (values.displayName || "").trim();
+        const email = (values.email || "").trim();
         const password = values.password || "";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Enter a valid recovery email." };
 
         if (!username || !password) {
           return {
@@ -2351,6 +2353,7 @@
             username,
             password,
             displayName || username,
+            email,
           );
           if (result && result.ok) {
             showInstructorMessage("Instructor account created.", "success");
@@ -2408,10 +2411,21 @@
               hint: "Only enter a password when you want to replace the current one.",
               key: "password",
             },
+            {
+              id: "editInstructorEmail",
+              label: "Recovery Email",
+              type: "email",
+              value: target.email || "",
+              placeholder: "instructor@example.com",
+              hint: "Password reset links will be sent to this email.",
+              key: "email",
+            },
           ],
           onSubmit: async (values) => {
             const username = String(values.username || "").trim();
             const displayName = String(values.displayName || "").trim();
+            const email = String(values.email || "").trim();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Enter a valid recovery email." };
             const password = String(values.password || "").trim();
             if (!username || !displayName) {
               return {
@@ -2420,6 +2434,7 @@
             }
 
             const changes = {};
+            if (email !== String(target.email || "").trim()) changes.email = email;
             if (username !== String(target.username || "").trim())
               changes.username = username;
             if (
@@ -2538,6 +2553,7 @@
             username: "fa-user",
             displayName: "fa-id-card",
             password: "fa-lock",
+            email: "fa-envelope",
           };
           icon.className = `fas ${field.icon || iconByKey[field.key] || "fa-pen"}`;
           leadingIcon.appendChild(icon);
@@ -6657,6 +6673,14 @@
               type: "password",
               placeholder: "Instructor password",
               key: "password",
+            },
+            {
+              id: "instructorEmail",
+              label: "Recovery Email",
+              type: "email",
+              placeholder: "instructor@example.com",
+              hint: "Password reset links will be sent to this email.",
+              key: "email",
             },
           ],
           onSubmit: addInstructorAccount,
