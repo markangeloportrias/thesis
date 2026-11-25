@@ -43,6 +43,23 @@
   document.body.appendChild(overlay);
   const form = overlay.querySelector('form');
   const email = overlay.querySelector('input[type=email]');
+  const errorDialog = document.createElement('dialog');
+  errorDialog.id = 'instructorRecoveryError';
+  errorDialog.setAttribute('aria-labelledby', 'recoveryErrorTitle');
+  errorDialog.setAttribute('aria-describedby', 'recoveryErrorText');
+  errorDialog.innerHTML = `
+    <div class="recovery-error-icon" aria-hidden="true"><i class="fas fa-exclamation-triangle"></i></div>
+    <h2 id="recoveryErrorTitle">Unable to send recovery code</h2>
+    <p id="recoveryErrorText"></p>
+    <button type="button" class="btn btn-primary">Try again</button>`;
+  document.body.appendChild(errorDialog);
+  errorDialog.querySelector('button').addEventListener('click', () => errorDialog.close());
+  errorDialog.addEventListener('close', () => email.focus());
+  function showRecoveryError(text) {
+    errorDialog.querySelector('p').textContent = text;
+    errorDialog.showModal();
+    errorDialog.querySelector('button').focus();
+  }
   const code = overlay.querySelector('#instructorRecoveryCode');
   const restart = overlay.querySelector('.recovery-restart');
   const password = overlay.querySelector('#instructorRecoveryPassword');
@@ -154,7 +171,7 @@
         }
       } else {
         submit.disabled = false;
-        if (step === 'email') window.alert(message.textContent);
+        if (step === 'email') showRecoveryError(message.textContent);
       }
     } catch (_) {
       message.textContent = 'Unable to connect. Please try again.';
