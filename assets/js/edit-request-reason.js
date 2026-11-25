@@ -52,10 +52,10 @@
   }
   window.EditRequestReason = {
     ask: () => panel('', true),
-    button(container, reason) {
+    button(container, reason, className = 'edit-reason-button') {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'edit-reason-button';
+      button.className = className;
       button.innerHTML = '<i class="fas fa-comment-alt" aria-hidden="true"></i> Reason';
       button.onclick = event => { event.stopPropagation(); panel(reason, false); };
       container.prepend(button);
