@@ -152,7 +152,10 @@
           form.reset();
           showStep('done');
         }
-      } else submit.disabled = false;
+      } else {
+        submit.disabled = false;
+        if (step === 'email') window.alert(message.textContent);
+      }
     } catch (_) {
       message.textContent = 'Unable to connect. Please try again.';
       submit.disabled = false;

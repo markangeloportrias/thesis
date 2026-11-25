@@ -60,6 +60,10 @@ function handleInstructorRecovery(PDO $pdo, array $config, string $action, array
         $account = $pdo->prepare("SELECT account_uid FROM instructor_accounts WHERE email=? AND status='active' AND archived_at IS NULL FOR UPDATE");
         $account->execute([$email]);
         $uid = $account->fetchColumn();
+        if (!$uid) {
+            $pdo->rollBack();
+            respond(['ok'=>false, 'message'=>'No active instructor account is registered with this email. Please check the email or contact your administrator.'], 422);
+        }
         if ($uid) {
             // Per-account cooldown also prevents repeated mail from different IPs.
             $recent = $pdo->prepare('SELECT 1 FROM instructor_password_resets WHERE instructor_uid=? AND created_at > DATE_SUB(NOW(), INTERVAL 2 MINUTE) LIMIT 1');
