@@ -1164,6 +1164,15 @@ html[data-theme="dark"] #themeToggleBtn i::before {
   display: none !important;
 }
 
+#instructorRecoveryModal .recovery-passwords input {
+  padding-right: 56px;
+}
+
+#instructorRecoveryModal .password-toggle-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .modal-btn {
   margin-top: 10px;
 }

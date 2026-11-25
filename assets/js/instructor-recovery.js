@@ -26,11 +26,13 @@
             <i class="fas fa-lock input-icon" aria-hidden="true"></i>
             <input id="instructorRecoveryPassword" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder=" ">
             <label for="instructorRecoveryPassword">New Password</label>
+            <button type="button" class="password-toggle-btn" data-recovery-password="instructorRecoveryPassword" aria-controls="instructorRecoveryPassword" aria-label="Show new password" aria-pressed="false"><i class="fas fa-eye" aria-hidden="true"></i></button>
           </div></div>
           <div class="input-container"><div class="input-field-wrapper">
             <i class="fas fa-lock input-icon" aria-hidden="true"></i>
             <input id="instructorRecoveryConfirm" type="password" autocomplete="new-password" minlength="8" maxlength="72" placeholder=" ">
             <label for="instructorRecoveryConfirm">Confirm New Password</label>
+            <button type="button" class="password-toggle-btn" data-recovery-password="instructorRecoveryConfirm" aria-controls="instructorRecoveryConfirm" aria-label="Show confirm password" aria-pressed="false"><i class="fas fa-eye" aria-hidden="true"></i></button>
           </div></div>
         </div>
         <p class="message" role="status" aria-live="polite" hidden></p>
@@ -50,8 +52,20 @@
   let token = '';
   let busy = false;
   let step = 'email';
+  const passwordToggles = [...overlay.querySelectorAll('[data-recovery-password]')];
+  function setPasswordVisible(button, visible) {
+    const input = overlay.querySelector('#' + button.dataset.recoveryPassword);
+    input.type = visible ? 'text' : 'password';
+    button.setAttribute('aria-pressed', String(visible));
+    button.setAttribute('aria-label', (visible ? 'Hide ' : 'Show ') + (input === password ? 'new password' : 'confirm password'));
+    button.querySelector('i').className = visible ? 'fas fa-eye-slash' : 'fas fa-eye';
+  }
+  passwordToggles.forEach(button => button.addEventListener('click', () => {
+    setPasswordVisible(button, button.getAttribute('aria-pressed') !== 'true');
+  }));
   function showStep(next) {
     step = next;
+    passwordToggles.forEach(button => setPasswordVisible(button, false));
     const titles = {email: 'Forgot Instructor Password', code: 'Verify Recovery Code', password: 'Reset Instructor Password', done: 'Password Reset Complete'};
     const descriptions = {email: 'Enter the recovery email registered by your administrator.', code: 'Enter the 8-digit code sent to ' + email.value.trim() + '. It expires in 10 minutes.', password: 'Code verified. Choose a new password with at least 8 characters.', done: 'You can now sign in to your instructor account with your new password.'};
     overlay.querySelector('h2').textContent = titles[step];
@@ -66,7 +80,7 @@
     password.required = confirm.required = step === 'password';
     submit.textContent = {email:'Send Recovery Code',code:'Verify Code',password:'Reset Password',done:'Back to Sign In'}[step];
     submit.disabled = false;
-    restart.hidden = step === 'email' || step === 'done';
+    restart.hidden = step !== 'code';
     ({email, code, password, done:submit}[step]).focus();
   }
   function open(resetToken = '') {
