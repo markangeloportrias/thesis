@@ -4262,8 +4262,8 @@
           const instructorComments = getInstructorComments(rec);
           const remarksAvailable = instructorComments.length > 0;
           const remarksRead = isInstructorRemarkRead(rec, getCommentReadToken(instructorComments));
-          const requestIcon = requestStatus === "requested" ? "fa-clock" : requestStatus === "accepted" ? "fa-pen" : requestStatus === "edited" ? "fa-check" : "fa-pen-to-square";
-          const requestTitle = requestStatus === "requested" ? "Edit request pending" : requestStatus === "accepted" ? "Edit approved — edit once" : requestStatus === "edited" ? "Edit already used" : "Request edit";
+          const requestIcon = requestStatus === "requested" ? "fa-clock" : requestStatus === "accepted" ? "fa-pen-to-square" : requestStatus === "edited" ? "fa-check" : "fa-pen-to-square";
+          const requestTitle = requestStatus === "requested" ? "Edit request pending" : requestStatus === "accepted" ? "Request another edit" : requestStatus === "edited" ? "Edit already used" : "Request edit";
           const feedbackTitle = remarksAvailable
             ? (remarksRead ? "Instructor feedback" : "New instructor feedback — open to read")
             : "No instructor feedback";
@@ -4295,29 +4295,6 @@
             openInstructorFeedback(rec, false);
           });          buttons[1]?.addEventListener("click", async () => {
             if (requestStatus === "requested") return;
-            if (requestStatus === "accepted") {
-              if (rec.procedureKey && rec.procedureKey !== "all-records") setActiveProcedure(rec.procedureKey);
-              editingRequestKey = getCaseKey(rec);
-              deliveryEditingIndex = index;
-              deliveryEditingRecord = JSON.parse(JSON.stringify(rec));
-              deliveryRecords.splice(index, 1);
-              document.getElementById("inputPatientName").value = rec.patientName || "";
-              document.getElementById("inputPatientAddress").value = rec.patientAddress || "";
-              document.getElementById("inputCaseNo").value = rec.caseNo || "";
-              document.getElementById("inputDateTime").value = rec.dateTime || "";
-              document.getElementById("inputDiagnosis").value = rec.diagnosis || "";
-              document.getElementById("inputFacilityName").value = rec.facilityName || "";
-              document.getElementById("inputFacilityAddress").value = rec.facilityAddress || "";
-              document.getElementById("inputFacilityContact").value = rec.facilityContact || "";
-              document.getElementById("inputSupervisorName").value = rec.supervisorName || "";
-              document.getElementById("inputSupervisorContact").value = rec.supervisorContact || "";
-              document.getElementById("inputSupervisorPosition").value = rec.supervisorPosition || "";
-              document.getElementById("inputLicenseNo").value = rec.licenseNo || "";
-              document.getElementById("inputLicenseExpiry").value = rec.licenseExpiry || "";
-              renderDeliveryRecordsTable();
-              openDeliveryModal();
-              return;
-            }
             const recordProcedureKey = rec.procedureKey || activeProcedureKey;
             const requestReason = await EditRequestReason.ask();
             if (!requestReason) return;
