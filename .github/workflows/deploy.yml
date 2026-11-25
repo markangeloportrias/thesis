@@ -22,6 +22,8 @@ jobs:
         env:
           THESIS_DB_PASSWORD: ${{ secrets.THESIS_DB_PASSWORD }}
           THESIS_MAIL_FROM: ${{ secrets.THESIS_MAIL_FROM }}
+          THESIS_SMTP_USERNAME: ${{ secrets.THESIS_SMTP_USERNAME }}
+          THESIS_SMTP_PASSWORD: ${{ secrets.THESIS_SMTP_PASSWORD }}
           THESIS_RECOVERY_LOGIN_URL: ${{ secrets.THESIS_RECOVERY_LOGIN_URL }}
         run: |
           php <<'PHP'
@@ -40,6 +42,16 @@ jobs:
           }
           PHP
           php -l api/config.php
+
+      - name: Set up PHP email dependencies
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: openssl
+          tools: composer:v2
+
+      - name: Install email delivery library
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
       - name: Recover interrupted deployment uploads
         env:

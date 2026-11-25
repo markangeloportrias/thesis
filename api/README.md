@@ -79,19 +79,34 @@ existing columns/tables. The student edit-request migration is independent.
 
 In GitHub repository Actions secrets, set:
 
-- `THESIS_MAIL_FROM`: a real sender mailbox on your hosted domain, for example
-  `noreply@your-domain.example`. Configure that mailbox/domain for sending on the host.
+- `THESIS_SMTP_USERNAME`: your full Gmail address, used to authenticate sending.
+- `THESIS_SMTP_PASSWORD`: a Google App Password for that account, not its normal
+  password. Enable Google Two-Step Verification, then create an App Password at
+  https://myaccount.google.com/apppasswords. Never commit or share this password.
+- `THESIS_MAIL_FROM`: the same Gmail address as `THESIS_SMTP_USERNAME` (if omitted,
+  the sender defaults to the SMTP username).
 - `THESIS_RECOVERY_LOGIN_URL`: the full HTTPS login page URL, for this deployment
   `https://midwife.dcsbisu.com/login` (no query string or fragment).
 
 The existing deployment builds these values into the server-side PHP config.
 For a manual deployment, set the equivalent environment variables or the
-`instructor_recovery` values in `api/config.php`. Sending uses PHP `mail()`;
-the hosting account must have a working PHP mail transport. SMTP credentials
-are not used by this implementation. Confirm delivery to an actual instructor
-mailbox, including the spam folder, after deployment. A successful PHP mail
-handoff does not guarantee inbox delivery. Transport failures are logged in the
-server PHP error log without exposing reset tokens.
+`instructor_recovery` values in `api/config.php`. Sending uses PHPMailer with
+authenticated Gmail SMTP over verified TLS to smtp.gmail.com:465. There is no
+PHP mail fallback. The deployment installs the locked Composer dependencies
+into api/vendor; manual deployments must run `composer install --no-dev` and
+upload that directory too. PHP 8.0+ with OpenSSL is required. The hosting server
+must allow outbound connections to port 465. Confirm delivery to an actual
+instructor mailbox, including spam, after deployment; SMTP acceptance does not
+guarantee inbox delivery. Server logs report safe diagnostic categories for
+connection, authentication, and delivery errors without message bodies or secrets.
+Missing settings return a configuration error before any account lookup. Actual
+delivery failure retains the generic public response to protect account privacy.
+
+After setting the secrets, rerun the deployment so it rebuilds the configuration.
+No SQL change is required for the SMTP switch. The instructor's Recovery Email
+is the recipient; the Gmail account configured above is the sender. Google may
+not offer App Passwords on some managed or restricted accounts. See
+https://support.google.com/accounts/answer/185833 for eligibility and setup.
 
 Admins register the recovery email when adding or editing an instructor. It is
 only returned to admins, and changing it invalidates outstanding recovery codes.

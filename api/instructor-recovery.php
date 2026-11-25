@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/recovery-mailer.php';
 
 function instructorRecoveryEmail($value): string
 {
@@ -38,11 +39,21 @@ function handleInstructorRecovery(PDO $pdo, array $config, string $action, array
         catch (InvalidArgumentException $error) { respond(['ok'=>false, 'message'=>$error->getMessage()], 422); }
         $settings = $config['instructor_recovery'] ?? [];
         $url = (string)($settings['login_url'] ?? '');
-        $from = (string)($settings['from_email'] ?? '');
+        $from = (string)($settings['from_email'] ?? '') ?: (string)($settings['smtp_username'] ?? '');
         if (!filter_var($url, FILTER_VALIDATE_URL) || parse_url($url, PHP_URL_SCHEME) !== 'https'
             || parse_url($url, PHP_URL_QUERY) !== null || parse_url($url, PHP_URL_FRAGMENT) !== null
             || !filter_var($from, FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/', $from)) {
             respond(['ok'=>false, 'message'=>'Email recovery is not configured yet. Please contact the administrator.'], 503);
+        }
+        if ($sendMail === null) {
+            try { $mailer = createRecoveryMailer($settings); }
+            catch (Throwable $error) {
+                error_log('Instructor recovery SMTP configuration unavailable; check deployment dependencies and mail settings.');
+                respond(['ok'=>false, 'message'=>'Email recovery is not configured yet. Please contact the administrator.'], 503);
+            }
+            $sendMail = static function (string $to, string $subject, string $body) use ($mailer): bool {
+                return sendRecoverySmtpMail($mailer, $to, $subject, $body);
+            };
         }
         $message = 'If this email belongs to an active instructor account, a recovery code will be sent. Check your inbox and spam folder. If you requested one recently, use the latest code or wait two minutes before requesting another.';
         $pdo->beginTransaction();
@@ -58,7 +69,7 @@ function handleInstructorRecovery(PDO $pdo, array $config, string $action, array
                 $pdo->prepare('UPDATE instructor_password_resets SET used_at=NOW() WHERE instructor_uid=? AND used_at IS NULL')->execute([$uid]);
                 $pdo->prepare('INSERT INTO instructor_password_resets (instructor_uid,token_hash,expires_at) VALUES (?,?,DATE_ADD(NOW(), INTERVAL 10 MINUTE))')->execute([$uid, instructorRecoveryCodeHash((string)$uid, $code)]);
                 $body = "An instructor password reset was requested for your Clinical Portal account.\n\nYour recovery code is: " . $code . "\n\nEnter this code in the recovery window at " . $url . ". After verification, you can choose a new password.\n\nThis code expires in 10 minutes and can be used once. Do not share it. If you did not request this, you can ignore this email.\n";
-                $sent = ($sendMail ?? 'mail')($email, 'Clinical Portal - Reset instructor password', $body, [
+                $sent = $sendMail($email, 'Clinical Portal - Reset instructor password', $body, [
                     'From' => $from, 'MIME-Version' => '1.0', 'Content-Type' => 'text/plain; charset=UTF-8',
                 ]);
                 if (!$sent) {

@@ -1,4 +1,5 @@
 # Local development environments
+/api/vendor/
 .venv/
 .vscode/
 .agents/

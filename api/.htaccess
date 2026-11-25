@@ -1,4 +1,5 @@
 RewriteEngine On
+RewriteRule ^vendor(?:/|$) - [F,L]
 RewriteCond %{HTTP:Authorization} ^(.+)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 RewriteCond %{REQUEST_FILENAME} !-f

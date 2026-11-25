@@ -15,6 +15,8 @@ return [
     'instructor_recovery' => [
         'login_url' => getenv('THESIS_RECOVERY_LOGIN_URL') ?: '',
         'from_email' => getenv('THESIS_MAIL_FROM') ?: '',
+        'smtp_username' => getenv('THESIS_SMTP_USERNAME') ?: '',
+        'smtp_password' => getenv('THESIS_SMTP_PASSWORD') ?: '',
     ],
     // Leave empty for same-origin XAMPP use. Set this when the browser app is
     // hosted on a different trusted origin.
