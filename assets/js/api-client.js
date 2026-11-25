@@ -3015,7 +3015,10 @@
     });
   };
   ApiClient.getEditRequests = async function (filters, requestOptions) {
-    var query = filters && filters.archived ? '?archived=1' : '';
+    var queryParams = new URLSearchParams();
+    if (filters && filters.archived) queryParams.set('archived', '1');
+    if (filters && filters.includeDismissed) queryParams.set('include_dismissed', '1');
+    var query = queryParams.toString() ? '?' + queryParams.toString() : '';
     var result=await mysqlRequest('edit-requests' + query, requestOptions || {});
     return (result.requests||[]).map(function(r){var numbers=r.case_numbers;if(typeof numbers==='string'){try{numbers=JSON.parse(numbers||'[]');}catch(e){numbers=[];}}numbers=Array.isArray(numbers)?numbers:[];return Object.assign({},r,{studentId:r.student_id,type:r.procedure_key,procedureKey:r.procedure_key,procedure:r.procedure_name,caseNumbers:numbers,caseNo:numbers[0]||'',caseKey:String(r.id),requestedAt:r.requested_at});});
   };

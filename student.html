@@ -1849,7 +1849,7 @@
 <script src="assets/js/record-quality.js?v=20261004-verified-export"></script>
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
-    <script src="assets/js/api-client.js?v=20261111-required-password-1"></script>
+    <script src="assets/js/api-client.js?v=20261125-preserve-edit-approval-1"></script>
     <script src="assets/js/edit-request-reason.js?v=20261125-dialog-2"></script>
     <script src="assets/js/student-first-password.js?v=20261111-centered-2"></script>
     <script>
@@ -3159,7 +3159,7 @@
         if (sharedRequest?.consumed_at) return '';
         if (["Allowed", "approved", "Approved"].includes(sharedStatus)) return "accepted";
         if (["Denied", "rejected", "Rejected"].includes(sharedStatus)) return "";
-        if (["pending", "Requested"].includes(sharedStatus)) return "requested";
+        if (["pending", "Requested"].includes(sharedStatus)) return sharedRequest.student_dismissed_at ? "" : "requested";
         if (liveEditRequestsLoaded) return "";
         return rec.editRequestStatus === "edited" || rec.editRequestStatus === "rejected"
           ? ""
@@ -3224,7 +3224,7 @@
 
       async function reconcilePendingEditRequestStates(silentRefresh = false) {
         try {
-          const liveRequests = await ApiClient.getEditRequests({}, silentRefresh ? { silent: true } : undefined);
+          const liveRequests = await ApiClient.getEditRequests({ includeDismissed: true }, silentRefresh ? { silent: true } : undefined);
           liveEditRequestsCache = Array.isArray(liveRequests) ? liveRequests : [];
           liveEditRequestsLoaded = true;
           const studentId = String(getCurrentStudentId() || "");
@@ -3234,7 +3234,7 @@
             const hasPendingRequest = liveEditRequestsCache.some((request) =>
               String(request.studentId || request.student_id || '') === studentId &&
               ['pending', 'Requested'].includes(request.status) &&
-              !request.archived_at && editRequestMatchesRecord(request, record)
+              !request.archived_at && !request.student_dismissed_at && editRequestMatchesRecord(request, record)
             );
             if (states[stateKey] === "requested" && !hasPendingRequest) {
               delete states[stateKey];

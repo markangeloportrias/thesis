@@ -1629,8 +1629,10 @@ try {
         $user = currentUser($pdo, ['admin', 'instructor', 'student']);
         if ($method === 'GET') {
             $archived = ($_GET['archived'] ?? '0') === '1';
+            // The student's record controls need decisions even after notifications are dismissed.
+            $includeDismissed = $user['role'] === 'student' && ($_GET['include_dismissed'] ?? '0') === '1';
             $where = $user['role'] === 'student'
-                ? ' AND edit_requests.student_id=? AND edit_requests.student_dismissed_at IS NULL'
+                ? ' AND edit_requests.student_id=?' . ($includeDismissed ? '' : ' AND edit_requests.student_dismissed_at IS NULL')
                 : ($archived
                     ? ' AND edit_requests.archived_at IS NOT NULL AND edit_requests.student_dismissed_at IS NULL'
                     : ' AND edit_requests.archived_at IS NULL AND edit_requests.reviewer_dismissed_at IS NULL AND edit_requests.student_dismissed_at IS NULL');
