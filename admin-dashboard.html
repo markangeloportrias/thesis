@@ -3463,7 +3463,7 @@
             <label>Parent/Guardian name (optional)<input name="parentName" type="text" value="${escapeHtml(target.parent_name || "")}" autocomplete="name"></label>
           <label>Contact number (optional)<input name="contactNumber" type="tel" value="${escapeHtml(target.contact_number || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
             <label>Parent/Guardian contact (optional)<input name="parentContact" type="tel" value="${escapeHtml(target.parent_contact || "")}" inputmode="numeric" autocomplete="tel" maxlength="11" minlength="11" pattern="[0-9]{11}" data-contact-number></label>
-            <div><button type="button" class="btn btn-secondary" id="resetStudentPasswordBtn"><i class="fas fa-key" aria-hidden="true"></i> Reset Password</button></div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;"><button type="button" class="btn btn-secondary" id="resetStudentPasswordBtn" aria-describedby="studentResetPasswordHint"><i class="fas fa-key" aria-hidden="true"></i> Reset Password</button><small id="studentResetPasswordHint" style="font-size:12px;line-height:1.5;color:#526d90;">Default password: <strong>midwife + Student ID</strong><br>No spaces (e.g. midwife123456).</small></div>
           </form>`;
         document.getElementById("resetStudentPasswordBtn").addEventListener("click", (event) => {
           void resetStudentPassword(studentId, event.currentTarget);

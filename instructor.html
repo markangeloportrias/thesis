@@ -6470,7 +6470,15 @@
         resetButton.className = "btn btn-secondary";
         resetButton.textContent = "Reset Password";
         resetButton.addEventListener("click", () => resetInstructorStudentPassword(studentId, resetButton));
-        instructorStudentsAddBody.appendChild(resetButton);
+        const resetRow = document.createElement("div");
+        resetRow.style.cssText = "display:flex;align-items:center;gap:12px;flex-wrap:wrap;";
+        const resetHint = document.createElement("small");
+        resetHint.id = "instructorStudentResetPasswordHint";
+        resetHint.style.cssText = "font-size:12px;line-height:1.5;color:#526d90;";
+        resetHint.innerHTML = "Default password: <strong>midwife + Student ID</strong><br>No spaces (e.g. midwife123456).";
+        resetButton.setAttribute("aria-describedby", resetHint.id);
+        resetRow.append(resetButton, resetHint);
+        instructorStudentsAddBody.appendChild(resetRow);
       }
 
       async function renderCurrentRecordsSearchResults() {
