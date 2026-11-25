@@ -263,6 +263,43 @@ html body.role-student .recent-record-open:hover { background: #e9f4fb; border-c
 html body.role-student .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* Correction requests table. */
+html body.role-student #editRequestsTab .edit-request-actions,
+html body.role-student #editRequestsTab .edit-request-mobile-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+html body.role-student #editRequestsTab :is(.edit-request-actions, .edit-request-mobile-action) > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+  border: 1px solid #4682b4 !important;
+  border-radius: 6px !important;
+  background: #4682b4 !important;
+  color: #fff !important;
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  cursor: pointer;
+}
+html body.role-student #editRequestsTab :is(.edit-request-actions, .edit-request-mobile-action) > .edit-reason-button {
+  border-color: #ffd000 !important;
+  background: #ffd000 !important;
+  color: #073572 !important;
+}
+html body.role-student #editRequestsTab :is(.edit-request-actions, .edit-request-mobile-action) > .edit-reason-button:hover {
+  border-color: #e6bb00 !important;
+  background: #e6bb00 !important;
+}
 html body.role-student .edit-requests-table-wrap { overflow-x: auto; }
 html body.role-student table.edit-requests-table {
   width: 100%;

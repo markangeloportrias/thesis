@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="assets/css/components/hero.css?v=20260728-12" />
     <link rel="stylesheet" href="assets/css/base/theme.css?v=20260903-message-box-4" />
     <link rel="stylesheet" href="assets/css/pages/student-palette.css?v=20261110-steel-blue-logout-1" />
-    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261110-steel-blue-request-1" />
+    <link rel="stylesheet" href="assets/css/pages/student-prc.css?v=20261125-request-actions-2" />
     <link rel="stylesheet" href="assets/css/components/role-table-density.css?v=20260821-1" />
     <link rel="stylesheet" href="assets/css/components/prc-export-preview.css?v=20260930-shared-export" />
     <style id="student-settings-minimal-styles">
@@ -3135,9 +3135,7 @@
       }
       function getEditRequestStatus(rec) {
         if (getProcedureRecordReviewStatus(rec) === 'verified' || rec.checkedBy || rec.checkedAt) return '';
-        // An instructor's Changes Requested review grants correction access
-        // for this record until it is resubmitted.
-        if (getProcedureRecordReviewStatus(rec) === 'needs_revision') return 'accepted';
+        // Review feedback is separate from approval of an edit request.
         const states = JSON.parse(localStorage.getItem("student_frontend_edit_states") || "{}");
         const localStatus = states[getCaseKey(rec)] || "";
         // One approved edit is consumed after it is saved. A denied request
@@ -3162,6 +3160,7 @@
         if (["Allowed", "approved", "Approved"].includes(sharedStatus)) return "accepted";
         if (["Denied", "rejected", "Rejected"].includes(sharedStatus)) return "";
         if (["pending", "Requested"].includes(sharedStatus)) return "requested";
+        if (liveEditRequestsLoaded) return "";
         return rec.editRequestStatus === "edited" || rec.editRequestStatus === "rejected"
           ? ""
           : (rec.editRequestStatus || (localStatus === 'requested' && liveEditRequestsLoaded ? '' : localStatus));
@@ -4262,8 +4261,8 @@
           const instructorComments = getInstructorComments(rec);
           const remarksAvailable = instructorComments.length > 0;
           const remarksRead = isInstructorRemarkRead(rec, getCommentReadToken(instructorComments));
-          const requestIcon = requestStatus === "requested" ? "fa-clock" : requestStatus === "accepted" ? "fa-pen-to-square" : requestStatus === "edited" ? "fa-check" : "fa-pen-to-square";
-          const requestTitle = requestStatus === "requested" ? "Edit request pending" : requestStatus === "accepted" ? "Request another edit" : requestStatus === "edited" ? "Edit already used" : "Request edit";
+          const requestIcon = requestStatus === "requested" ? "fa-clock" : requestStatus === "accepted" ? "fa-pen-to-square" : "fa-pen";
+          const requestTitle = requestStatus === "requested" ? "Edit request pending" : requestStatus === "accepted" ? "Edit approved — edit once" : "Request edit";
           const feedbackTitle = remarksAvailable
             ? (remarksRead ? "Instructor feedback" : "New instructor feedback — open to read")
             : "No instructor feedback";
@@ -4295,6 +4294,29 @@
             openInstructorFeedback(rec, false);
           });          buttons[1]?.addEventListener("click", async () => {
             if (requestStatus === "requested") return;
+            if (requestStatus === "accepted") {
+              if (rec.procedureKey && rec.procedureKey !== "all-records") setActiveProcedure(rec.procedureKey);
+              editingRequestKey = getCaseKey(rec);
+              deliveryEditingIndex = index;
+              deliveryEditingRecord = JSON.parse(JSON.stringify(rec));
+              deliveryRecords.splice(index, 1);
+              document.getElementById("inputPatientName").value = rec.patientName || "";
+              document.getElementById("inputPatientAddress").value = rec.patientAddress || "";
+              document.getElementById("inputCaseNo").value = rec.caseNo || "";
+              document.getElementById("inputDateTime").value = rec.dateTime || "";
+              document.getElementById("inputDiagnosis").value = rec.diagnosis || "";
+              document.getElementById("inputFacilityName").value = rec.facilityName || "";
+              document.getElementById("inputFacilityAddress").value = rec.facilityAddress || "";
+              document.getElementById("inputFacilityContact").value = rec.facilityContact || "";
+              document.getElementById("inputSupervisorName").value = rec.supervisorName || "";
+              document.getElementById("inputSupervisorContact").value = rec.supervisorContact || "";
+              document.getElementById("inputSupervisorPosition").value = rec.supervisorPosition || "";
+              document.getElementById("inputLicenseNo").value = rec.licenseNo || "";
+              document.getElementById("inputLicenseExpiry").value = rec.licenseExpiry || "";
+              renderDeliveryRecordsTable();
+              openDeliveryModal();
+              return;
+            }
             const recordProcedureKey = rec.procedureKey || activeProcedureKey;
             const requestReason = await EditRequestReason.ask();
             if (!requestReason) return;
@@ -5148,7 +5170,7 @@
           });
           return;
         }
-        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><colgroup><col style="width:24%"><col style="width:16%"><col style="width:13%"><col style="width:19%"><col style="width:16%"><col style="width:12%"></colgroup><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Assigned Instructor</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div><div class="edit-requests-mobile-list" aria-label="Correction requests"></div>';
+        container.innerHTML = '<div class="edit-requests-table-wrap"><table class="edit-requests-table"><colgroup><col style="width:20%"><col style="width:15%"><col style="width:10%"><col style="width:19%"><col style="width:16%"><col style="width:20%"></colgroup><thead><tr><th>Status</th><th>Procedure</th><th>Case No.</th><th>Assigned Instructor</th><th>Requested</th><th>Action</th></tr></thead><tbody></tbody></table></div><div class="edit-requests-mobile-list" aria-label="Correction requests"></div>';
         const requestTableBody = container.querySelector("tbody");
         const mobileRequestList = container.querySelector(".edit-requests-mobile-list");
         requests.forEach((request, requestIndex) => {
@@ -5170,7 +5192,11 @@
           instructorCell.textContent = request.assigned_instructor_name || "Not assigned";
           card.insertBefore(instructorCell, card.children[3]);
           const requestActionButton = card.querySelector("[data-delete-edit-notification]");
-          EditRequestReason.button(card.lastElementChild, request.request_reason);
+          const requestActions = document.createElement("div");
+          requestActions.className = "edit-request-actions";
+          card.lastElementChild.appendChild(requestActions);
+          requestActions.appendChild(requestActionButton);
+          EditRequestReason.button(requestActions, request.request_reason);
           if (requestActionButton) {
             requestActionButton.setAttribute("aria-label", isPendingRequest ? "Cancel this edit request" : "Dismiss this notification");
             requestActionButton.innerHTML = `<i class="fas ${isPendingRequest ? "fa-ban" : "fa-trash"}"></i> ${isPendingRequest ? "Cancel Request" : "Dismiss"}`;
