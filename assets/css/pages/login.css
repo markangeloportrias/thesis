@@ -1160,6 +1160,10 @@ html[data-theme="dark"] #themeToggleBtn i::before {
   text-align: left;
 }
 
+#instructorRecoveryModal [hidden] {
+  display: none !important;
+}
+
 .modal-btn {
   margin-top: 10px;
 }
