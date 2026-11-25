@@ -1187,6 +1187,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261123-instructor-recovery-1"></script>
+    <script src="assets/js/edit-request-reason.js"></script>
     <script src="assets/js/admin-student-import.js?v=20261111-popup-2"></script>
     <script>
       (() => {
@@ -6405,6 +6406,7 @@
           </td>
         `;
           editRequestsTbody.appendChild(tr);
+          EditRequestReason.button(tr.querySelector('.action-cell'), req.request_reason);
         });
       }
 

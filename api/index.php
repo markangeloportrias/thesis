@@ -1681,6 +1681,9 @@ try {
         }
         if ($method === 'POST' && $user['role'] === 'student') {
             requireFields($data, ['procedure_key', 'procedure_name']);
+            $reason = is_string($data['request_reason'] ?? null) ? trim($data['request_reason']) : '';
+            if ($reason === '' || mb_strlen($reason) > 2000) respond(['ok'=>false, 'message'=>'Please provide an edit request reason (up to 2000 characters).'], 422);
+            if (!columnExists($pdo, 'edit_requests', 'request_reason')) respond(['ok'=>false, 'message'=>'Edit request reasons are not configured yet. Please contact the administrator.'], 503);
             $identity = is_array($data['record_identity'] ?? null) ? $data['record_identity'] : [];
             if (!$identity) respond(['ok' => false, 'message' => 'Refresh the page and select the record again. Record identity is required.'], 422);
             [$where, $params] = caseMutationSelection('resolve', $identity, (string)$user['user_uid']);
@@ -1700,8 +1703,8 @@ try {
             $data['procedure_key'] = $record['procedure_key'];
             $data['procedure_name'] = $record['procedure_name'];
             $caseNumbers = [(string)$record['case_no']];
-            $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers, record_identity) VALUES (?, ?, ?, ?, ?)');
-            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers),json_encode($identity)]);
+            $stmt = $pdo->prepare('INSERT INTO edit_requests (student_id, procedure_key, procedure_name, case_numbers, record_identity, request_reason) VALUES (?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$user['user_uid'],$data['procedure_key'],$data['procedure_name'],json_encode($caseNumbers),json_encode($identity),$reason]);
             $requestId = (string)$pdo->lastInsertId();
             $notice = $pdo->prepare('INSERT INTO notification_history (event_type,student_id,procedure_key,procedure_type,case_no,request_id,message) VALUES (?,?,?,?,?,?,?)');
             $notice->execute(['edit_request_submitted', $user['user_uid'], $data['procedure_key'], $data['procedure_name'], implode(', ', array_map('strval', $caseNumbers)), $requestId, 'A student submitted a clinical record edit request.']);

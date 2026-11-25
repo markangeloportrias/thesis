@@ -1850,6 +1850,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261111-required-password-1"></script>
+    <script src="assets/js/edit-request-reason.js"></script>
     <script src="assets/js/student-first-password.js?v=20261111-centered-2"></script>
     <script>
       (() => {
@@ -4318,12 +4319,14 @@
               return;
             }
             const recordProcedureKey = rec.procedureKey || activeProcedureKey;
+            const requestReason = await EditRequestReason.ask();
+            if (!requestReason) return;
             const recordProcedureConfig = PROCEDURE_CONFIGS[recordProcedureKey] || activeProcedureConfig;
             buttons[1].disabled = true;
             try {
               const res = await ApiClient.requestEditApproval(
                 getCurrentStudentId(), recordProcedureConfig?.procedureName || rec.procedureName,
-                [rec.caseNo || ''], rec.recordIdentity
+                [rec.caseNo || ''], rec.recordIdentity, requestReason
               );
               if (!res?.ok) throw new Error(res?.message || 'The edit request could not be submitted.');
               setEditRequestStatus(rec, 'requested');
@@ -5190,6 +5193,7 @@
           instructorCell.textContent = request.assigned_instructor_name || "Not assigned";
           card.insertBefore(instructorCell, card.children[3]);
           const requestActionButton = card.querySelector("[data-delete-edit-notification]");
+          EditRequestReason.button(card.lastElementChild, request.request_reason);
           if (requestActionButton) {
             requestActionButton.setAttribute("aria-label", isPendingRequest ? "Cancel this edit request" : "Dismiss this notification");
             requestActionButton.innerHTML = `<i class="fas ${isPendingRequest ? "fa-ban" : "fa-trash"}"></i> ${isPendingRequest ? "Cancel Request" : "Dismiss"}`;
@@ -5239,6 +5243,7 @@
           mobileCard.innerHTML = `<div class="edit-request-mobile-status">${card.children[0].innerHTML}</div><dl><div><dt>Procedure</dt><dd>${escapeHtml(request.procedure || "Clinical record")}</dd></div><div><dt>Case No.</dt><dd>${escapeHtml(request.caseNo || "â€”")}</dd></div><div><dt>Assigned Instructor</dt><dd>${escapeHtml(request.assigned_instructor_name || "Not assigned")}</dd></div><div><dt>Requested</dt><dd>${escapeHtml(request.requestedAt || "â€”")}</dd></div></dl><div class="edit-request-mobile-action"></div>`;
           const mobileAction = requestActionButton.cloneNode(true);
           mobileCard.querySelector(".edit-request-mobile-action")?.appendChild(mobileAction);
+          EditRequestReason.button(mobileCard.querySelector('.edit-request-mobile-action'), request.request_reason);
           mobileAction.addEventListener("click", (event) => {
             event.stopPropagation();
             requestActionButton.click();
@@ -5247,6 +5252,7 @@
             if (!event.target.closest("button")) card.click();
           });
           mobileCard.addEventListener("keydown", (event) => {
+            if (event.target.closest('button')) return;
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               card.click();

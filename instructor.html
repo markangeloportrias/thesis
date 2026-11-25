@@ -1969,6 +1969,7 @@
     <script src="assets/js/student-loading.js?v=20261016-local-loading-1"></script>
     <script src="assets/js/philippine-time.js?v=20260913-1"></script>
     <script src="assets/js/api-client.js?v=20261016-instructor-directory-1"></script>
+    <script src="assets/js/edit-request-reason.js"></script>
     <script src="assets/js/admin-student-import.js?v=20261111-popup-2"></script>
     <link rel="stylesheet" href="assets/css/pages/instructor-activity.css?v=5-compact" />
     <link rel="stylesheet" href="assets/css/pages/instructor-directory-enlarge.css?v=20261112-review-body-centered-7" />
@@ -3981,6 +3982,7 @@
               </div>
             `;
             if (version === instructorRequestRenderVersion) editRequestsList.appendChild(item);
+            EditRequestReason.button(item.querySelector('.request-item-actions'), req.request_reason);
           });
         }
         if (version === instructorRequestRenderVersion) applyInstructorRequestFilter();
