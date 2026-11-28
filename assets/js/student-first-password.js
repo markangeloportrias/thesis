@@ -19,7 +19,11 @@
           #studentFirstPasswordPanel small { display:block; margin-top:8px; font-size:13px; line-height:1.45; color:#456080; }
           #studentFirstPasswordPanel [role="alert"] { margin:12px 0 0; color:#9b241c; }
           #studentFirstPasswordPanel [role="alert"]:empty { display:none; }
-          #studentFirstPasswordPanel button { margin-top:22px; min-height:48px; font-size:16px !important; background:#084c91 !important; color:white !important; }
+          #studentFirstPasswordPanel button[type="submit"] { margin-top:22px; min-height:48px; font-size:16px !important; background:#084c91 !important; color:white !important; }
+          #studentFirstPasswordPanel .first-password-field { position:relative; margin-top:6px; }
+          #studentFirstPasswordPanel .first-password-field input { padding-right:52px !important; margin-top:0 !important; }
+          #studentFirstPasswordPanel .first-password-eye { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:44px; height:40px; padding:0; margin:0; border:0; border-radius:8px; background:transparent; color:#456080; cursor:pointer; }
+          #studentFirstPasswordPanel .first-password-eye:focus-visible { outline:2px solid #4682b4; }
           #studentFirstPasswordPanel button:disabled { opacity:.65; cursor:wait; }
           @media (max-width:480px) { #studentFirstPasswordPanel { padding:22px !important; } }
         </style>
@@ -38,7 +42,28 @@
       document.body.appendChild(panel);
       panel.showModal();
       const form = panel.querySelector('form');
-      const button = panel.querySelector('button');
+      const button = panel.querySelector('button[type="submit"]');
+      ['firstNewPassword', 'firstConfirmPassword'].forEach((id) => {
+        const input = panel.querySelector('#' + id);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'first-password-field';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'first-password-eye';
+        toggle.setAttribute('aria-controls', id);
+        const label = id === 'firstNewPassword' ? 'new password' : 'confirm password';
+        function update(visible) {
+          input.type = visible ? 'text' : 'password';
+          toggle.setAttribute('aria-label', (visible ? 'Hide ' : 'Show ') + label);
+          toggle.setAttribute('aria-pressed', String(visible));
+          toggle.innerHTML = '<i class="fas ' + (visible ? 'fa-eye-slash' : 'fa-eye') + '" aria-hidden="true"></i>';
+        }
+        update(false);
+        toggle.addEventListener('click', () => update(input.type === 'password'));
+        wrapper.appendChild(toggle);
+      });
       const error = panel.querySelector('[role="alert"]');
       form.addEventListener('submit', async (event) => {
         event.preventDefault();

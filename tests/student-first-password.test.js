@@ -14,10 +14,18 @@ function setup() {
     querySelector(selector) { return fields[selector]; },
     showModal() { this.open = true; }, close() { this.open = false; }, remove() { this.removed = true; },
   };
+  fields['button[type="submit"]'] = fields.button;
+  const toggles = [];
+  for (const id of ['#firstNewPassword', '#firstConfirmPassword']) fields[id].parentNode = { insertBefore() {} };
   let calls = 0;
   let response = { ok: true };
   const context = {
-    window: {}, document: { body: { appendChild() {} }, createElement() { return panel; } },
+    window: {}, document: { body: { appendChild() {} }, createElement(tag) {
+      if (tag === 'dialog') return panel;
+      const element = { attributes: {}, listeners: {}, appendChild() {}, setAttribute(k,v) { this.attributes[k]=v; }, addEventListener(k,v) { this.listeners[k]=v; } };
+      if (tag === 'button') toggles.push(element);
+      return element;
+    } },
     ApiClient: { async changeStudentInitialPassword(current, password) {
       calls++;
       assert.equal(current, undefined);
@@ -26,13 +34,28 @@ function setup() {
     } },
   };
   vm.runInNewContext(fs.readFileSync('assets/js/student-first-password.js', 'utf8'), context);
-  return { panel, fields, context, get calls() { return calls; }, fail() { response = { ok: false, message: 'Current password is incorrect.' }; } };
+  return { panel, fields, context, toggles, get calls() { return calls; }, fail() { response = { ok: false, message: 'Current password is incorrect.' }; } };
 }
 
 test('custom-password accounts do not see the panel', async () => {
   const app = setup();
   await app.context.window.requireStudentPasswordChange({ must_change_password: false });
   assert.equal(app.panel.open, undefined);
+  assert.equal(app.calls, 0);
+});
+
+test('eye buttons toggle each password independently without submitting', () => {
+  const app = setup();
+  app.context.window.requireStudentPasswordChange({ must_change_password: true });
+  assert.equal(app.toggles.length, 2);
+  app.toggles[0].listeners.click();
+  assert.equal(app.fields['#firstNewPassword'].type, 'text');
+  assert.equal(app.fields['#firstConfirmPassword'].type, 'password');
+  assert.equal(app.toggles[0].attributes['aria-pressed'], 'true');
+  app.toggles[0].listeners.click();
+  assert.equal(app.fields['#firstNewPassword'].type, 'password');
+  app.toggles[1].listeners.click();
+  assert.equal(app.fields['#firstConfirmPassword'].type, 'text');
   assert.equal(app.calls, 0);
 });
 
