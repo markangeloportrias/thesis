@@ -506,14 +506,18 @@ try {
 
     if ($resource === 'auth' && $id === 'student-password' && $method === 'PATCH') {
         $user = currentUser($pdo, ['student'], true);
-        requireFields($data, ['current_password', 'new_password']);
+        requireFields($data, ['new_password']);
         $newPassword = (string)$data['new_password'];
         if (!credentialIsStrong($newPassword, 6)) respond(['ok'=>false,'message'=>'New password must contain at least 6 characters.'],422);
         if ($newPassword === 'midwife' . $user['user_uid']) respond(['ok'=>false,'message'=>'Choose a password different from your default password.'],422);
         $pdo->beginTransaction();
         $credential = $pdo->prepare('SELECT password FROM students WHERE student_id=? AND archived_at IS NULL FOR UPDATE');
         $credential->execute([$user['user_uid']]);
-        if (!passwordMatches((string)$data['current_password'], (string)$credential->fetchColumn())) {
+        $storedPassword = (string)$credential->fetchColumn();
+        // Only a signed-in, forced-default-password session may skip re-entry.
+        $initialChange = !empty($user['must_change_password'])
+            && passwordMatches('midwife' . $user['user_uid'], $storedPassword);
+        if (!$initialChange && !passwordMatches((string)($data['current_password'] ?? ''), $storedPassword)) {
             $pdo->rollBack();
             respond(['ok'=>false,'message'=>'Current password is incorrect.'],403);
         }

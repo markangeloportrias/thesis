@@ -26,8 +26,6 @@
         <form>
           <h2 id="firstPasswordTitle" style="margin:0 0 12px;font-size:24px">Change your default password</h2>
           <p style="line-height:1.5">For your account security, set a new password before continuing to your dashboard.</p>
-          <label style="display:block;font-weight:700;margin-top:16px" for="firstCurrentPassword">Current password</label>
-          <input id="firstCurrentPassword" type="password" autocomplete="current-password" required style="width:100%;box-sizing:border-box;padding:12px;margin-top:6px;border:1px solid #a7bfdc;border-radius:8px">
           <label style="display:block;font-weight:700;margin-top:16px" for="firstNewPassword">New password</label>
           <input id="firstNewPassword" type="password" autocomplete="new-password" minlength="6" required style="width:100%;box-sizing:border-box;padding:12px;margin-top:6px;border:1px solid #a7bfdc;border-radius:8px">
           <small>Use at least 6 characters, different from your default password.</small>
@@ -45,7 +43,6 @@
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (button.disabled) return;
-        const current = panel.querySelector('#firstCurrentPassword').value;
         const password = panel.querySelector('#firstNewPassword').value;
         error.textContent = '';
         if (password !== panel.querySelector('#firstConfirmPassword').value) {
@@ -59,7 +56,7 @@
         button.disabled = true;
         button.textContent = 'Saving password…';
         try {
-          const result = await ApiClient.changeStudentInitialPassword(current, password);
+          const result = await ApiClient.changeStudentInitialPassword(undefined, password);
           if (!result?.ok) throw new Error(result?.message || 'Unable to change password.');
           panel.close();
           panel.remove();

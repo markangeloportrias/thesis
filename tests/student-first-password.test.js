@@ -20,7 +20,7 @@ function setup() {
     window: {}, document: { body: { appendChild() {} }, createElement() { return panel; } },
     ApiClient: { async changeStudentInitialPassword(current, password) {
       calls++;
-      assert.equal(current, 'midwife001234');
+      assert.equal(current, undefined);
       assert.equal(password, 'Changed123!');
       return response;
     } },
@@ -40,6 +40,7 @@ test('required panel blocks Escape, mismatches and default reuse; resolves only 
   const app = setup();
   const done = app.context.window.requireStudentPasswordChange({ must_change_password: true, user_uid: '001234' });
   assert.equal(app.panel.open, true);
+  assert.doesNotMatch(app.panel.innerHTML, /firstCurrentPassword|Current password/);
   let prevented = false;
   app.panel.listeners.cancel({ preventDefault() { prevented = true; } });
   assert.equal(prevented, true);
