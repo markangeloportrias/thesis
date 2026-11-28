@@ -409,6 +409,13 @@
               <div class="students-panel active" id="studentsYearPanel">
                 <div id="manageStudentsSummary" aria-label="Student management summary"></div>
                 <div class="student-management-toolbar">
+                  <div id="manageStudentSearch" style="position:relative;width:min(540px,100%);margin-right:auto;">
+                    <label style="display:flex;align-items:center;gap:14px;border:1px solid #b8d2ef;border-radius:12px;padding:0 16px;background:white;min-height:52px;">
+                      <i class="fas fa-search" aria-hidden="true" style="color:#0054a6;"></i>
+                      <input id="manageStudentSearchInput" type="search" placeholder="Search student ID or name" aria-label="Search students by ID or name" aria-controls="manageStudentSearchResults" autocomplete="off" style="border:0;box-shadow:none;min-width:0;width:100%;background:transparent;">
+                    </label>
+                    <div id="manageStudentSearchResults" aria-live="polite" hidden style="position:absolute;top:100%;left:0;right:0;z-index:20;background:white;border:1px solid #b8d2ef;border-radius:12px;box-shadow:0 12px 28px #12366322;padding:8px;max-height:320px;overflow:auto;"></div>
+                  </div>
                   <button
                     class="btn btn-secondary"
                     id="refreshSchoolYearsBtn"
@@ -2987,6 +2994,7 @@
       }
 
       function backToStudentsYears(updateHistory = true) {
+        document.getElementById('manageStudentSearchResults').hidden = true;
         studentsNav.schoolYear = "";
         studentsNav.blockId = "";
         studentsNav.blockLabel = "";
@@ -3002,6 +3010,56 @@
         renderStudentBlocks();
         if (updateHistory) pushAdminHistory("studentsCard");
       }
+
+      (() => {
+        const input = document.getElementById('manageStudentSearchInput');
+        const results = document.getElementById('manageStudentSearchResults');
+        let timer, version = 0;
+        input.addEventListener('input', () => {
+          clearTimeout(timer);
+          const current = ++version, term = input.value.trim().toLowerCase();
+          results.hidden = !term;
+          results.replaceChildren();
+          if (!term) return;
+          results.textContent = 'Searching students…';
+          timer = setTimeout(async () => {
+            try {
+              const response = await ApiClient.getAllAssignedStudents();
+              if (current !== version) return;
+              if (!response?.ok) throw new Error('Unable to search students. Please try again.');
+              const matches = (response.students || []).filter(s => String(s.student_id || '').toLowerCase().includes(term) || String(s.student_name || '').toLowerCase().includes(term)).slice(0, 12);
+              results.replaceChildren();
+              if (!matches.length) results.textContent = 'No matching students found.';
+              matches.forEach(s => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.style.cssText = 'display:block;width:100%;text-align:left;padding:12px;border:0;border-bottom:1px solid #e4edf8;background:white;color:#123663;cursor:pointer;';
+                const name = document.createElement('strong'), details = document.createElement('small');
+                const year = s.registered_school_year || s.school_year || '';
+                name.textContent = s.student_name || s.student_id;
+                details.style.cssText = 'display:block;margin-top:4px;color:#526d90;';
+                details.textContent = `${s.student_id} · ${year || 'No year'} · ${s.block_label || 'No block'}`;
+                button.append(name, details);
+                button.onclick = () => {
+                  if (!year || !s.block_id) { results.textContent = 'This student has no academic year or block assignment.'; return; }
+                  results.hidden = true;
+                  studentsNav.schoolYear = year;
+                  studentSearchInput.value = s.student_id;
+                  openStudentsBlock(s.block_id, s.block_label || s.block_id);
+                };
+                results.appendChild(button);
+              });
+            } catch (error) { if (current === version) results.textContent = error.message; }
+          }, 250);
+        });
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Escape') { ++version; clearTimeout(timer); results.hidden = true; }
+          if (event.key === 'ArrowDown') { event.preventDefault(); results.querySelector('button')?.focus(); }
+        });
+        document.addEventListener('click', event => {
+          if (!document.getElementById('manageStudentSearch').contains(event.target)) { ++version; results.hidden = true; }
+        });
+      })();
 
       async function renderSchoolYears() {
         const result = await ApiClient.getSchoolYears();
