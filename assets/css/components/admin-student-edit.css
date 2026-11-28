@@ -1,0 +1,44 @@
+/* Only the admin Edit Student dialog; other option panes retain their sizing. */
+html body.role-admin #optionPaneOverlay:has(#studentEditForm) .logout-confirm-box {
+  width: min(680px, calc(100vw - 32px)) !important;
+  max-width: 680px !important;
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding: 36px !important;
+}
+html body.role-admin #optionPaneOverlay:has(#studentEditForm) #optionPaneTitle {
+  font-size: 28px !important;
+  line-height: 1.3;
+  margin-bottom: 20px;
+}
+html body.role-admin #studentEditForm {
+  gap: 18px !important;
+}
+html body.role-admin #studentEditForm label {
+  font-size: 16px !important;
+  line-height: 1.5;
+}
+html body.role-admin #studentEditForm input {
+  min-height: 52px;
+  padding: 12px 14px !important;
+  font-size: 17px !important;
+  box-sizing: border-box;
+}
+html body.role-admin #studentEditForm #studentResetPasswordHint {
+  font-size: 14px !important;
+}
+html body.role-admin #optionPaneOverlay:has(#studentEditForm) :is(#resetStudentPasswordBtn, .logout-confirm-btn) {
+  min-height: 50px;
+  padding: 12px 22px !important;
+  font-size: 16px !important;
+}
+html body.role-admin #optionPaneOverlay:has(#studentEditForm) .logout-confirm-actions {
+  margin-top: 26px;
+  gap: 14px;
+}
+@media (max-width: 540px) {
+  html body.role-admin #optionPaneOverlay:has(#studentEditForm) .logout-confirm-box {
+    padding: 24px !important;
+  }
+}
